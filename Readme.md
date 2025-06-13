@@ -27,7 +27,7 @@ VoiceBuddy addresses these challenges through:
 - **Smart Scheduling**: Manages tasks and provides timely reminders
 
 ## Tech Stack
-- **Frontend**: React, Tailwind CSS
+- **Frontend**: React (JavaScript/JSX), Tailwind CSS
 - **Backend**: Node.js, Express
 - **AI Components**: 
   - Large Language Model (LLM) for natural language understanding
@@ -63,10 +63,19 @@ npm install
 
 ### Running the Application
 
+#### Option 1: Using the development script (Windows)
+For Windows users, a PowerShell script is provided to start both client and server:
+```powershell
+./start-dev.ps1
+```
+
+#### Option 2: Manual startup
 1. Start the server
 ```bash
 cd server
-npm start
+npm run dev  # For development with auto-reload
+# or
+npm start    # For production mode
 ```
 
 2. In a new terminal, start the client
@@ -93,3 +102,6 @@ npm run dev
 
 ## Contributing
 Contributions to improve VoiceBuddy are welcome! Please feel free to submit a pull request.
+
+## Contact
+For questions or feedback about VoiceBuddy, please reach out to the project team through [GitHub issues](https://github.com/yourusername/voicebuddy-ai-assistant/issues) or contact the project maintainer.
