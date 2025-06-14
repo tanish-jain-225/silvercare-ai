@@ -98,8 +98,11 @@ export function Reminders() {
               icon: '/public/voice-search.png'
             });
           }
-          // When alarm ends naturally
-          audio.onended = () => setIsAlarmPlaying(false);
+          // When alarm ends naturally, reset state (ensure only if this audio is still current)
+          audio.onended = () => {
+            setIsAlarmPlaying(false);
+            setAlarmAudio(current => (current === audio ? null : current));
+          };
         }, delay);
         timers.push(timer);
       }
@@ -111,8 +114,9 @@ export function Reminders() {
     if (alarmAudio) {
       alarmAudio.pause();
       alarmAudio.currentTime = 0;
-      setIsAlarmPlaying(false);
     }
+    setIsAlarmPlaying(false);
+    setAlarmAudio(null);
   };
 
   React.useEffect(() => {
@@ -122,7 +126,7 @@ export function Reminders() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-green-50 to-emerald-100 flex flex-col">
       {/* Show Stop Alarm button if alarm is playing */}
-      {isAlarmPlaying && (
+      {isAlarmPlaying && alarmAudio && (
         <div className="fixed top-0 left-0 w-full flex justify-center z-50">
           <button
             onClick={handleStopAlarm}
