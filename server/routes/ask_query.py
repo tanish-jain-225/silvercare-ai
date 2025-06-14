@@ -1,6 +1,10 @@
 from flask import Blueprint, request, jsonify
 from together import Together
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 client = Together(api_key=os.getenv("TOGETHER_API_KEY", "tgp_v1_WSJUCyB6cAaCZff7oVSK30nK1rxEgSlqAWBHzYdipfM"))
 

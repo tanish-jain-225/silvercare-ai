@@ -1,6 +1,10 @@
 from flask import Blueprint, request, jsonify
 from twilio.rest import Client
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 send_emergency_bp = Blueprint('send_emergency', __name__)
 

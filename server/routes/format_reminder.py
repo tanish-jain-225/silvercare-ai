@@ -9,6 +9,11 @@ from bson import ObjectId
 from datetime import datetime
 import json
 from dateutil.parser import parse as parse_datetime
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 
 format_reminder_bp = Blueprint('format_reminder', __name__)
@@ -45,17 +50,24 @@ def convert_to_json_friendly(document):
     return result
 
 # Initialize MongoDB client
-mongo_client = MongoClient('mongodb+srv://tanish-jain-225:tanishjain02022005@cluster0.578qvco.mongodb.net/')
-db = mongo_client['assistant_db']  # Database name
-reminders_collection = db['reminders']  # Collection name
+mongo_url = os.environ.get('MONGO_URL')
+db_name = os.environ.get('DB_NAME')  # Database name
+collection_name = os.environ.get('COLLECTION_NAME')  # Collection name
 
 # Initialize Together AI client
-client = Together(api_key="tgp_v1_WSJUCyB6cAaCZff7oVSK30nK1rxEgSlqAWBHzYdipfM")
+together_api_key = os.environ.get('TOGETHER_API_KEY', 'tgp_v1_WSJUCyB6cAaCZff7oVSK30nK1rxEgSlqAWBHzYdipfM')
+client = Together(api_key=together_api_key)
 
 # Initialize MongoDB client
-mongo_client = MongoClient('mongodb+srv://tanish-jain-225:tanishjain02022005@cluster0.578qvco.mongodb.net/')
-db = mongo_client['assistant_db']  # Database name
-reminders_collection = db['reminders']  # Collection name
+if mongo_url:
+    mongo_client = MongoClient(mongo_url)
+    db = mongo_client[db_name] if db_name else mongo_client['assistant_db']
+    reminders_collection = db[collection_name] if collection_name else db['reminders']
+else:
+    # Fallback to hardcoded values if env vars are not set
+    mongo_client = MongoClient('mongodb+srv://tanish-jain-225:tanishjain02022005@cluster0.578qvco.mongodb.net/')
+    db = mongo_client['assistant_db']
+    reminders_collection = db['reminders']
 
 @format_reminder_bp.route('/format-reminder', methods=['POST', 'OPTIONS'])
 def format_reminder():
