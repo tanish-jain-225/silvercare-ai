@@ -8,10 +8,15 @@ app = Flask(__name__)
 # Enable CORS to allow all origins
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-# Register blueprints
-app.register_blueprint(format_reminder_bp)
-app.register_blueprint(send_emergency_bp)
-app.register_blueprint(chat_bp)
+# Serve empty favicon to avoid 500 errors
+@app.route('/favicon.ico')
+def favicon():
+    return ('', 204)
+
+# Register blueprints under /api prefix
+app.register_blueprint(format_reminder_bp, url_prefix='/api')
+app.register_blueprint(send_emergency_bp, url_prefix='/api')
+app.register_blueprint(chat_bp, url_prefix='/api')
 
 @app.route('/', methods=['GET'])
 def index():
