@@ -173,38 +173,45 @@ export function Emergency() {
           </div>
         </Card>
 
-        {/* Emergency Contacts */}
+        {/* Emergency Contacts Section */}
         <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <div className="flex items-center justify-center w-12 h-12 bg-green-100/50 rounded-full mr-3">
+          {/* Section Header */}
+          <div className="flex items-center mb-6">
+            <div className="flex items-center justify-center w-12 h-12 bg-green-50 rounded-lg mr-4">
               <Users className="text-green-600" size={24} />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800">{t('emergencyContacts')}</h3>
+            <h3 className="text-2xl font-semibold text-gray-900">{t('emergencyContacts')}</h3>
           </div>
 
-          <div className="space-y-4">
+          {/* Contacts List */}
+          <div className="grid gap-3">
             {emergencyContacts.map((contact) => (
-              <Card
+              <div
                 key={contact.id}
                 onClick={() => handleContactCall(contact)}
-                className="p-4 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all duration-300 cursor-pointer"
+                className="group p-5 bg-white rounded-xl border border-gray-100 shadow-xs hover:shadow-sm transition-all duration-200 cursor-pointer hover:border-green-100 active:scale-[0.98]"
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center mb-1">
-                      <h4 className="font-semibold text-gray-800 text-lg">{contact.name}</h4>
-                      <span className="ml-3 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">{contact.relationship}</span>
+                  {/* Contact Info */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium text-gray-900">{contact.name}</h4>
+                      <span className="px-2 py-1 bg-gray-50 text-gray-600 text-xs rounded-md">
+                        {contact.relationship}
+                      </span>
                     </div>
                     <p className="text-blue-600 font-medium flex items-center">
                       <Phone className="mr-2" size={16} />
                       {contact.phone}
                     </p>
                   </div>
-                  <div className="flex items-center justify-center w-10 h-10 bg-green-100/50 rounded-full">
+
+                  {/* Call Button */}
+                  <div className="flex items-center justify-center w-10 h-10 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
                     <Phone className="text-green-600" size={20} />
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         </div>
