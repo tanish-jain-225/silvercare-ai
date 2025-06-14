@@ -30,7 +30,7 @@ def format_reminder():
         messages=[
             {
                 "role": "system",
-                "content": "Format user input as a reminder. Extract title, date, and time. Always return valid JSON with id, title, date, and time fields. Date should be in YYYY-MM-DD format. Time should be in HH:MM format."
+                "content": "Format user input as a reminder. Extract title, date, and time. Always return valid JSON with id, title, date, and time fields. If date is not mentioned, make it null. If title is not mentioned, make it null. Time should be in HH:MM format."
             },
             {
                 "role": "user",
@@ -44,14 +44,17 @@ def format_reminder():
         try:
             reminder_json = pyjson.loads(match.group())
             id = reminder_json.get('id') or str(hash(user_input))
-            title = reminder_json.get('title')
+            title = reminder_json.get('title') or 'New Reminder'
             date = reminder_json.get('date')
             time = reminder_json.get('time')
 
-            if not title:
-                return jsonify({"error": "Missing title in parsed reminder"}), 400
+            # If date is missing, use today's date
             if not date:
-                return jsonify({"error": "Missing date in parsed reminder"}), 400
+                from datetime import datetime
+                date = datetime.now().strftime('%Y-%m-%d')
+            if not title:
+                title = 'New Reminder'
+
             if not time:
                 return jsonify({"error": "Missing time in parsed reminder"}), 400
 

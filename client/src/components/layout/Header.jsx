@@ -1,14 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  Menu,
-  X,
-  Globe,
-  ChevronDown,
-  LogOut,
-  User,
-} from "lucide-react";
+import { Menu, X, Globe, ChevronDown, LogOut, User } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 
 const LANGUAGES = [
@@ -45,11 +38,11 @@ export function Header() {
         >
           <img
             src="/voice-search.png"
-            alt="VoiceBuddy Logo"
+            alt="SilverCare AI Logo"
             className="w-8 h-8"
           />
           <span className="text-xl font-bold text-gray-800 tracking-tight">
-            VoiceBuddy
+            SilverCare AI
           </span>
         </Link>
 
@@ -166,34 +159,19 @@ export function Header() {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
           <nav className="flex flex-col gap-1 px-6 py-4">
-            <Link
-              to="/"
-              className="py-2 hover:text-blue-600"
-            >
+            <Link to="/" className="py-2 hover:text-blue-600">
               Home
             </Link>
-            <Link
-              to="/emergency"
-              className="py-2 hover:text-blue-600"
-            >
+            <Link to="/emergency" className="py-2 hover:text-blue-600">
               Emergency
             </Link>
-            <Link
-              to="/reminders"
-              className="py-2 hover:text-blue-600"
-            >
+            <Link to="/reminders" className="py-2 hover:text-blue-600">
               Reminders
             </Link>
-            <Link
-              to="/ask-queries"
-              className="py-2 hover:text-blue-600"
-            >
+            <Link to="/ask-queries" className="py-2 hover:text-blue-600">
               Ask
             </Link>
-            <Link
-              to="/daily-planner"
-              className="py-2 hover:text-blue-600"
-            >
+            <Link to="/daily-planner" className="py-2 hover:text-blue-600">
               Planner
             </Link>
             {/* Language Switcher Mobile */}
