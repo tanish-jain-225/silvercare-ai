@@ -25,10 +25,10 @@ export function Home() {
   const features = [
     {
       icon: Calendar,
-      title: t("dailyPlanner"),
-      description: "Plan your day with voice assistance",
-      path: "/daily-planner",
-      color: "bg-indigo-500 text-blue-600",
+      title: t("blog"),
+      description: "Entertain your day",
+      path: "/blog",
+      color: "bg-blue-100 text-blue-600",
     },
     {
       icon: Clock,

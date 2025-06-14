@@ -1,43 +1,67 @@
 from flask import Blueprint, request, jsonify
+from pymongo import MongoClient
 from together import Together
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-client = Together(api_key=os.getenv("TOGETHER_API_KEY", "tgp_v1_WSJUCyB6cAaCZff7oVSK30nK1rxEgSlqAWBHzYdipfM"))
+# Setup MongoDB client and collection
+mongo_client = MongoClient(os.getenv("MONGO_URI"))
+db = mongo_client["assistant_db"]
+collection = db["chat_history"]
+
+# LLM client
+client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
 
 chat_bp = Blueprint('chat', __name__)
 
-# Shared in-memory chat history
-chat_history = [
-    {"role": "system", "content": "You are a helpful assistant. Answer clearly and concisely."}
-]
 
-@chat_bp.route('/chat', methods=['POST'])
-def chat():
+@chat_bp.route('/chat/history', methods=['GET'])
+def get_chat_history():
+    user_id = request.args.get("userId", default="default") #To be changed on production level
+    history_doc = collection.find_one({"userId": user_id})
+    chat_history = history_doc["history"][1:] if history_doc else []
+    return jsonify({"history": chat_history})
+
+
+@chat_bp.route('/chat/message', methods=['POST'])
+def send_message():
     data = request.get_json()
     user_message = data.get('message')
+    user_id = data.get('userId')
 
     if not user_message:
         return jsonify({"error": "No message provided"}), 400
 
-    # Add user message to chat history
+    # Load or init chat history
+    history_doc = collection.find_one({"userId": user_id})
+    chat_history = history_doc["history"] if history_doc else [
+        {"role": "system", "content": "You are a medical assistant. Answer clearly and concisely. If its nothing related to health then humbly inform that to user"}
+    ]
+
+    # Append user message
     chat_history.append({"role": "user", "content": user_message})
 
-    # Send full conversation to LLM
+    # Get response from LLM
     response = client.chat.completions.create(
         model="deepseek-ai/DeepSeek-V3",
         messages=chat_history
     )
-
     reply = response.choices[0].message.content.strip()
 
-    # Add assistant reply to chat history
+    # Append assistant message
     chat_history.append({"role": "assistant", "content": reply})
+
+    # Update DB
+    collection.update_one(
+        {"userId": user_id},
+        {"$set": {"history": chat_history}},
+        upsert=True
+    )
 
     return jsonify({
         "reply": reply,
-        "history": chat_history[-4:]  # return last 4 exchanges (optional)
+        "history": chat_history[1:]  # exclude system message
     })
+

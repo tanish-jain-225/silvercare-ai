@@ -60,8 +60,8 @@ export function Header() {
             <Link to="/ask-queries" className="hover:text-blue-600">
               Ask
             </Link>
-            <Link to="/daily-planner" className="hover:text-blue-600">
-              Planner
+            <Link to="/blog" className="hover:text-blue-600">
+              Blog
             </Link>
           </div>
           {/* Language Dropdown */}
@@ -170,7 +170,7 @@ export function Header() {
             <Link to="/ask-queries" className="py-2 hover:text-blue-600">
               Ask
             </Link>
-            <Link to="/daily-planner" className="py-2 hover:text-blue-600">
+            <Link to="/blog" className="py-2 hover:text-blue-600">
               Planner
             </Link>
             {/* Language Switcher Mobile */}
