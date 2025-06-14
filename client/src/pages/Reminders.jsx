@@ -196,119 +196,178 @@ export function Reminders() {
     fetchReminders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-green-50 to-emerald-100 flex flex-col">
       {/* Show Stop Alarm button if alarm is playing */}
       {isAlarmPlaying && alarmAudio && (
-        <div className="fixed top-0 left-0 w-full flex justify-center z-50">
+        <div className="fixed top-0 left-0 w-full flex justify-center z-50 px-4">
           <button
             onClick={handleStopAlarm}
-            className="bg-red-600 text-white font-bold px-6 py-3 rounded-b-2xl shadow-lg animate-bounce mt-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            style={{ fontSize: '1.2rem' }}
+            className="bg-red-600 text-white font-semibold px-4 py-2 sm:px-6 sm:py-3 rounded-b-xl sm:rounded-b-2xl shadow-lg animate-bounce mt-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white text-sm sm:text-lg touch-manipulation"
             aria-label="Stop Alarm"
           >
             Stop Alarm
           </button>
         </div>
       )}
+
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 w-full">
-        <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-4 py-4">
-          <div className="flex items-center justify-between">
+      <header className="bg-white shadow-sm border-b border-gray-200 w-full shrink-0">
+        <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
             <button
               onClick={() => navigate('/')}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors mr-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+              className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 touch-manipulation"
               aria-label={t('back', 'Back')}
             >
-              <ArrowLeft size={22} className="text-gray-600" />
+              <ArrowLeft size={20} className="text-gray-600 sm:w-6 sm:h-6" />
             </button>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-800">{t('reminders')}</h1>
-            <div className="flex items-center">
+            
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 truncate flex-1 text-center px-2">
+              {t('reminders')}
+            </h1>
+            
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <Button
                 onClick={fetchReminders}
                 variant="outline"
                 size="sm"
                 icon={RefreshCw}
-                className="m-2"
                 disabled={isLoading}
                 ariaLabel={t('refreshReminders', 'Refresh reminders')}
+                className="p-1.5 sm:p-2"
               />
               <Button
                 onClick={() => setShowAddForm(true)}
                 variant="primary"
                 size="sm"
                 icon={Plus}
-                className="ml-2"
                 ariaLabel={t('add')}
+                className="p-1.5 sm:p-2"
               >
-                <span className="hidden sm:inline">{t('add')}</span>
+                <span className="hidden sm:inline ml-1">{t('add')}</span>
               </Button>
             </div>
           </div>
         </div>
-      </header>
-      {/* Reminders List */}
-      <section className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-4 py-6">
+      </header>      {/* Reminders List */}
+      <section className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {isLoading ? (
           <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="ml-4 text-gray-600">{t('loadingReminders', 'Loading reminders...')}</p>
+            <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600"></div>
+            <p className="ml-3 sm:ml-4 text-sm sm:text-base text-gray-600">
+              {t('loadingReminders', 'Loading reminders...')}
+            </p>
           </div>
         ) : uniqueReminders.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-gray-500 mb-4">{t('noReminders', 'No reminders found')}</div>
+          <div className="text-center py-8 sm:py-12">
+            <div className="text-gray-500 mb-4 text-sm sm:text-base">
+              {t('noReminders', 'No reminders found')}
+            </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {uniqueReminders.map((reminder) => (
-              <Card key={reminder.created_at} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-5 w-full">
-                <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                  <Clock className="text-blue-500" size={20} aria-hidden="true" />
-                  <div className="min-w-0">
-                    <div className="font-semibold text-base sm:text-lg text-gray-800 break-words">{reminder.title}</div>
-                    <div className="text-xs sm:text-sm text-gray-500">{formatDate(reminder.date)} | {reminder.time}</div>
+              <Card 
+                key={reminder.created_at} 
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 w-full gap-3 sm:gap-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                  <div className="bg-blue-50 rounded-full p-2 flex-shrink-0 mt-0.5 sm:mt-0">
+                    <Clock className="text-blue-500 w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-sm sm:text-base md:text-lg text-gray-800 break-words leading-tight">
+                      {reminder.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                      <span className="inline-block">{formatDate(reminder.date)}</span>
+                      <span className="mx-1 text-gray-400">•</span>
+                      <span className="inline-block">{reminder.time}</span>
+                    </p>
                   </div>
                 </div>
-                <div className="flex gap-2 mt-2 sm:mt-0">
-                  <Button onClick={() => handleReadReminder(reminder)} variant="outline" size="sm" icon={Volume2} ariaLabel={t('readReminder', 'Read reminder')} />
-                  <Button onClick={() => handleDeleteReminder(reminder.created_at)} variant="danger" size="sm" icon={Trash2} ariaLabel={t('deleteReminder', 'Delete reminder')} />
+                
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Button 
+                    onClick={() => handleReadReminder(reminder)} 
+                    variant="outline" 
+                    size="sm" 
+                    icon={Volume2} 
+                    ariaLabel={t('readReminder', 'Read reminder')}
+                    className="flex-1 sm:flex-none"
+                  />
+                  <Button 
+                    onClick={() => handleDeleteReminder(reminder.created_at)} 
+                    variant="danger" 
+                    size="sm" 
+                    icon={Trash2} 
+                    ariaLabel={t('deleteReminder', 'Delete reminder')}
+                    className="flex-1 sm:flex-none"
+                  />
                 </div>
               </Card>
             ))}
           </div>
-        )}
-        {/* Add Reminder Form */}
+        )}        {/* Add Reminder Form */}
         {showAddForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-8 w-full max-w-xs sm:max-w-sm mx-2">
-              <h2 className="text-xl font-bold mb-4">{t('addReminder')}</h2>
-              <Input
-                label={t('title')}
-                value={newReminder.title}
-                onChange={e => setNewReminder({ ...newReminder, title: e.target.value })}
-                required
-                className="mb-2"
-              />
-              <Input
-                label={t('date')}
-                type="date"
-                value={newReminder.date}
-                onChange={e => setNewReminder({ ...newReminder, date: e.target.value })}
-                required
-                className="mb-2"
-              />
-              <Input
-                label={t('time')}
-                type="time"
-                value={newReminder.time}
-                onChange={e => setNewReminder({ ...newReminder, time: e.target.value })}
-                required
-                className="mb-4"
-              />
-              <div className="flex justify-end gap-2">
-                <Button onClick={() => setShowAddForm(false)} variant="outline" size="sm" ariaLabel={t('cancel')}>{t('cancel')}</Button>
-                <Button onClick={handleAddReminder} variant="primary" size="sm" ariaLabel={t('add')}>{t('add')}</Button>
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto transform animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-gray-800">
+                  {t('addReminder')}
+                </h2>
+                
+                <div className="space-y-3 sm:space-y-4">
+                  <Input
+                    label={t('title')}
+                    value={newReminder.title}
+                    onChange={e => setNewReminder({ ...newReminder, title: e.target.value })}
+                    required
+                    placeholder={t('reminderTitle', 'Enter reminder title')}
+                    className="w-full"
+                  />
+                  
+                  <Input
+                    label={t('date')}
+                    type="date"
+                    value={newReminder.date}
+                    onChange={e => setNewReminder({ ...newReminder, date: e.target.value })}
+                    required
+                    className="w-full"
+                  />
+                  
+                  <Input
+                    label={t('time')}
+                    type="time"
+                    value={newReminder.time}
+                    onChange={e => setNewReminder({ ...newReminder, time: e.target.value })}
+                    required
+                    className="w-full"
+                  />
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6 sm:mt-8">
+                  <Button 
+                    onClick={() => setShowAddForm(false)} 
+                    variant="outline" 
+                    size="md"
+                    ariaLabel={t('cancel')}
+                    className="w-full sm:w-auto order-2 sm:order-1"
+                  >
+                    {t('cancel')}
+                  </Button>
+                  <Button 
+                    onClick={handleAddReminder} 
+                    variant="primary" 
+                    size="md"
+                    ariaLabel={t('add')}
+                    className="w-full sm:w-auto order-1 sm:order-2"
+                    disabled={!newReminder.title || !newReminder.time || !newReminder.date}
+                  >
+                    {t('add')}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

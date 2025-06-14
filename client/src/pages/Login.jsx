@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -12,25 +12,12 @@ import googleIcon from "../assets/google-icon.png";
 export function Login() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { login, loginWithGoogle, isAuthenticated, loading } = useApp();
+  const { login, loginWithGoogle } = useApp();
   const { speak } = useVoice();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!loading && isAuthenticated) {
-      navigate("/home", { replace: true });
-    }
-  }, [isAuthenticated, loading, navigate]);
-
-  // Welcome message effect - must be at top level
-  useEffect(() => {
-    if (!loading) {
-      speak("Welcome to SilverCare AI. Please enter your login details.");
-    }
-  }, [speak, loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,7 +27,7 @@ export function Login() {
     try {
       const success = await login(email, password);
       if (success) {
-        navigate("/home", { replace: true });
+        navigate("/");
       } else {
         setError("Invalid email or password");
         speak("Login failed. Please check your credentials.");
@@ -53,18 +40,6 @@ export function Login() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const success = await loginWithGoogle();
-      if (success) {
-        navigate("/home", { replace: true });
-      }
-    } catch (err) {
-      setError("Google login failed. Please try again.");
-      speak("Google login failed. Please try again.");
-    }
-  };
-
   const handleVoiceInput = (field) => (text) => {
     if (field === "email") {
       setEmail(text);
@@ -72,17 +47,10 @@ export function Login() {
       setPassword(text);
     }
   };
-  // Show loading while auth state is being determined
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+
+  React.useEffect(() => {
+    speak("Welcome to SilverCare AI. Please enter your login details.");
+  }, [speak]);
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-2 sm:p-4">
@@ -174,7 +142,35 @@ export function Login() {
               className="w-full"
               icon={googleIcon}
               size="lg"
-              onClick={handleGoogleLogin}
+              onClick={async () => {
+                setIsLoading(true);
+                setError("");
+                try {
+                  const success = await loginWithGoogle();
+                  // Check if user is new (no age or healthConditions set)
+                  const user = JSON.parse(
+                    localStorage.getItem("silvercare_user")
+                  );
+                  if (
+                    success &&
+                    user &&
+                    (user.age === undefined ||
+                      user.healthConditions?.length === 0)
+                  ) {
+                    navigate("/user-details");
+                  } else if (success) {
+                    navigate("/");
+                  } else {
+                    setError("Google login failed. Please try again.");
+                    speak("Google login failed. Please try again.");
+                  }
+                } catch (err) {
+                  setError("Google login failed. Please try again.");
+                  speak("Google login failed. Please try again.");
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
             >
               {t("continueWithGoogle")}
             </Button>

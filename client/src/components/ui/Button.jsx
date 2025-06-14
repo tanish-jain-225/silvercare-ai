@@ -13,9 +13,8 @@ export function Button({
   className = "",
   ariaLabel,
   ...props
-}) {
-  const baseClasses =
-    "font-semibold rounded-2xl transition-all duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm";
+}) {  const baseClasses =
+    "font-semibold rounded-xl sm:rounded-2xl transition-all duration-200 focus:outline-none focus-visible:ring-2 sm:focus-visible:ring-4 focus-visible:ring-offset-1 sm:focus-visible:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow-md";
 
   const variantClasses = {
     primary: "bg-blue-600 hover:bg-blue-700 text-white focus-visible:ring-blue-200",
@@ -26,12 +25,11 @@ export function Button({
       "border-2 border-gray-300 hover:border-blue-400 text-gray-700 bg-white focus-visible:ring-blue-100",
     subtle: "bg-gray-100 hover:bg-gray-200 text-gray-800 focus-visible:ring-gray-200",
   };
-
   const sizeClasses = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-5 py-2.5 text-base",
-    lg: "px-7 py-3 text-lg",
-    xl: "px-9 py-4 text-xl",
+    sm: "px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm",
+    md: "px-3 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base",
+    lg: "px-5 sm:px-7 py-2.5 sm:py-3 text-base sm:text-lg",
+    xl: "px-6 sm:px-9 py-3 sm:py-4 text-lg sm:text-xl",
   };
 
   return (

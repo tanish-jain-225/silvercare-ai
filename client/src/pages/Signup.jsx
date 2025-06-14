@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { User, Mail, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -11,26 +11,13 @@ import { useVoice } from "../hooks/useVoice";
 export function Signup() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { signup, isAuthenticated, loading } = useApp();
+  const { signup } = useApp();
   const { speak } = useVoice();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!loading && isAuthenticated) {
-      navigate("/home", { replace: true });
-    }
-  }, [isAuthenticated, loading, navigate]);
-
-  // Welcome message effect - must be at top level
-  useEffect(() => {
-    if (!loading) {
-      speak("Welcome! Let's create your SilverCare AI account.");
-    }
-  }, [speak, loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,7 +27,7 @@ export function Signup() {
     try {
       const success = await signup(name, email, password);
       if (success) {
-        navigate("/user-details", { replace: true });
+        navigate("/user-details");
       } else {
         setError("Signup failed. Please try again.");
         speak("Signup failed. Please try again.");
@@ -62,17 +49,10 @@ export function Signup() {
       setPassword(text);
     }
   };
-  // Show loading while auth state is being determined
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+
+  React.useEffect(() => {
+    speak("Welcome! Let's create your SilverCare AI account.");
+  }, [speak]);
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-2 sm:p-4">

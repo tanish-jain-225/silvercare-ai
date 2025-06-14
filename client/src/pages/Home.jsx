@@ -105,7 +105,7 @@ export function Home() {
           ))}
         </div>
         {/* Quick Health Check */}
-        <div className="my-10">
+        <div className="my-16">
           <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
             <div className="text-center">
               <h3 className="text-xl font-semibold mb-2 break-words">
