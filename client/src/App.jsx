@@ -1,9 +1,10 @@
-import React from "react";
+import React, { Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  useLocation
 } from "react-router-dom";
 import { AppProvider, useApp } from "./context/AppContext";
 import { LanguageSelection } from "./pages/LanguageSelection";
@@ -19,28 +20,37 @@ import { Profile } from "./pages/Profile";
 import { storage } from "./utils/storage";
 import { Header } from "./components/layout/Header";
 import { BottomNavigation } from "./components/layout/BottomNavigation";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./utils/i18n";
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useApp();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+  const { isAuthenticated, loading } = useApp();
+  // While auth state is loading, don't render anything (or show a loader)
+  if (loading) return <div className="flex-1 flex items-center justify-center">Loading...</div>;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
 function AppRoutes() {
-  const { language } = useApp();
-  const location = window.location;
+  const { language, isAuthenticated, loading } = useApp();
+  const location = useLocation();
   // Check if user has selected a language
   const hasSelectedLanguage = storage.get("silvercare_language");
 
   // Define routes where layout should be hidden
-  const hideLayoutRoutes = ["/login", "/signup", "/user-details"];
+  const hideLayoutRoutes = ["/login", "/signup", "/user-details", "/language-selection"];
 
   // Check if current path matches any of the hideLayoutRoutes
-  const shouldHideLayout = hideLayoutRoutes.includes(window.location.pathname);
+  const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
+
+  // Redirect to language selection if no language is selected and not already there
+  if (!hasSelectedLanguage && location.pathname !== "/language-selection") {
+    return <Navigate to="/language-selection" replace />;
+  }
 
   return (
-    <Router>
+    <>
       {!shouldHideLayout && <Header />}
+      <Suspense fallback={<div className="flex-1 flex items-center justify-center">Loading...</div>}>
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/language-selection" element={<LanguageSelection />} />
@@ -95,14 +105,6 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/voice"
-          element={
-            <ProtectedRoute>
-              <AskQueries />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/profile"
           element={
             <ProtectedRoute>
@@ -110,18 +112,28 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        {/* Catch-all: redirect unknown paths to home */}
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
+      </Suspense>
       {!shouldHideLayout && <BottomNavigation />}
-    </Router>
+    </>
   );
 }
 
-function App() {
+export default function App() {
   return (
-    <AppProvider>
-      <AppRoutes />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <AppRoutes />
+        </Router>
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
-
-export default App;

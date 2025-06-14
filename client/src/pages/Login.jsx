@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -12,12 +12,25 @@ import googleIcon from "../assets/google-icon.png";
 export function Login() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { login, loginWithGoogle } = useApp();
+  const { login, loginWithGoogle, isAuthenticated, loading } = useApp();
   const { speak } = useVoice();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate("/home", { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate]);
+
+  // Welcome message effect - must be at top level
+  useEffect(() => {
+    if (!loading) {
+      speak("Welcome to SilverCare AI. Please enter your login details.");
+    }
+  }, [speak, loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +40,7 @@ export function Login() {
     try {
       const success = await login(email, password);
       if (success) {
-        navigate("/");
+        navigate("/home", { replace: true });
       } else {
         setError("Invalid email or password");
         speak("Login failed. Please check your credentials.");
@@ -40,6 +53,18 @@ export function Login() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const success = await loginWithGoogle();
+      if (success) {
+        navigate("/home", { replace: true });
+      }
+    } catch (err) {
+      setError("Google login failed. Please try again.");
+      speak("Google login failed. Please try again.");
+    }
+  };
+
   const handleVoiceInput = (field) => (text) => {
     if (field === "email") {
       setEmail(text);
@@ -47,10 +72,17 @@ export function Login() {
       setPassword(text);
     }
   };
-
-  React.useEffect(() => {
-    speak("Welcome to SilverCare AI. Please enter your login details.");
-  }, [speak]);
+  // Show loading while auth state is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-2 sm:p-4">
@@ -98,15 +130,14 @@ export function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 icon={Lock}
                 required
-                className="pr-14 sm:pr-16 md:pr-20 min-w-0"
+                voiceButton={
+                  <VoiceButton
+                    onResult={handleVoiceInput("password")}
+                    size="sm"
+                    className="!w-9 sm:!w-10"
+                  />
+                }
               />
-              <div className="absolute inset-y-0 right-4 top-4 flex items-center pointer-events-auto">
-                <VoiceButton
-                  onResult={handleVoiceInput("password")}
-                  size="sm"
-                  className="!w-9 sm:!w-10"
-                />
-              </div>
             </div>
 
             {/* Error Message */}
@@ -143,35 +174,7 @@ export function Login() {
               className="w-full"
               icon={googleIcon}
               size="lg"
-              onClick={async () => {
-                setIsLoading(true);
-                setError("");
-                try {
-                  const success = await loginWithGoogle();
-                  // Check if user is new (no age or healthConditions set)
-                  const user = JSON.parse(
-                    localStorage.getItem("silvercare_user")
-                  );
-                  if (
-                    success &&
-                    user &&
-                    (user.age === undefined ||
-                      user.healthConditions?.length === 0)
-                  ) {
-                    navigate("/user-details");
-                  } else if (success) {
-                    navigate("/");
-                  } else {
-                    setError("Google login failed. Please try again.");
-                    speak("Google login failed. Please try again.");
-                  }
-                } catch (err) {
-                  setError("Google login failed. Please try again.");
-                  speak("Google login failed. Please try again.");
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
+              onClick={handleGoogleLogin}
             >
               {t("continueWithGoogle")}
             </Button>

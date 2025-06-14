@@ -13,48 +13,48 @@ const AppContext = createContext(undefined);
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(storage.get("silvercare_language") || "en");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    // Load saved user and language on app start
-    const savedUser = storage.get("silvercare_user");
-    const savedLanguage = storage.get("silvercare_language");
-
-    if (savedUser) {
-      setUser(savedUser);
-      setIsAuthenticated(true);
-    }
-
-    if (savedLanguage) {
-      setLanguage(savedLanguage);
-    }
-  }, []);
-
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        const userData = {
-          id: firebaseUser.uid,
-          name:
-            firebaseUser.displayName ||
-            firebaseUser.email?.split("@")[0] ||
-            "User",
-          email: firebaseUser.email,
-          age: 65,
-          healthConditions: [],
-        };
-        setUser(userData);
-        setIsAuthenticated(true);
-        storage.set("silvercare_user", userData);
-      } else {
+      try {
+        if (firebaseUser) {
+          const userData = {
+            id: firebaseUser.uid,
+            name:
+              firebaseUser.displayName ||
+              firebaseUser.email?.split("@")[0] ||
+              "User",
+            email: firebaseUser.email,
+            age: 65,
+            healthConditions: [],
+          };
+          setUser(userData);
+          setIsAuthenticated(true);
+          storage.set("silvercare_user", userData);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          storage.remove("silvercare_user");
+        }
+      } catch (error) {
+        console.error("Error handling auth state change:", error);
         setUser(null);
         setIsAuthenticated(false);
         storage.remove("silvercare_user");
       }
+      setLoading(false);
     });
-    return () => unsubscribe();
+    
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.error("Error unsubscribing from auth state:", error);
+      }
+    };
   }, []);
 
   const login = async (email, password) => {
@@ -150,6 +150,7 @@ export function AppProvider({ children }) {
         logout,
         signup,
         loginWithGoogle: loginWithGoogleHandler,
+        loading,
       }}
     >
       {children}

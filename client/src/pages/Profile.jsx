@@ -50,41 +50,42 @@ export function Profile() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-indigo-50 to-purple-100 flex flex-col items-center justify-center">
+    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-indigo-50 to-purple-100 flex flex-col items-center justify-center">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200 w-full">
-        <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-2 sm:px-4 py-3 sm:py-4">
+      <header className="bg-white shadow-sm border-b border-gray-200 w-full">
+        <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <button
                 onClick={() => navigate('/')}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors mr-2 sm:mr-3"
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors mr-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                aria-label={t('back', 'Back')}
               >
                 <ArrowLeft size={22} className="text-gray-600" />
               </button>
-              <h1 className="text-lg sm:text-xl font-bold text-gray-800">{t('profile')}</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-800">{t('profile')}</h1>
             </div>
             <Button
               onClick={() => setIsEditing(!isEditing)}
               variant="outline"
               size="sm"
               icon={Edit}
+              ariaLabel={isEditing ? t('cancel') : t('edit')}
             >
               {isEditing ? t('cancel') : t('edit')}
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Content */}
-      <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-2 sm:px-4 py-4 sm:py-6">
+      <section className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-4 py-6">
         {/* Personal Information */}
         <Card className="mb-6">
           <div className="flex items-center mb-4">
-            <User className="text-blue-600 mr-3" size={24} />
+            <User className="text-blue-600 mr-3" size={24} aria-hidden="true" />
             <h3 className="text-lg font-semibold">{t('personalInfo')}</h3>
           </div>
-          
           {isEditing ? (
             <div className="space-y-4">
               <Input
@@ -104,9 +105,7 @@ export function Profile() {
                 onChange={(e) => setEditedUser(prev => prev ? { ...prev, age: parseInt(e.target.value) || 0 } : null)}
                 type="number"
               />
-              <Button onClick={handleSave} className="w-full">
-                {t('save')}
-              </Button>
+              <Button onClick={handleSave} className="w-full" ariaLabel={t('save')}>{t('save')}</Button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -121,7 +120,7 @@ export function Profile() {
               {user.age && (
                 <div>
                   <p className="text-sm text-gray-600">{t('age')}</p>
-                  <p className="text-lg font-medium">{user.age} years</p>
+                  <p className="text-lg font-medium">{user.age} {t('years', 'years')}</p>
                 </div>
               )}
             </div>
@@ -131,10 +130,9 @@ export function Profile() {
         {/* Health Information */}
         <Card className="mb-6">
           <div className="flex items-center mb-4">
-            <Heart className="text-red-600 mr-3" size={24} />
+            <Heart className="text-red-600 mr-3" size={24} aria-hidden="true" />
             <h3 className="text-lg font-semibold">{t('healthInfo')}</h3>
           </div>
-          
           {user.healthConditions && user.healthConditions.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {user.healthConditions.map((condition, index) => (
@@ -147,15 +145,16 @@ export function Profile() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-600">No health conditions recorded</p>
+            <p className="text-gray-600">{t('noHealthConditions', 'No health conditions recorded')}</p>
           )}
         </Card>
 
+        {/* Language Selection */}
         <Card className="mb-6">
           <div className="space-y-4">
             <div>
               <div className="flex items-center mb-2">
-                <Globe className="text-blue-600 mr-2" size={20} />
+                <Globe className="text-blue-600 mr-2" size={20} aria-hidden="true" />
                 <p className="font-medium">{t('changeLanguage')}</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -163,11 +162,12 @@ export function Profile() {
                   <button
                     key={lang.code}
                     onClick={() => handleLanguageChange(lang.code)}
-                    className={`p-3 rounded-lg border-2 text-left transition-all ${
+                    className={`p-3 rounded-lg border-2 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                       language === lang.code
                         ? 'border-blue-500 bg-blue-50 text-blue-700'
                         : 'border-gray-300 hover:border-blue-300'
                     }`}
+                    aria-label={lang.name}
                   >
                     <span className="text-sm font-medium">{lang.name}</span>
                   </button>
@@ -181,13 +181,14 @@ export function Profile() {
         <Button
           onClick={handleLogout}
           variant="danger"
-          icon={LogOut}
           className="w-full"
           size="lg"
+          icon={LogOut}
+          ariaLabel={t('logout')}
         >
           {t('logout')}
         </Button>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

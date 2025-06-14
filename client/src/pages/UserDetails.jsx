@@ -94,7 +94,6 @@ export function UserDetails() {
     "Recovering",
     "Chronic",
   ];
-
   // Update form field with transcript - MODIFIED VERSION
   useEffect(() => {
     console.log("Current transcript:", transcript);
@@ -155,8 +154,16 @@ export function UserDetails() {
         default:
           break;
       }
+    }  }, [transcript, activeVoiceField, listening]);
+
+  // Welcome message effect - must be at top level
+  useEffect(() => {
+    if (browserSupportsSpeechRecognition) {
+      speak(
+        "Please provide your medical information for better healthcare assistance."
+      );
     }
-  }, [transcript, activeVoiceField, listening]);
+  }, [speak, browserSupportsSpeechRecognition]);
 
   const toggleVoiceInput = (fieldName) => {
     if (!browserSupportsSpeechRecognition) {
@@ -260,19 +267,12 @@ export function UserDetails() {
       }
 
       speak("Your medical information has been saved successfully.");
-      navigate("/");
+      navigate("/home");
     } catch (error) {
-      console.error("Error saving medical information:", error);
-    } finally {
+      console.error("Error saving medical information:", error);    } finally {
       setIsLoading(false);
     }
   };
-
-  React.useEffect(() => {
-    speak(
-      "Please provide your medical information for better healthcare assistance."
-    );
-  }, [speak]);
 
   // Check for browser support
   if (!browserSupportsSpeechRecognition) {

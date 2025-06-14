@@ -7,11 +7,10 @@ export function BottomNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-
   const navItems = [
-    { icon: Home, label: t('home'), path: '/' },
+    { icon: Home, label: t('home'), path: '/home' },
     { icon: Calendar, label: t('dailyPlanner'), path: '/daily-planner' },
-    { icon: Mic, label: t('voiceAssistant'), path: '/voice', isPrimary: true },
+    { icon: Mic, label: t('voiceAssistant'), path: '/ask-queries', isPrimary: true },
     { icon: Bell, label: t('reminders'), path: '/reminders' },
     { icon: User, label: t('profile'), path: '/profile' }
   ];

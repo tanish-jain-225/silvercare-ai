@@ -31,9 +31,8 @@ export function Header() {
   return (
     <header className="bg-white shadow-md w-full sticky top-0 z-50">
       <div className="w-full flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 md:py-4">
-        {/* Logo and Brand */}
-        <Link
-          to="/"
+        {/* Logo and Brand */}        <Link
+          to="/home"
           className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded mx-2"
         >
           <img
@@ -49,7 +48,7 @@ export function Header() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-2">
           <div className="flex items-center gap-6 px-2">
-            <Link to="/" className="hover:text-blue-600">
+            <Link to="/home" className="hover:text-blue-600">
               Home
             </Link>
             <Link to="/emergency" className="hover:text-blue-600">
@@ -159,7 +158,7 @@ export function Header() {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
           <nav className="flex flex-col gap-1 px-6 py-4">
-            <Link to="/" className="py-2 hover:text-blue-600">
+            <Link to="/home" className="py-2 hover:text-blue-600">
               Home
             </Link>
             <Link to="/emergency" className="py-2 hover:text-blue-600">

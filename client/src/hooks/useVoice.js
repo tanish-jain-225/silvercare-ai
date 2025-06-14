@@ -1,11 +1,19 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { voiceService } from '../utils/voice';
 
 export function useVoice() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      voiceService.stop();
+    };
+  }, []);
+
   const speak = useCallback(async (text) => {
+    if (!text) return;
     try {
       setIsSpeaking(true);
       await voiceService.speak(text);
@@ -40,6 +48,6 @@ export function useVoice() {
     isSpeaking,
     speak,
     listen,
-    stop
+    stop,
   };
 }

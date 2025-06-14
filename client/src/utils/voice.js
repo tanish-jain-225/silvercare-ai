@@ -2,6 +2,8 @@ export class VoiceService {
   constructor() {
     this.synthesis = window.speechSynthesis;
     this.recognition = null;
+    this.isListening = false;
+    this.isSpeaking = false;
     
     // Initialize speech recognition if available
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -9,6 +11,7 @@ export class VoiceService {
       this.recognition = new SpeechRecognition();
       this.recognition.continuous = false;
       this.recognition.interimResults = false;
+      this.recognition.maxAlternatives = 1;
     }
   }
 
@@ -19,16 +22,31 @@ export class VoiceService {
         return;
       }
 
+      if (!text || text.trim() === '') {
+        resolve();
+        return;
+      }
+
       // Cancel any ongoing speech
       this.synthesis.cancel();
+      this.isSpeaking = true;
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(text.trim());
       utterance.rate = options.rate || 0.8;
       utterance.pitch = options.pitch || 1;
       utterance.volume = options.volume || 1;
 
-      utterance.onend = () => resolve();
+      utterance.onstart = () => {
+        this.isSpeaking = true;
+      };
+
+      utterance.onend = () => {
+        this.isSpeaking = false;
+        resolve();
+      };
+
       utterance.onerror = (event) => {
+        this.isSpeaking = false;
         // Treat 'interrupted' errors as normal behavior, not actual errors
         if (event.error === 'interrupted') {
           resolve();
@@ -48,28 +66,58 @@ export class VoiceService {
         return;
       }
 
+      if (this.isListening) {
+        reject(new Error('Already listening'));
+        return;
+      }
+
+      this.isListening = true;
       this.recognition.lang = language;
       
+      this.recognition.onstart = () => {
+        this.isListening = true;
+      };
+
       this.recognition.onresult = (event) => {
+        this.isListening = false;
         const transcript = event.results[0][0].transcript;
         resolve(transcript);
       };
 
       this.recognition.onerror = (event) => {
-        reject(event.error);
+        this.isListening = false;
+        reject(new Error(event.error));
       };
 
-      this.recognition.start();
+      this.recognition.onend = () => {
+        this.isListening = false;
+      };
+
+      try {
+        this.recognition.start();
+      } catch (error) {
+        this.isListening = false;
+        reject(error);
+      }
     });
   }
 
   stop() {
     if (this.synthesis) {
       this.synthesis.cancel();
+      this.isSpeaking = false;
     }
-    if (this.recognition) {
+    if (this.recognition && this.isListening) {
       this.recognition.stop();
+      this.isListening = false;
     }
+  }
+
+  getStatus() {
+    return {
+      isListening: this.isListening,
+      isSpeaking: this.isSpeaking,
+    };
   }
 }
 
