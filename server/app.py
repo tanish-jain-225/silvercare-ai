@@ -13,5 +13,9 @@ app.register_blueprint(format_reminder_bp)
 app.register_blueprint(send_emergency_bp)
 app.register_blueprint(chat_bp)
 
+@app.route('/', methods=['GET'])
+def index():
+    return "Welcome to the VoiceBuddy AI Assistant API!"
+
 if __name__ == '__main__':
     app.run(port=8000, debug=True)
