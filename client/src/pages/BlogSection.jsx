@@ -16,10 +16,14 @@ export function BlogSection() {
   const [blogError, setBlogError] = useState(null);
 
   useEffect(() => {
-    // Fetch real articles tagged 'design' from Dev.to
-    fetch('https://dev.to/api/articles?tag=design&per_page=10')
+    // Fetch real articles tagged 'design' from Dev.to and pick 12 random
+    fetch('https://dev.to/api/articles?tag=design&per_page=100')
       .then(res => res.json())
-      .then(data => setBlogs(data))
+      .then(data => {
+        // Shuffle and take 12 random items
+        const shuffled = data.sort(() => Math.random() - 0.5);
+        setBlogs(shuffled.slice(0, 12));
+      })
       .catch(err => setBlogError(err))
       .finally(() => setLoadingBlogs(false));
   }, []);
