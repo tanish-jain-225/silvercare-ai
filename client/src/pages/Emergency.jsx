@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Phone, Users, MapPin, AlertTriangle, Mic, Send, MicOff } from 'lucide-react';
+import { ArrowLeft, Phone, Users, MapPin, AlertTriangle, Mic, Send, MicOff, Trash2 } from 'lucide-react'; // Added Trash2
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/Button';
@@ -22,13 +22,13 @@ export default function Emergency() {
   const [recognition, setRecognition] = useState(null);
 
   // State for emergency contacts
-  const initialContacts = [
-    { id: '1', name: 'Dr. Smith', phone: '+918104439075', relationship: 'Doctor' },
-    { id: '2', name: 'John (Son)', phone: '+15550124', relationship: 'Family' },
-    { id: '3', name: 'Emergency Services', phone: '911', relationship: 'Emergency' },
-    { id: '4', name: 'Sarah (Daughter)', phone: '+15550198', relationship: 'Family' }
-  ];
-  const [emergencyContacts, setEmergencyContacts] = useState(initialContacts);
+  // const initialContacts = []; // No longer using hardcoded initial contacts here
+
+  const [emergencyContacts, setEmergencyContacts] = useState(() => {
+    const savedContacts = localStorage.getItem('emergencyContacts');
+    return savedContacts ? JSON.parse(savedContacts) : []; // Initialize with empty array if nothing in localStorage
+  });
+
   const [showAddContactForm, setShowAddContactForm] = useState(false);
   const [newContactName, setNewContactName] = useState('');
   const [newContactPhone, setNewContactPhone] = useState('');
@@ -44,11 +44,24 @@ export default function Emergency() {
       phone: newContactPhone.trim(),
       relationship: 'Custom' // Or allow user to specify
     };
-    setEmergencyContacts(prevContacts => [...prevContacts, newContact]);
+    setEmergencyContacts(prevContacts => {
+      const updatedContacts = [...prevContacts, newContact];
+      localStorage.setItem('emergencyContacts', JSON.stringify(updatedContacts));
+      return updatedContacts;
+    });
     setNewContactName('');
     setNewContactPhone('');
     setShowAddContactForm(false);
     speak(`${newContact.name} has been added to your emergency contacts.`);
+  };
+
+  const handleDeleteContact = (contactId) => {
+    setEmergencyContacts(prevContacts => {
+      const updatedContacts = prevContacts.filter(contact => contact.id !== contactId);
+      localStorage.setItem('emergencyContacts', JSON.stringify(updatedContacts));
+      speak("Contact removed.");
+      return updatedContacts;
+    });
   };
 
   const handleEmergencyCall = () => {
@@ -152,12 +165,7 @@ export default function Emergency() {
       speak('Please enter a message first');
       return;
     }
-
-    const locationText = location ? 
-      `\n\n📍 My Location: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}` : 
-      '';
-
-    const emergencyMessage = `🚨 EMERGENCY MESSAGE 🚨\n\n${message.trim()}${locationText}\n\n⏰ Sent: ${new Date().toLocaleString()}\n\nFrom: VoiceBuddy Emergency Assistant`;
+    const emergencyMessage = `${message.trim()}`;
 
     const whatsappUrl = `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(emergencyMessage)}`;
     
@@ -343,22 +351,32 @@ export default function Emergency() {
                     </div>
                   </div>
                   
-                  {/* Microphone Button */}
-                  <button
-                    onClick={() => handleSpeechToText(contact.id)}
-                    className={`p-3 rounded-full transition-all duration-200 ${
-                      isListening[contact.id] 
-                        ? 'bg-red-600 text-white animate-pulse' 
-                        : 'bg-red-50 text-red-600 hover:bg-red-100'
-                    }`}
-                    title={isListening[contact.id] ? 'Listening...' : 'Start voice recording'}
-                  >
-                    {isListening[contact.id] ? (
-                      <MicOff size={24} />
-                    ) : (
-                      <Mic size={24} />
-                    )}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {/* Microphone Button */}
+                    <button
+                      onClick={() => handleSpeechToText(contact.id)}
+                      className={`p-3 rounded-full transition-all duration-200 ${
+                        isListening[contact.id] 
+                          ? 'bg-red-600 text-white animate-pulse' 
+                          : 'bg-red-50 text-red-600 hover:bg-red-100'
+                      }`}
+                      title={isListening[contact.id] ? 'Listening...' : 'Start voice recording'}
+                    >
+                      {isListening[contact.id] ? (
+                        <MicOff size={22} />
+                      ) : (
+                        <Mic size={22} />
+                      )}
+                    </button>
+                    {/* Delete Contact Button */}
+                    <button
+                      onClick={() => handleDeleteContact(contact.id)}
+                      className="p-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all duration-200"
+                      title="Delete Contact"
+                    >
+                      <Trash2 size={22} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Message Input */}
@@ -375,7 +393,7 @@ export default function Emergency() {
                   />
                   {isListening[contact.id] && (
                     <p className="text-red-600 text-sm mt-2 animate-pulse">
-                      🎤 Listening for your voice...
+                      Listening for your voice...
                     </p>
                   )}
                 </div>
