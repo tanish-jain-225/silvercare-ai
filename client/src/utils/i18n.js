@@ -33,7 +33,7 @@ const resources = {
       
       // Home
       welcome: "Hello {{name}}",
-      dailyPlanner: "Daily Planner",
+      blog: "Blog Section",
       reminders: "Reminders",
       emergency: "Emergency",
       askQueries: "Ask Queries",
@@ -42,9 +42,11 @@ const resources = {
       home: "Home",
       voiceAssistant: "Voice Assistant",
       profile: "Profile",
+      // Blog Section
+      blog: "Blog",
+      blogSection: "Blog Section",
       
-      // Daily Planner
-      planYourDay: "Plan Your Day",
+      planYourDay: "Entertain Your Day",
       typeOrSpeak: "Type your message or speak...",
       
       // Reminders

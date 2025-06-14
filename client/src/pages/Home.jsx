@@ -12,6 +12,9 @@ import { useTranslation } from "react-i18next";
 import { Card } from "../components/ui/Card";
 import { useApp } from "../context/AppContext";
 import { useVoice } from "../hooks/useVoice";
+import PropTypes from "prop-types";
+import { motion } from 'framer-motion';
+import SplitText from "../components/homepage/SplitText";
 
 export function Home() {
   const navigate = useNavigate();
@@ -22,9 +25,9 @@ export function Home() {
   const features = [
     {
       icon: Calendar,
-      title: t("dailyPlanner"),
-      description: "Plan your day with voice assistance",
-      path: "/daily-planner",
+      title: t("blog"),
+      description: "Entertain your day",
+      path: "/blog",
       color: "bg-blue-100 text-blue-600",
     },
     {
@@ -32,14 +35,14 @@ export function Home() {
       title: t("reminders"),
       description: "Set and manage your reminders",
       path: "/reminders",
-      color: "bg-green-100 text-green-600",
+      color: "bg-indigo-500 text-green-600",
     },
     {
       icon: AlertTriangle,
       title: t("emergency"),
       description: "Quick access to emergency help",
       path: "/emergency",
-      color: "bg-red-100 text-red-600",
+      color: "bg-indigo-500 text-red-600",
     },
     {
       icon: MessageSquare,
@@ -63,75 +66,90 @@ export function Home() {
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-b from-white to-blue-100 flex flex-col items-center justify-center">
       {/* Welcome Banner */}
-      <section className="bg-white shadow-sm border-b border-gray-200 m-4 rounded-md w-full">
-        <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 break-words">
-                {user ? t("welcome", { name: user.name }) : "Welcome"}
-              </h1>
-              <p className="text-gray-600 text-base md:text-lg break-words">
-                {t('howCanIHelp', 'How can I help you today?')}
-              </p>
+      <section className="w-[80%] bg-gradient-to-r from-blue-50 to-indigo-50 border border-gray-100 rounded-xl shadow-sm mx-10 my-6 overflow-hidden">
+        <div className="container mx-auto px-4 py-8 md:py-12 max-w-9xl">
+          <div className="flex flex-col items-start space-y-4 md:space-y-6">
+            {/* Animated greeting */}
+            <div className="relative">
+              <div className="absolute -left-4 top-0 h-full w-1 bg-indigo-500 rounded-full"></div>
+              <SplitText
+                text={`Welcome back, ${user.name}!`}
+                className="text-3xl md:text-5xl font-extrabold text-gray-800 text-left pl-6"
+                delay={100}
+                duration={2}
+                ease="power3.out"
+                splitType="chars"
+                from={{ opacity: 0, y: 40 }}
+                to={{ opacity: 1, y: 0 }}
+              />
             </div>
+
+            {/* Subtitle with subtle animation */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="pl-6"
+            >
+              <p className="text-lg md:text-xl text-gray-600 font-medium leading-relaxed">
+                {t('howCanIHelp', 'How can I assist you today?')}
+              </p>
+
+              {/* Decorative elements */}
+              <div className="flex items-center mt-4 space-x-3">
+                <div className="h-2 w-8 bg-indigo-400 rounded-full"></div>
+                <div className="h-2 w-16 bg-indigo-300 rounded-full"></div>
+                <div className="h-2 w-8 bg-indigo-200 rounded-full"></div>
+              </div>
+            </motion.div>
+
+            {/* CTA Button (optional) */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="pl-6 pt-2"
+            >
+              <button className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-lg shadow-sm transition-all duration-300 transform hover:-translate-y-0.5">
+                Get Started
+              </button>
+            </motion.div>
           </div>
         </div>
       </section>
+
       {/* Content */}
-      <section className="w-full container mx-auto max-w-md md:max-w-lg lg:max-w-xl px-4 py-8">
-        <div className="grid grid-cols-2 gap-4">
+      <div className="w-[90%] px-2 mb-20 sm:px-6 lg:px-8 py-8 mx-auto"> {/* Added mx-auto for center alignment */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 ">
           {features.map((feature) => (
-            <Card
+            <div
               key={feature.path}
               onClick={() => handleFeatureClick(feature.path, feature.title)}
-              className="cursor-pointer p-2 focus-visible:ring-2 focus-visible:ring-blue-400"
+              className="bg-white group cursor-pointer p-8 border border-gray-100 rounded-xl shadow-xs hover:shadow-md transition-all duration-500 hover:-translate-y-2 focus-visible:ring-2 focus-visible:ring-opacity-60 focus-visible:ring-primary-500"
               tabIndex={0}
               aria-label={feature.title}
             >
-              <div className="text-center flex flex-col justify-center m-2">
+              <div className="text-center flex flex-col justify-center items-center h-full space-y-5">
                 <div
-                  className={`inline-flex items-center justify-center w-12 md:w-14 rounded-full mb-3 mx-auto ${feature.color}`}
+                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${feature.color} bg-opacity-10 group-hover:bg-opacity-20 transition-all duration-500`}
                 >
-                  <feature.icon size={28} className="" aria-hidden="true" />
+                  <feature.icon
+                    size={32}
+                    className={`${feature.color.replace('bg-', 'text-')} opacity-90 group-hover:opacity-100 transition-all duration-500`}
+                    aria-hidden="true"
+                  />
                 </div>
-                <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-1 break-words">
+                <h3 className="text-xl font-medium text-gray-900 group-hover:text-primary-600 transition-colors duration-300">
                   {feature.title}
                 </h3>
-                <p className="text-sm md:text-base text-gray-600 leading-tight break-words">
+                <p className="text-gray-500 leading-relaxed text-[0.95rem] group-hover:text-gray-700 transition-colors duration-300">
                   {feature.description}
                 </p>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
-        {/* Quick Health Check */}
-        <div className="my-16">
-          <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-            <div className="text-center">
-              <h3 className="text-xl font-semibold mb-2 break-words">
-                {t('dailyHealthCheck', 'Daily Health Check')}
-              </h3>
-              <p className="text-green-100 mb-4 break-words">
-                {t('howAreYouFeeling', 'How are you feeling today?')}
-              </p>
-              <div className="flex justify-center space-x-4">
-                <button className="flex flex-col items-center p-3 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Great">
-                  <span className="text-2xl mb-1">{t('great', 'Great')}</span>
-                  <span className="text-sm">{t('great', 'Great')}</span>
-                </button>
-                <button className="flex flex-col items-center p-3 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Okay">
-                  <span className="text-2xl mb-1">{t('okay', 'Okay')}</span>
-                  <span className="text-sm">{t('okay', 'Okay')}</span>
-                </button>
-                <button className="flex flex-col items-center p-3 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Not Good">
-                  <span className="text-2xl mb-1">{t('notGood', 'Not Good')}</span>
-                  <span className="text-sm">{t('notGood', 'Not Good')}</span>
-                </button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
+      </div>
     </main>
   );
 }
