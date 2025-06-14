@@ -12,7 +12,7 @@ import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import { UserDetails } from "./pages/UserDetails";
 import { Home } from "./pages/Home";
-import { DailyPlanner } from "./pages/DailyPlanner";
+import { BlogSection } from "./pages/BlogSection";
 import { Reminders } from "./pages/Reminders";
 import Emergency from "./pages/Emergency";
 import { AskQueries } from "./pages/AskQueries";
@@ -73,10 +73,10 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/daily-planner"
+          path="/blog"
           element={
             <ProtectedRoute>
-              <DailyPlanner />
+              <BlogSection />
             </ProtectedRoute>
           }
         />

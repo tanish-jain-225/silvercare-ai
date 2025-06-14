@@ -22,9 +22,9 @@ export function Home() {
   const features = [
     {
       icon: Calendar,
-      title: t("dailyPlanner"),
-      description: "Plan your day with voice assistance",
-      path: "/daily-planner",
+      title: t("blog"),
+      description: "Entertain your day",
+      path: "/blog",
       color: "bg-blue-100 text-blue-600",
     },
     {
