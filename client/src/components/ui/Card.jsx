@@ -40,8 +40,8 @@ export function Card({
       {...props}
     >
       {Icon && title ? (
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-14 md:w-16 bg-blue-100 rounded-full mb-4 md:mb-5">
+        <div className=" text-center w-full">
+          <div className="inline-flex items-center justify-center w-50 md:w-16 bg-blue-100 rounded-full mb-4 md:mb-5">
             <Icon size={variant === 'elevated' ? 36 : 28} className="text-blue-600" aria-hidden="true" />
           </div>
           <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-2 truncate">{title}</h3>
