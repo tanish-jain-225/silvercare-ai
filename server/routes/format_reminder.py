@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response
 from together import Together
 import requests
 import re
@@ -8,6 +8,7 @@ from pymongo.errors import PyMongoError
 from bson import ObjectId
 from datetime import datetime
 import json
+from dateutil.parser import parse as parse_datetime
 
 
 format_reminder_bp = Blueprint('format_reminder', __name__)
@@ -43,19 +44,10 @@ def convert_to_json_friendly(document):
             result[key] = value
     return result
 
-app = Flask(__name__)
-# Set the custom encoder for Flask's jsonify
-app.json_encoder = MongoJSONEncoder
-
-# Override Flask's default response class to handle ObjectId serialization
-class JSONResponse(Response):
-    @classmethod
-    def force_type(cls, response, environ=None):
-        if isinstance(response, dict):
-            response = jsonify(convert_to_json_friendly(response))
-        return super(JSONResponse, cls).force_type(response, environ)
-
-app.response_class = JSONResponse
+# Initialize MongoDB client
+mongo_client = MongoClient('mongodb+srv://tanish-jain-225:tanishjain02022005@cluster0.578qvco.mongodb.net/')
+db = mongo_client['assistant_db']  # Database name
+reminders_collection = db['reminders']  # Collection name
 
 # Initialize Together AI client
 client = Together(api_key="tgp_v1_WSJUCyB6cAaCZff7oVSK30nK1rxEgSlqAWBHzYdipfM")
@@ -65,8 +57,19 @@ mongo_client = MongoClient('mongodb+srv://tanish-jain-225:tanishjain02022005@clu
 db = mongo_client['assistant_db']  # Database name
 reminders_collection = db['reminders']  # Collection name
 
-@app.route('/format-reminder', methods=['POST'])
+@format_reminder_bp.route('/format-reminder', methods=['POST', 'OPTIONS'])
 def format_reminder():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'success'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        return response
+        
+    print("POST /format-reminder endpoint called")
+    print(f"Request data: {request.json}")
+    
     user_input = request.json.get('input', '')
     # Ensure we have input to process
     if not user_input:
@@ -133,6 +136,8 @@ def format_reminder():
             return jsonify({"error": "Failed to parse or post JSON", "details": str(e), "raw": content}), 400
     return jsonify({"error": "No JSON found in LLM response", "raw": content}), 400
 
+
+
 def process_reminders(reminders_list):
     """Process multiple reminders and save them to MongoDB"""
     results = []
@@ -195,19 +200,26 @@ def save_to_mongodb(reminder):
     
     return json_safe_reminder
 
-@app.route('/reminders', methods=['GET'])
+@format_reminder_bp.route('/reminders', methods=['GET'])
 def get_reminders():
     """Get all reminders from MongoDB"""
+    print("GET /reminders endpoint called")
     try:
         # Fetch all reminders from the collection
         cursor = reminders_collection.find({})
-        reminders = convert_to_json_friendly(list(cursor))
-        return jsonify({"success": True, "reminders": reminders, "count": len(reminders)})
+        reminders_list = list(cursor)
+        print(f"Found {len(reminders_list)} reminders")
+        reminders = convert_to_json_friendly(reminders_list)
+        response = jsonify({"success": True, "reminders": reminders, "count": len(reminders)})
+        # Explicitly set CORS headers to ensure they're applied
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
     except Exception as e:
         print(f"Error in get_reminders: {str(e)}")
         return jsonify({"error": str(e)}), 500
         
-@app.route('/reminders/<reminder_id>', methods=['GET'])
+@format_reminder_bp.route('/reminders/<reminder_id>', methods=['GET'])
 def get_reminder_by_id(reminder_id):
     """Get a specific reminder by ID"""
     try:
@@ -221,12 +233,74 @@ def get_reminder_by_id(reminder_id):
         if not reminder:
             return jsonify({"error": f"Reminder with ID {reminder_id} not found"}), 404
             
-        # Convert to JSON-friendly format
-        reminder = convert_to_json_friendly(reminder)
+        # Convert to JSON-friendly format        reminder = convert_to_json_friendly(reminder)
         return jsonify({"success": True, "reminder": reminder})
+    
+    except Exception as e:
+        print(f"Error in get_reminder_by_id: {str(e)}")
+        return jsonify({"error": str(e)}), 500
     except Exception as e:
         print(f"Error in get_reminder_by_id: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+@format_reminder_bp.route('/reminder-data', methods=['POST', 'OPTIONS'])
+def save_reminder_data():
+    """Endpoint to directly save reminder data to MongoDB without LLM processing"""
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'success'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        return response
+        
+    print("POST /reminder-data endpoint called")
+    reminder_data = request.json
+    if not reminder_data:
+        return jsonify({"error": "No reminder data provided"}), 400
+        
+    try:
+        print(f"Processing reminder data: {reminder_data}")
+        # This will handle both single reminder objects and arrays of reminders
+        if isinstance(reminder_data, list):
+            results = []
+            for reminder in reminder_data:
+                saved = save_to_mongodb(reminder)
+                results.append(saved)
+            response = jsonify({"success": True, "reminders": results, "count": len(results)})
+        else:
+            saved_reminder = save_to_mongodb(reminder_data)
+            response = jsonify({"success": True, "reminder": saved_reminder})
+        
+        # Explicitly set CORS headers
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        return response
+    except Exception as e:
+        print(f"Error in save_reminder_data: {str(e)}")
+        return jsonify({"error": f"Failed to save reminder data: {str(e)}"}), 500
+
+@format_reminder_bp.route('/reminders/<created_at>', methods=['DELETE'])
+def delete_reminder(created_at):
+    """Delete a reminder by its created_at timestamp (string match)"""
+    try:
+        # Parse the string to a datetime object
+        dt = parse_datetime(created_at)
+        result = reminders_collection.delete_one({'created_at': dt})
+        if result.deleted_count == 0:
+            return jsonify({'error': 'Reminder not found'}), 404
+        return jsonify({'success': True, 'message': 'Reminder deleted'})
+    except Exception as e:
+        print(f"Error deleting reminder: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
+    from flask import Flask
+    from flask_cors import CORS
+    
+    app = Flask(__name__)
+    # Enable CORS with specific configuration
+    CORS(app, resources={r"/*": {"origins": ["*"], "supports_credentials": True}})
+    # Register the blueprint
+    app.register_blueprint(format_reminder_bp)
     app.run(port=8000, debug=True)
+
