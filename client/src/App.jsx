@@ -14,7 +14,7 @@ import { UserDetails } from "./pages/UserDetails";
 import { Home } from "./pages/Home";
 import { DailyPlanner } from "./pages/DailyPlanner";
 import { Reminders } from "./pages/Reminders";
-import { Emergency } from "./pages/Emergency";
+import Emergency from "./pages/Emergency";
 import { AskQueries } from "./pages/AskQueries";
 import { Profile } from "./pages/Profile";
 import { storage } from "./utils/storage";

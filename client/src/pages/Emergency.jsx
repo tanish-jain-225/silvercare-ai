@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Phone, Users, MapPin, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Phone, Users, MapPin, AlertTriangle, Mic, Send, MicOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/Button';
@@ -9,19 +9,47 @@ import { useApp } from '../context/AppContext';
 import { useLocation } from '../hooks/useLocation';
 import LocationComponent from '../components/location/LocationComponet'
 
-export function Emergency() {
+export default function Emergency() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { speak } = useVoice();
-  const { user } = useApp();
-  const { location, loading: locationLoading, error: locationError } = useLocation();
+  const { user } = useApp();  const { location, loading: locationLoading, error: locationError } = useLocation();
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
+  
+  // State for emergency chat
+  const [messages, setMessages] = useState({});
+  const [isListening, setIsListening] = useState({});
+  const [recognition, setRecognition] = useState(null);
 
-  const emergencyContacts = [
-    { id: '1', name: 'Dr. Smith', phone: '+1-555-0123', relationship: 'Doctor' },
-    { id: '2', name: 'John (Son)', phone: '+1-555-0124', relationship: 'Family' },
-    { id: '3', name: 'Emergency Services', phone: '911', relationship: 'Emergency' }
+  // State for emergency contacts
+  const initialContacts = [
+    { id: '1', name: 'Dr. Smith', phone: '+918104439075', relationship: 'Doctor' },
+    { id: '2', name: 'John (Son)', phone: '+15550124', relationship: 'Family' },
+    { id: '3', name: 'Emergency Services', phone: '911', relationship: 'Emergency' },
+    { id: '4', name: 'Sarah (Daughter)', phone: '+15550198', relationship: 'Family' }
   ];
+  const [emergencyContacts, setEmergencyContacts] = useState(initialContacts);
+  const [showAddContactForm, setShowAddContactForm] = useState(false);
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactPhone, setNewContactPhone] = useState('');
+
+  const handleAddContact = () => {
+    if (!newContactName.trim() || !newContactPhone.trim()) {
+      speak("Please enter both name and phone number for the new contact.");
+      return;
+    }
+    const newContact = {
+      id: Date.now().toString(), // Simple unique ID
+      name: newContactName.trim(),
+      phone: newContactPhone.trim(),
+      relationship: 'Custom' // Or allow user to specify
+    };
+    setEmergencyContacts(prevContacts => [...prevContacts, newContact]);
+    setNewContactName('');
+    setNewContactPhone('');
+    setShowAddContactForm(false);
+    speak(`${newContact.name} has been added to your emergency contacts.`);
+  };
 
   const handleEmergencyCall = () => {
     // Use actual location if available, otherwise use fallback coordinates
@@ -64,8 +92,86 @@ export function Emergency() {
     window.location.href = `tel:${contact.phone}`;
   };
 
+  // Initialize speech recognition
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
+      recognitionInstance.lang = 'en-US';
+      
+      setRecognition(recognitionInstance);
+    }
+  }, []);
+
+  // Handle speech-to-text
+  const handleSpeechToText = (contactId) => {
+    if (!recognition) {
+      speak('Speech recognition is not supported on this device');
+      return;
+    }
+
+    if (isListening[contactId]) {
+      recognition.stop();
+      setIsListening(prev => ({ ...prev, [contactId]: false }));
+      return;
+    }
+
+    setIsListening(prev => ({ ...prev, [contactId]: true }));
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setMessages(prev => ({
+        ...prev,
+        [contactId]: transcript
+      }));
+      setIsListening(prev => ({ ...prev, [contactId]: false }));
+      speak('Message captured');
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(prev => ({ ...prev, [contactId]: false }));
+      speak('Speech recognition failed');
+    };
+
+    recognition.onend = () => {
+      setIsListening(prev => ({ ...prev, [contactId]: false }));
+    };
+
+    recognition.start();
+    speak('Listening for your message');
+  };
+
+  // Handle sending message via WhatsApp
+  const handleSendWhatsApp = (contact) => {
+    const message = messages[contact.id];
+    if (!message || !message.trim()) {
+      speak('Please enter a message first');
+      return;
+    }
+
+    const locationText = location ? 
+      `\n\n📍 My Location: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}` : 
+      '';
+
+    const emergencyMessage = `🚨 EMERGENCY MESSAGE 🚨\n\n${message.trim()}${locationText}\n\n⏰ Sent: ${new Date().toLocaleString()}\n\nFrom: VoiceBuddy Emergency Assistant`;
+
+    const whatsappUrl = `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(emergencyMessage)}`;
+    
+    window.open(whatsappUrl, '_blank');
+    speak(`Emergency message sent to ${contact.name} via WhatsApp`);
+    
+    // Clear the message after sending
+    setMessages(prev => ({
+      ...prev,
+      [contact.id]: ''
+    }));
+  };
   React.useEffect(() => {
-    speak('Emergency help is available. You can get immediate help or contact your emergency contacts.');
+    speak('Emergency chat is ready. Use the microphone to record messages or type manually, then send via WhatsApp.');
   }, [speak]);
 
   return (
@@ -79,9 +185,8 @@ export function Emergency() {
               className="p-2 rounded-full hover:bg-gray-100/50 transition-all duration-300 mr-2"
             >
               <ArrowLeft size={22} className="text-gray-600" />
-            </button>
-            <h1 className="text-xl font-bold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-orange-600">
-              {t('Emergency Help - SilverCare AI')}
+            </button>            <h1 className="text-xl font-bold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-orange-600">
+              Emergency Chat - VoiceBuddy AI
             </h1>
           </div>
         </div>
@@ -171,53 +276,126 @@ export function Emergency() {
           <div className='pt-3'>
             <LocationComponent />
           </div>
-        </Card>
-
-        {/* Emergency Contacts Section */}
+        </Card>        {/* Emergency Chat Section */}
         <div className="mb-8">
           {/* Section Header */}
           <div className="flex items-center mb-6">
-            <div className="flex items-center justify-center w-12 h-12 bg-green-50 rounded-lg mr-4">
-              <Users className="text-green-600" size={24} />
+            <div className="flex items-center justify-center w-12 h-12 bg-red-50 rounded-lg mr-4">
+              <Send className="text-red-600" size={24} />
             </div>
-            <h3 className="text-2xl font-semibold text-gray-900">{t('emergencyContacts')}</h3>
+            <h3 className="text-2xl font-semibold text-gray-900">Emergency Chat</h3>
           </div>
 
-          {/* Contacts List */}
-          <div className="grid gap-3">
-            {emergencyContacts.map((contact) => (
-              <div
-                key={contact.id}
-                onClick={() => handleContactCall(contact)}
-                className="group p-5 bg-white rounded-xl border border-gray-100 shadow-xs hover:shadow-sm transition-all duration-200 cursor-pointer hover:border-green-100 active:scale-[0.98]"
+          {/* Emergency Chat Cards */}
+          <div className="space-y-4">
+            <div>
+              <button
+                onClick={() => setShowAddContactForm(!showAddContactForm)}
+                className="mb-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
               >
-                <div className="flex items-center justify-between">
-                  {/* Contact Info */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-gray-900">{contact.name}</h4>
-                      <span className="px-2 py-1 bg-gray-50 text-gray-600 text-xs rounded-md">
-                        {contact.relationship}
+                <Users size={20} />
+                {showAddContactForm ? 'Cancel Adding Contact' : 'Add New Contact'}
+              </button>
+              {showAddContactForm && (
+                <Card className="p-4 sm:p-6 bg-white border border-gray-200 mb-4">
+                  <h4 className="font-semibold text-gray-900 text-lg mb-3">Add New Emergency Contact</h4>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Contact Name"
+                      value={newContactName}
+                      onChange={(e) => setNewContactName(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Contact Phone Number"
+                      value={newContactPhone}
+                      onChange={(e) => setNewContactPhone(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={handleAddContact}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+                    >
+                      Save Contact
+                    </button>
+                  </div>
+                </Card>
+              )}
+            </div>
+            {emergencyContacts.map((contact) => (
+              <Card 
+                key={contact.id} 
+                className="p-4 sm:p-6 bg-white border border-gray-200 hover:border-red-200 transition-all duration-200"
+              >
+                {/* Contact Info Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                      <span className="text-red-600 font-bold text-lg">
+                        {contact.name.charAt(0)}
                       </span>
                     </div>
-                    <p className="text-blue-600 font-medium flex items-center">
-                      <Phone className="mr-2" size={16} />
-                      {contact.phone}
-                    </p>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 text-lg">{contact.name}</h4>
+                      <p className="text-gray-600 text-sm">{contact.phone}</p>
+                    </div>
                   </div>
-
-                  {/* Call Button */}
-                  <div className="flex items-center justify-center w-10 h-10 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
-                    <Phone className="text-green-600" size={20} />
-                  </div>
+                  
+                  {/* Microphone Button */}
+                  <button
+                    onClick={() => handleSpeechToText(contact.id)}
+                    className={`p-3 rounded-full transition-all duration-200 ${
+                      isListening[contact.id] 
+                        ? 'bg-red-600 text-white animate-pulse' 
+                        : 'bg-red-50 text-red-600 hover:bg-red-100'
+                    }`}
+                    title={isListening[contact.id] ? 'Listening...' : 'Start voice recording'}
+                  >
+                    {isListening[contact.id] ? (
+                      <MicOff size={24} />
+                    ) : (
+                      <Mic size={24} />
+                    )}
+                  </button>
                 </div>
-              </div>
+
+                {/* Message Input */}
+                <div className="mb-4">
+                  <textarea
+                    value={messages[contact.id] || ''}
+                    onChange={(e) => setMessages(prev => ({
+                      ...prev,
+                      [contact.id]: e.target.value
+                    }))}
+                    placeholder="Type emergency message or use microphone..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                    rows={3}
+                  />
+                  {isListening[contact.id] && (
+                    <p className="text-red-600 text-sm mt-2 animate-pulse">
+                      🎤 Listening for your voice...
+                    </p>
+                  )}
+                </div>
+
+                {/* Send WhatsApp Button */}
+                <button
+                  onClick={() => handleSendWhatsApp(contact)}
+                  disabled={!messages[contact.id]?.trim()}
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                >
+                  <Send size={20} />
+                  Send via WhatsApp
+                </button>
+              </Card>
             ))}
           </div>
         </div>
 
         {/* Important Notice */}
-        <Card className="bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-2xl p-6 shadow-sm">
+        <Card className="bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-2xl p-6 shadow-sm my-20">
           <div className="flex items-start">
             <div className="flex items-center justify-center w-12 h-12 bg-amber-100/50 rounded-full mr-4">
               <AlertTriangle className="text-amber-600" size={24} />
@@ -231,7 +409,7 @@ export function Emergency() {
             </div>
           </div>
         </Card>
-      </div>
-    </div>
+      </div>    </div>
   );
 }
+
