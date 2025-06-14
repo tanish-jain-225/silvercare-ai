@@ -1,18 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Menu, X, Globe, ChevronDown, LogOut, User } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 
 const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "es", label: "Español" },
-  { code: "hi", label: "Hindi" },
+  { code: "en", name: "English" },
+  { code: "hi", name: "Hindi" },
+  { code: "mr", name: "Marathi" },
+  { code: "gu", name: "Gujarati" },
 ];
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
+  const menuRef = useRef(null);
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { user, logout } = useApp();
@@ -28,10 +30,18 @@ export function Header() {
     setIsLangOpen(false);
   };
 
+  const navigateAndClose = (path) => {
+    setIsMenuOpen(false);
+    setTimeout(() => navigate(path), 50);
+  };
+
+  const handleMenuLinkClick = () => setIsMenuOpen(false);
+
   return (
     <header className="bg-white shadow-md w-full sticky top-0 z-50">
       <div className="w-full flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 md:py-4">
-        {/* Logo and Brand */}        <Link
+        {/* Logo and Brand */}{" "}
+        <Link
           to="/home"
           className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded mx-2"
         >
@@ -44,7 +54,6 @@ export function Header() {
             SilverCare AI
           </span>
         </Link>
-
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-2">
           <div className="flex items-center gap-6 px-2">
@@ -108,7 +117,7 @@ export function Header() {
           </div>
           {/* User Profile Dropdown */}
           {user && (
-            <div className="relative">
+            <div className="relative flex items-center" ref={menuRef}>
               <button
                 className="flex items-center gap-2 text-gray-700 font-medium hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
                 onClick={() => setIsMenuOpen((v) => !v)}
@@ -116,9 +125,17 @@ export function Header() {
                 aria-expanded={isMenuOpen}
                 type="button"
               >
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
+                {user.profileImage ? (
+                  <img
+                    src={user.profileImage}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-blue-200 shadow-sm"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                    <User size={22} />
+                  </div>
+                )}
                 <ChevronDown size={16} />
               </button>
               {isMenuOpen && (
@@ -143,34 +160,67 @@ export function Header() {
             </div>
           )}
         </nav>
-
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-700 hover:text-blue-600 hover:bg-gray-100"
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-        >
-          {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-        </button>
+        {/* Mobile Profile and Menu Combined */}
+        <div className="flex md:hidden items-center gap-2">
+          <div
+            className="flex items-center gap-1 rounded-full border border-blue-200 bg-white shadow-sm p-1 cursor-pointer transition hover:shadow-md"
+            onClick={() => setIsMenuOpen((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={isMenuOpen}
+          >
+            {user && user.profileImage ? (
+              <img
+                src={user.profileImage}
+                alt="Profile"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                <User size={22} />
+              </div>
+            )}
+            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </div>
+        </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Dropdown Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
+        <div className="md:hidden absolute right-2 top-16 bg-white border-t border-gray-100 shadow-lg rounded-xl z-50">
           <nav className="flex flex-col gap-1 px-6 py-4">
-            <Link to="/home" className="py-2 hover:text-blue-600">
+            <Link
+              to="/home"
+              className="py-2 hover:text-blue-600"
+              onClick={handleMenuLinkClick}
+            >
               Home
             </Link>
-            <Link to="/emergency" className="py-2 hover:text-blue-600">
+            <Link
+              to="/emergency"
+              className="py-2 hover:text-blue-600"
+              onClick={handleMenuLinkClick}
+            >
               Emergency
             </Link>
-            <Link to="/reminders" className="py-2 hover:text-blue-600">
+            <Link
+              to="/reminders"
+              className="py-2 hover:text-blue-600"
+              onClick={handleMenuLinkClick}
+            >
               Reminders
             </Link>
-            <Link to="/ask-queries" className="py-2 hover:text-blue-600">
+            <Link
+              to="/ask-queries"
+              className="py-2 hover:text-blue-600"
+              onClick={handleMenuLinkClick}
+            >
               Ask
             </Link>
-            <Link to="/blog" className="py-2 hover:text-blue-600">
+            <Link
+              to="/blog"
+              className="py-2 hover:text-blue-600"
+              onClick={handleMenuLinkClick}
+            >
               Planner
             </Link>
             {/* Language Switcher Mobile */}
@@ -193,7 +243,10 @@ export function Header() {
               </div>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => {
+                handleMenuLinkClick();
+                handleLogout();
+              }}
               className="py-2 flex items-center text-red-600 hover:bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-200"
             >
               <LogOut size={18} className="mr-2" />

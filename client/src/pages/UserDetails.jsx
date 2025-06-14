@@ -21,6 +21,9 @@ import { useVoice } from "../hooks/useVoice";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
+import { db } from "../firebase/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { uploadToCloudinary } from "../utils/cloudinary";
 
 const VoiceButton = ({ listening, onClick, fieldName }) => (
   <button
@@ -74,6 +77,7 @@ export function UserDetails() {
     healthCondition: { selected: "", custom: "" },
     currentMedicalStatus: "",
     medicalCertificates: null,
+    profileImage: null,
   });
 
   // Options for dropdowns
@@ -154,7 +158,8 @@ export function UserDetails() {
         default:
           break;
       }
-    }  }, [transcript, activeVoiceField, listening]);
+    }
+  }, [transcript, activeVoiceField, listening]);
 
   // Welcome message effect - must be at top level
   useEffect(() => {
@@ -242,34 +247,54 @@ export function UserDetails() {
     }));
   };
 
+  // Add profileImage to formData
+  const handleProfileImageUpload = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      profileImage: e.target.files[0],
+    }));
+  };
+
   // Form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Process form data
+      let imageUrl = "";
+      let medicalCertificateUrl = "";
+      if (formData.profileImage) {
+        imageUrl = await uploadToCloudinary(formData.profileImage);
+      }
+      if (formData.medicalCertificates) {
+        medicalCertificateUrl = await uploadToCloudinary(
+          formData.medicalCertificates
+        );
+      }
       const userData = {
         ...formData,
         healthCondition:
           formData.healthCondition.selected === "Other"
             ? formData.healthCondition.custom
             : formData.healthCondition.selected,
+        profileImage: imageUrl,
+        medicalCertificates: medicalCertificateUrl,
       };
-
-      // Update user context if needed
       if (user) {
         const updatedUser = {
           ...user,
           ...userData,
         };
+        console.log("Updated user data:", updatedUser);
         setUser(updatedUser);
+        // Store in Firestore users collection
+        await setDoc(doc(db, "users", user.id), userData);
       }
-
       speak("Your medical information has been saved successfully.");
       navigate("/home");
     } catch (error) {
-      console.error("Error saving medical information:", error);    } finally {
+      console.error("Error saving medical information:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -701,6 +726,34 @@ export function UserDetails() {
                     <input
                       type="file"
                       onChange={handleFileUpload}
+                      className="hidden"
+                      accept=".jpg,.jpeg,.png"
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 opacity-80">
+                  {t("The maximum file size allowed is")} (max 5MB)
+                </p>
+              </div>
+
+              {/* Profile Image Upload */}
+              <div className="space-y-4 group">
+                <label className="block text-sm font-semibold text-gray-700 mb-3 group-hover:text-pink-600 transition-colors">
+                  {t("Profile Image")}
+                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex-1 cursor-pointer">
+                    <div className="flex items-center justify-center gap-4 p-6 border-2 border-dashed border-gray-200 rounded-xl hover:border-pink-300 transition-all duration-300 bg-white/30 hover:bg-pink-50/50 backdrop-blur-sm group-hover:shadow-md">
+                      <Upload className="text-gray-500 group-hover:text-pink-500 transition-colors w-6 h-6" />
+                      <span className="text-sm text-gray-600 group-hover:text-pink-600 transition-colors font-medium">
+                        {formData.profileImage
+                          ? formData.profileImage.name
+                          : t("Click to Upload")}
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      onChange={handleProfileImageUpload}
                       className="hidden"
                       accept=".jpg,.jpeg,.png"
                     />

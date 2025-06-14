@@ -8,29 +8,36 @@ import {
   logout as firebaseLogout,
 } from "../firebase/auth.js";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { db } from "../firebase/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const AppContext = createContext(undefined);
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [language, setLanguage] = useState(storage.get("silvercare_language") || "en");
+  const [language, setLanguage] = useState(
+    storage.get("silvercare_language") || "en"
+  );
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          const userData = {
+          let userData = {
             id: firebaseUser.uid,
             name:
               firebaseUser.displayName ||
               firebaseUser.email?.split("@")[0] ||
               "User",
             email: firebaseUser.email,
-            age: 65,
-            healthConditions: [],
           };
+          // Fetch extra user details from Firestore
+          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+          if (userDoc.exists()) {
+            userData = { ...userData, ...userDoc.data() };
+          }
           setUser(userData);
           setIsAuthenticated(true);
           storage.set("silvercare_user", userData);
@@ -47,7 +54,7 @@ export function AppProvider({ children }) {
       }
       setLoading(false);
     });
-    
+
     return () => {
       try {
         unsubscribe();
@@ -57,6 +64,15 @@ export function AppProvider({ children }) {
     };
   }, []);
 
+  useEffect(() => {
+    // On mount, check local storage for user
+    const storedUser = storage.get("silvercare_user");
+    if (storedUser) {
+      setUser(storedUser);
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   const login = async (email, password) => {
     try {
       const user = await loginWithEmailPassword(email, password);
@@ -64,8 +80,6 @@ export function AppProvider({ children }) {
         id: user.uid,
         name: user.displayName || email.split("@")[0],
         email: user.email,
-        age: 65, // Default or fetch from profile if available
-        healthConditions: [], // Default or fetch if available
       };
       setUser(userData);
       setIsAuthenticated(true);
@@ -109,8 +123,6 @@ export function AppProvider({ children }) {
         id: user.uid,
         name: user.displayName || user.email.split("@")[0],
         email: user.email,
-        age: 65,
-        healthConditions: [],
       };
       setUser(userData);
       setIsAuthenticated(true);

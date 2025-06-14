@@ -8,6 +8,8 @@ import { VoiceButton } from "../components/voice/VoiceButton";
 import { useApp } from "../context/AppContext";
 import { useVoice } from "../hooks/useVoice";
 import googleIcon from "../assets/google-icon.png";
+import { db } from "../firebase/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 export function Login() {
   const navigate = useNavigate();
@@ -147,16 +149,13 @@ export function Login() {
                 setError("");
                 try {
                   const success = await loginWithGoogle();
-                  // Check if user is new (no age or healthConditions set)
-                  const user = JSON.parse(
-                    localStorage.getItem("silvercare_user")
-                  );
-                  if (
-                    success &&
-                    user &&
-                    (user.age === undefined ||
-                      user.healthConditions?.length === 0)
-                  ) {
+                  const user = JSON.parse(localStorage.getItem("silvercare_user"));
+                  let hasDetails = false;
+                  if (user && user.id) {
+                    const userDoc = await getDoc(doc(db, "users", user.id));
+                    hasDetails = userDoc.exists() && Object.keys(userDoc.data() || {}).length > 0;
+                  }
+                  if (success && user && !hasDetails) {
                     navigate("/user-details");
                   } else if (success) {
                     navigate("/");

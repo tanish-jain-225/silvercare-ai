@@ -50,107 +50,94 @@ export function Profile() {
   if (!user) return null;
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-indigo-50 to-purple-100 flex flex-col items-center justify-center">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 w-full">
-        <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <button
-                onClick={() => navigate('/')}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors mr-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-                aria-label={t('back', 'Back')}
-              >
-                <ArrowLeft size={22} className="text-gray-600" />
-              </button>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-800">{t('profile')}</h1>
-            </div>
-            <Button
-              onClick={() => setIsEditing(!isEditing)}
-              variant="outline"
-              size="sm"
-              icon={Edit}
-              ariaLabel={isEditing ? t('cancel') : t('edit')}
-            >
-              {isEditing ? t('cancel') : t('edit')}
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <section className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-4 py-6">
-        {/* Personal Information */}
-        <Card className="mb-6">
-          <div className="flex items-center mb-4">
-            <User className="text-blue-600 mr-3" size={24} aria-hidden="true" />
-            <h3 className="text-lg font-semibold">{t('personalInfo')}</h3>
-          </div>
-          {isEditing ? (
-            <div className="space-y-4">
-              <Input
-                label={t('name')}
-                value={editedUser?.name || ''}
-                onChange={(e) => setEditedUser(prev => prev ? { ...prev, name: e.target.value } : null)}
+    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-indigo-50 to-purple-100 flex flex-col items-center justify-center pb-32">
+      {/* Profile Card */}
+      <div className="w-full max-w-lg mx-auto mt-8 mb-6 p-6 rounded-3xl shadow-2xl bg-white/90 border border-blue-100 relative animate-fade-in">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative">
+            {user.profileImage ? (
+              <img
+                src={user.profileImage}
+                alt="Profile"
+                className="w-28 h-28 rounded-full object-cover border-4 border-blue-300 shadow-lg bg-white"
               />
-              <Input
-                label={t('email')}
-                value={editedUser?.email || ''}
-                onChange={(e) => setEditedUser(prev => prev ? { ...prev, email: e.target.value } : null)}
-                type="email"
-              />
-              <Input
-                label={t('age')}
-                value={editedUser?.age?.toString() || ''}
-                onChange={(e) => setEditedUser(prev => prev ? { ...prev, age: parseInt(e.target.value) || 0 } : null)}
-                type="number"
-              />
-              <Button onClick={handleSave} className="w-full" ariaLabel={t('save')}>{t('save')}</Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-600">{t('name')}</p>
-                <p className="text-lg font-medium">{user.name}</p>
+            ) : (
+              <div className="w-28 h-28 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-5xl font-bold border-4 border-blue-200 shadow-lg">
+                <User size={56} />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">{t('email')}</p>
-                <p className="text-lg font-medium">{user.email}</p>
-              </div>
-              {user.age && (
-                <div>
-                  <p className="text-sm text-gray-600">{t('age')}</p>
-                  <p className="text-lg font-medium">{user.age} {t('years', 'years')}</p>
-                </div>
-              )}
+            )}
+            <span className="absolute bottom-2 right-2 bg-green-400 border-2 border-white w-5 h-5 rounded-full"></span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mt-2">{user.name}</h2>
+          <p className="text-gray-500 text-lg">{user.email}</p>
+          <div className="flex flex-wrap justify-center gap-3 mt-2">
+            {user.age && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200">
+                <span className="font-semibold">{user.age}</span> {t('years', 'years')}
+              </span>
+            )}
+            {user.gender && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-pink-50 text-pink-700 rounded-full text-sm font-medium border border-pink-200">
+                {user.gender}
+              </span>
+            )}
+          </div>
+          {user.address && (
+            <div className="mt-2 px-4 py-2 bg-gray-50 rounded-xl border border-gray-200 text-gray-700 text-center text-sm max-w-xs shadow-sm">
+              <span className="font-medium text-gray-500">{t('address', 'Address')}: </span>{user.address}
             </div>
           )}
-        </Card>
-
+        </div>
+      </div>
+      {/* Details Section */}
+      <section className="container mx-auto w-full max-w-lg px-4 py-4">
         {/* Health Information */}
-        <Card className="mb-6">
+        <Card className="mb-6 animate-fade-in-up">
           <div className="flex items-center mb-4">
             <Heart className="text-red-600 mr-3" size={24} aria-hidden="true" />
             <h3 className="text-lg font-semibold">{t('healthInfo')}</h3>
           </div>
-          {user.healthConditions && user.healthConditions.length > 0 ? (
+          {user.healthCondition ? (
             <div className="flex flex-wrap gap-2">
-              {user.healthConditions.map((condition, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm"
-                >
-                  {t(condition)}
-                </span>
-              ))}
+              <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">
+                {t(user.healthCondition)}
+              </span>
             </div>
           ) : (
             <p className="text-gray-600">{t('noHealthConditions', 'No health conditions recorded')}</p>
           )}
+          {user.currentMedicalStatus && (
+            <div className="mt-3">
+              <p className="text-sm text-gray-600">{t('currentMedicalStatus', 'Current Medical Status')}</p>
+              <p className="text-lg font-medium">{user.currentMedicalStatus}</p>
+            </div>
+          )}
+          {user.medicalCertificates && (
+            <div className="mt-3">
+              <p className="text-sm text-gray-600">{t('medicalCertificates', 'Medical Certificates')}</p>
+              <a href={user.medicalCertificates} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all">{t('viewCertificate', 'View Certificate')}</a>
+            </div>
+          )}
         </Card>
-
+        {/* Emergency Contacts */}
+        {user.emergencyContacts && user.emergencyContacts.length > 0 && (
+          <Card className="mb-6 animate-fade-in-up">
+            <div className="flex items-center mb-4">
+              <Settings className="text-yellow-600 mr-3" size={24} aria-hidden="true" />
+              <h3 className="text-lg font-semibold">{t('emergencyContacts', 'Emergency Contacts')}</h3>
+            </div>
+            <ul className="space-y-2">
+              {user.emergencyContacts.map((contact, idx) => (
+                <li key={idx} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-yellow-50 rounded-lg px-4 py-2">
+                  <span className="font-medium text-yellow-800">{contact.name}</span>
+                  <span className="text-yellow-700">{contact.number}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
         {/* Language Selection */}
-        <Card className="mb-6">
+        <Card className="mb-6 animate-fade-in-up">
           <div className="space-y-4">
             <div>
               <div className="flex items-center mb-2">
@@ -176,12 +163,11 @@ export function Profile() {
             </div>
           </div>
         </Card>
-
         {/* Logout */}
         <Button
           onClick={handleLogout}
           variant="danger"
-          className="w-full"
+          className="w-full animate-fade-in-up"
           size="lg"
           icon={LogOut}
           ariaLabel={t('logout')}
