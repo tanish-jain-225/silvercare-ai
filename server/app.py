@@ -14,13 +14,25 @@ def favicon():
     return ('', 204)
 
 # Register blueprints under /api prefix
-app.register_blueprint(format_reminder_bp, url_prefix='/api')
-app.register_blueprint(send_emergency_bp, url_prefix='/api')
-app.register_blueprint(chat_bp, url_prefix='/api')
+app.register_blueprint(format_reminder_bp)
+app.register_blueprint(send_emergency_bp)
+app.register_blueprint(chat_bp)
 
 @app.route('/', methods=['GET'])
 def index():
     return "Welcome to the VoiceBuddy AI Assistant API!"
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return "API is running smoothly!", 200
+
+# Error handler for 404 Not Found
+@app.errorhandler(404)
+def not_found(error):
+    return {"error": "Resource not found"}, 404
+# Error handler for 500 Internal Server Error
+
+
 
 if __name__ == '__main__':
     app.run(port=8000, debug=True)
