@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Mic, User, Calendar, Bell } from 'lucide-react';
+import { Home, Mic, User, BookText, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export function BottomNavigation() {
@@ -9,39 +9,43 @@ export function BottomNavigation() {
   const { t } = useTranslation();
   const navItems = [
     { icon: Home, label: t('home'), path: '/home' },
-    { icon: Calendar, label: t('Blog'), path: '/blog' },
+    { icon: BookText, label: t('Blog'), path: '/blog' },
     { icon: Mic, label: t('voiceAssistant'), path: '/ask-queries', isPrimary: true },
     { icon: Bell, label: t('reminders'), path: '/reminders' },
     { icon: User, label: t('profile'), path: '/profile' }
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-md z-40">
-      <div className="flex justify-around items-center max-w-2xl mx-auto w-full px-1 sm:px-4 py-1 sm:py-2">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100/50 shadow-sm z-20">
+      {/* Reduced py-4 to py-2 or py-3 */}
+      <div className="flex justify-between items-center max-w-2xl mx-auto w-full px-3 sm:px-6 py-2">
         {navItems.map(({ icon: Icon, label, path, isPrimary }) => {
           const isActive = location.pathname === path;
           return isPrimary ? (
             <button
               key={path}
               onClick={() => navigate(path)}
-              className="flex flex-col items-center p-2 bg-blue-600 text-white rounded-md shadow-lg w-14 h-14 sm:w-16 sm:h-16 justify-center transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              // Reduced h-20 to h-16 and sm:h-24 to sm:h-20
+              className="flex flex-col items-center p-3 bg-indigo-500/95 backdrop-blur-sm text-white rounded-2xl shadow-lg w-20 h-16 sm:w-24 sm:h-20 justify-center transform hover:scale-105 hover:bg-indigo-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-indigo-200/50 focus:ring-offset-2 focus:ring-offset-white/80"
               aria-label={label}
             >
-              <Icon size={28} />
-              <span className="text-xs hidden sm:block">{label}</span>
+              {/* Reduced icon size from 28 to 24 */}
+              <Icon size={24} className="drop-shadow-sm" />
+              <span className="text-xs mt-1 font-medium hidden sm:block drop-shadow-sm whitespace-nowrap">{label}</span>
             </button>
           ) : (
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`flex flex-col items-center p-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200 ${
-                isActive 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
-              }`}
+              // Reduced h-20 to h-16 and sm:h-24 to sm:h-20
+              className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-indigo-200/50 focus:ring-offset-2 focus:ring-offset-white/80 w-20 h-16 sm:w-24 sm:h-20 justify-center ${isActive
+                ? 'bg-indigo-50/80 text-indigo-600 shadow-sm'
+                : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/60'
+                }`}
             >
-              <Icon size={24} />
-              <span className="text-xs mt-1 font-medium hidden sm:block">{label}</span>
+              {/* Reduced icon size from 24 to 20 */}
+              <Icon size={20} className="drop-shadow-sm" />
+              <span className="text-sm font-semibold mt-1  hidden sm:block whitespace-nowrap">{label}</span>
             </button>
           );
         })}
