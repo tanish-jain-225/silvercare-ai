@@ -6,35 +6,23 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { useVoice } from '../hooks/useVoice';
+import axios from 'axios';
 
 export function Reminders() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { speak } = useVoice();
-  const [reminders, setReminders] = useState([
-    {
-      id: '1',
-      title: 'Take morning medication',
-      time: '08:00',
-      date: '2024-01-15',
-      isActive: true
-    },
-    {
-      id: '2',
-      title: 'Doctor appointment',
-      time: '14:30',
-      date: '2024-01-16',
-      isActive: true
-    }
-  ]);
+  const [reminders, setReminders] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newReminder, setNewReminder] = useState({
     title: '',
     time: '',
     date: ''
   });
+  const [alarmAudio, setAlarmAudio] = useState(null);
+  const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
 
-  const handleAddReminder = () => {
+  const handleAddReminder = async () => {
     if (!newReminder.title || !newReminder.time || !newReminder.date) return;
 
     const reminder = {
@@ -49,6 +37,18 @@ export function Reminders() {
     setNewReminder({ title: '', time: '', date: '' });
     setShowAddForm(false);
     speak('Reminder added successfully');
+
+    // Send reminder data to /remainder endpoint
+    fetch('http://localhost:5000/reminder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: reminder.id,
+        title: reminder.title,
+        date: reminder.date,
+        time: reminder.time
+      })
+    }).catch(() => {});
   };
 
   const handleDeleteReminder = (id) => {
@@ -69,12 +69,70 @@ export function Reminders() {
     });
   };
 
+  // Local notification scheduling
+  React.useEffect(() => {
+    // Request notification permission on mount
+    if (window.Notification && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  React.useEffect(() => {
+    // Clear previous timers
+    let timers = [];
+    reminders.forEach(reminder => {
+      const reminderTime = new Date(`${reminder.date}T${reminder.time}`);
+      const now = new Date();
+      const delay = reminderTime - now;
+      if (delay > 0) {
+        const timer = setTimeout(() => {
+          // Play alarm sound
+          const audio = new Audio('/public/alarm.mp3');
+          setAlarmAudio(audio);
+          setIsAlarmPlaying(true);
+          audio.play();
+          // Show notification
+          if (window.Notification && Notification.permission === 'granted') {
+            new Notification('Alarm', {
+              body: `${reminder.title} at ${reminder.time} on ${reminder.date}`,
+              icon: '/public/voice-search.png'
+            });
+          }
+          // When alarm ends naturally
+          audio.onended = () => setIsAlarmPlaying(false);
+        }, delay);
+        timers.push(timer);
+      }
+    });
+    return () => timers.forEach(timer => clearTimeout(timer));
+  }, [reminders]);
+
+  const handleStopAlarm = () => {
+    if (alarmAudio) {
+      alarmAudio.pause();
+      alarmAudio.currentTime = 0;
+      setIsAlarmPlaying(false);
+    }
+  };
+
   React.useEffect(() => {
     speak('Here are your reminders. You can add new ones or listen to existing reminders.');
   }, [speak]);
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-green-50 to-emerald-100 flex flex-col">
+      {/* Show Stop Alarm button if alarm is playing */}
+      {isAlarmPlaying && (
+        <div className="fixed top-0 left-0 w-full flex justify-center z-50">
+          <button
+            onClick={handleStopAlarm}
+            className="bg-red-600 text-white font-bold px-6 py-3 rounded-b-2xl shadow-lg animate-bounce mt-0"
+            style={{ fontSize: '1.2rem' }}
+          >
+            Stop Alarm
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200 w-full">
         <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-2 sm:px-4 py-3 sm:py-4">
