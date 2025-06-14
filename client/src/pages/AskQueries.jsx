@@ -16,6 +16,8 @@ const sampleQuestions = [
   "How can I improve my sleep quality?",
 ];
 
+const route_endpoint = "http://localhost:8000";
+
 const userId = "default"; // Replace with dynamic user ID in production
 
 export function AskQueries() {
@@ -43,7 +45,7 @@ export function AskQueries() {
     setIsLoading(true); // Start loading
 
     try {
-      const response = await fetch("http://localhost:8000/chat/message", {
+      const response = await fetch(`${route_endpoint}/chat/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: messageToSend, userId }),
@@ -81,7 +83,7 @@ export function AskQueries() {
   const fetchHistory = async () => {
     try {
       const res = await fetch(
-        `http://localhost:8000/chat/history?userId=${userId}`
+        `${route_endpoint}/chat/history?userId=${userId}`
       );
       const data = await res.json();
 

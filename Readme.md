@@ -84,7 +84,7 @@ cd client
 npm run dev
 ```
 
-3. Open your browser and navigate to `http://localhost:5173`
+3. Open your browser and navigate
 
 ## Features
 - Voice command recognition

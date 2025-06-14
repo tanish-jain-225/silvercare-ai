@@ -8,6 +8,8 @@ import { Card } from '../components/ui/Card';
 import { useVoice } from '../hooks/useVoice';
 import axios from 'axios';
 
+const route_endpoint = 'http://localhost:8000'; // Update with your backend URL
+
 export function Reminders() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -26,7 +28,7 @@ export function Reminders() {
     try {
       setIsLoading(true);
       console.log('Fetching reminders...');
-      const response = await fetch('http://localhost:8000/reminders', {
+      const response = await fetch(`${route_endpoint}/reminders`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -67,7 +69,7 @@ export function Reminders() {
     setNewReminder({ title: '', time: '', date: '' });
     speak('Reminder added successfully');
     try {
-      const response = await fetch('http://localhost:8000/reminder-data', {
+      const response = await fetch(`${route_endpoint}/reminder-data`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
@@ -90,7 +92,7 @@ export function Reminders() {
   const handleDeleteReminder = async (createdAt) => {
     try {
       // Send DELETE request to backend
-      const response = await fetch(`http://localhost:8000/reminders/${encodeURIComponent(createdAt)}`, {
+      const response = await fetch(`${route_endpoint}/reminders/${encodeURIComponent(createdAt)}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });

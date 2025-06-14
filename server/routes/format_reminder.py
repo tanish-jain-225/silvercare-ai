@@ -224,7 +224,7 @@ def get_reminders():
         reminders = convert_to_json_friendly(reminders_list)
         response = jsonify({"success": True, "reminders": reminders, "count": len(reminders)})
         # Explicitly set CORS headers to ensure they're applied
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
     except Exception as e:
@@ -261,7 +261,7 @@ def save_reminder_data():
     # Handle preflight OPTIONS request
     if request.method == 'OPTIONS':
         response = jsonify({'status': 'success'})
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
         response.headers.add('Access-Control-Allow-Methods', 'POST')
         return response
@@ -285,7 +285,7 @@ def save_reminder_data():
             response = jsonify({"success": True, "reminder": saved_reminder})
         
         # Explicitly set CORS headers
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Origin', '*')
         return response
     except Exception as e:
         print(f"Error in save_reminder_data: {str(e)}")

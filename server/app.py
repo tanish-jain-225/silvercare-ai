@@ -5,8 +5,8 @@ from routes.send_emergency import send_emergency_bp
 from routes.ask_query import chat_bp
 
 app = Flask(__name__)
-# Enable CORS with specific configuration
-CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"], "supports_credentials": True}})
+# Enable CORS to allow all origins
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Register blueprints
 app.register_blueprint(format_reminder_bp)
