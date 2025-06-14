@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, Blueprint, request, jsonify, Response
 from together import Together
 import requests
 import re
@@ -9,6 +9,8 @@ from bson import ObjectId
 from datetime import datetime
 import json
 
+
+format_reminder_bp = Blueprint('format_reminder', __name__)
 # Custom JSON encoder to handle MongoDB ObjectId
 class MongoJSONEncoder(json.JSONEncoder):
     def default(self, obj):
