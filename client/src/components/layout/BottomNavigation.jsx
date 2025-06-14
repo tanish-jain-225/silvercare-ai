@@ -16,7 +16,7 @@ export function BottomNavigation() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100/50 shadow-sm z-20">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-t border-gray-100/50 dark:border-gray-700/50 shadow-sm z-20">
       {/* Reduced py-4 to py-2 or py-3 */}
       <div className="flex justify-between items-center max-w-2xl mx-auto w-full px-3 sm:px-6 py-2">
         {navItems.map(({ icon: Icon, label, path, isPrimary }) => {
@@ -26,7 +26,7 @@ export function BottomNavigation() {
               key={path}
               onClick={() => navigate(path)}
               // Reduced h-20 to h-16 and sm:h-24 to sm:h-20
-              className="flex flex-col items-center p-3 bg-indigo-500/95 backdrop-blur-sm text-white rounded-2xl shadow-lg w-20 h-16 sm:w-24 sm:h-20 justify-center transform hover:scale-105 hover:bg-indigo-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-indigo-200/50 focus:ring-offset-2 focus:ring-offset-white/80"
+              className="flex flex-col items-center p-3 bg-indigo-500/95 dark:bg-indigo-600/95 backdrop-blur-sm text-white rounded-2xl shadow-lg w-20 h-16 sm:w-24 sm:h-20 justify-center transform hover:scale-105 hover:bg-indigo-600 dark:hover:bg-indigo-700 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-indigo-200/50 dark:focus:ring-indigo-800/50 focus:ring-offset-2 focus:ring-offset-white/80 dark:focus:ring-offset-gray-900/80"
               aria-label={label}
             >
               {/* Reduced icon size from 28 to 24 */}
@@ -38,14 +38,14 @@ export function BottomNavigation() {
               key={path}
               onClick={() => navigate(path)}
               // Reduced h-20 to h-16 and sm:h-24 to sm:h-20
-              className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-indigo-200/50 focus:ring-offset-2 focus:ring-offset-white/80 w-20 h-16 sm:w-24 sm:h-20 justify-center ${isActive
-                ? 'bg-indigo-50/80 text-indigo-600 shadow-sm'
-                : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/60'
+              className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-indigo-200/50 dark:focus:ring-indigo-800/50 focus:ring-offset-2 focus:ring-offset-white/80 dark:focus:ring-offset-gray-900/80 w-20 h-16 sm:w-24 sm:h-20 justify-center ${isActive
+                  ? 'bg-indigo-50/80 dark:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/60 dark:hover:bg-indigo-900/60'
                 }`}
             >
               {/* Reduced icon size from 24 to 20 */}
               <Icon size={20} className="drop-shadow-sm" />
-              <span className="text-sm font-semibold mt-1  hidden sm:block whitespace-nowrap">{label}</span>
+              <span className="text-sm font-semibold mt-1 hidden sm:block whitespace-nowrap">{label}</span>
             </button>
           );
         })}

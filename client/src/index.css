@@ -1,3 +1,168 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* CSS Variables for theme colors */
+:root {
+    /* Light mode variables */
+    --color-background: #ffffff;
+    --color-background-secondary: #f8fafc;
+    --color-background-tertiary: #f1f5f9;
+    --color-surface: #ffffff;
+    --color-surface-secondary: #f8fafc;
+    --color-text-primary: #1f2937;
+    --color-text-secondary: #6b7280;
+    --color-text-tertiary: #9ca3af;
+    --color-border: #e5e7eb;
+    --color-border-secondary: #d1d5db;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+    --color-shadow-strong: rgba(0, 0, 0, 0.15);
+    --color-accent: #3b82f6;
+    --color-accent-hover: #2563eb;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+}
+
+.dark {
+    /* Dark mode variables */
+    --color-background: #0f0f0f;
+    --color-background-secondary: #1a1a1a;
+    --color-background-tertiary: #262626;
+    --color-surface: #1a1a1a;
+    --color-surface-secondary: #262626;
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-tertiary: #9ca3af;
+    --color-border: #374151;
+    --color-border-secondary: #4b5563;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --color-shadow-strong: rgba(0, 0, 0, 0.5);
+    --color-accent: #60a5fa;
+    --color-accent-hover: #3b82f6;
+    --color-success: #34d399;
+    --color-warning: #fbbf24;
+    --color-error: #f87171;
+    --color-info: #60a5fa;
+}
+
+/* Global theme classes for body */
+body.light-theme {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+}
+
+body.dark-theme {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+}
+
+/* Smooth transitions for theme switching */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Prevent transition on page load */
+*:not(.theme-transition) {
+    transition: none;
+}
+
+/* Theme transition class for smooth switching */
+.theme-transition * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: var(--color-surface);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-tertiary);
+}
+
+/* Global utility classes for theme-aware styling */
+@layer components {
+    .theme-bg-primary {
+        @apply bg-white dark:bg-gray-900;
+    }
+
+    .theme-bg-secondary {
+        @apply bg-gray-50 dark:bg-gray-800;
+    }
+
+    .theme-bg-tertiary {
+        @apply bg-gray-100 dark:bg-gray-700;
+    }
+
+    .theme-text-primary {
+        @apply text-gray-900 dark:text-gray-100;
+    }
+
+    .theme-text-secondary {
+        @apply text-gray-700 dark:text-gray-300;
+    }
+
+    .theme-text-tertiary {
+        @apply text-gray-500 dark:text-gray-400;
+    }
+
+    .theme-border {
+        @apply border-gray-200 dark:border-gray-700;
+    }
+
+    .theme-border-secondary {
+        @apply border-gray-300 dark:border-gray-600;
+    }
+
+    .theme-card {
+        @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm;
+    }
+
+    .theme-input {
+        @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent;
+    }
+
+    .theme-button-primary {
+        @apply bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-800;
+    }
+
+    .theme-button-secondary {
+        @apply bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600;
+    }
+
+    .theme-button-outline {
+        @apply border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700;
+    }
+}
+
+/* Ensure all form elements inherit theme */
+input,
+textarea,
+select {
+    @apply theme-input;
+}
+
+/* Ensure all buttons inherit theme by default */
+button {
+    @apply transition-colors duration-200;
+}
+
+/* Theme-aware gradients */
+.theme-gradient-primary {
+    @apply bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800;
+}
+
+.theme-gradient-secondary {
+    @apply bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-700;
+}

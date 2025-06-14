@@ -7,6 +7,9 @@ import {
   useLocation
 } from "react-router-dom";
 import { AppProvider, useApp } from "./context/AppContext";
+import { ThemeProvider } from "./context/ThemeContext";
+import { RootLayout } from "./components/layout/RootLayout";
+import { ThemeDebugger } from "./components/ui/ThemeDebugger";
 import { LanguageSelection } from "./pages/LanguageSelection";
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
@@ -26,7 +29,11 @@ import "./utils/i18n";
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useApp();
   // While auth state is loading, don't render anything (or show a loader)
-  if (loading) return <div className="flex-1 flex items-center justify-center">Loading...</div>;
+  if (loading) return (
+    <div className="flex-1 flex items-center justify-center theme-bg-primary theme-text-primary">
+      Loading...
+    </div>
+  );
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
@@ -48,92 +55,98 @@ function AppRoutes() {
   }
 
   return (
-    <>
+    <RootLayout>
       {!shouldHideLayout && <Header />}
-      <Suspense fallback={<div className="flex-1 flex items-center justify-center">Loading...</div>}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="/language-selection" element={<LanguageSelection />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route
-          path="/user-details"
-          element={
-            <ProtectedRoute>
-              <UserDetails />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/home"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/blog"
-          element={
-            <ProtectedRoute>
-              <BlogSection />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/reminders"
-          element={
-            <ProtectedRoute>
-              <Reminders />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/emergency"
-          element={
-            <ProtectedRoute>
-              <Emergency />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ask-queries"
-          element={
-            <ProtectedRoute>
-              <AskQueries />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        {/* Catch-all: redirect unknown paths to home */}
-        <Route path="*" element={<Navigate to="/home" replace />} />
-      </Routes>
+      <Suspense fallback={
+        <div className="flex-1 flex items-center justify-center theme-bg-primary theme-text-primary">
+          Loading...
+        </div>
+      }>
+        <Routes>
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/language-selection" element={<LanguageSelection />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/user-details"
+            element={
+              <ProtectedRoute>
+                <UserDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/blog"
+            element={
+              <ProtectedRoute>
+                <BlogSection />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reminders"
+            element={
+              <ProtectedRoute>
+                <Reminders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/emergency"
+            element={
+              <ProtectedRoute>
+                <Emergency />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ask-queries"
+            element={
+              <ProtectedRoute>
+                <AskQueries />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          {/* Catch-all: redirect unknown paths to home */}
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
       </Suspense>
       {!shouldHideLayout && <BottomNavigation />}
-    </>
+    </RootLayout>
   );
 }
 
 export default function App() {
   return (
     <ErrorBoundary>
-      <AppProvider>
-        <Router
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <AppRoutes />
-        </Router>
-      </AppProvider>
+      <ThemeProvider>
+        <AppProvider>
+          <Router
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <AppRoutes />
+          </Router>
+        </AppProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
