@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useVoice } from '../hooks/useVoice';
 import { useApp } from '../context/AppContext';
+import { useLocation } from '../hooks/useLocation';
 import LocationComponent from '../components/location/LocationComponet'
 
 export function Emergency() {
@@ -13,6 +14,7 @@ export function Emergency() {
   const { t } = useTranslation();
   const { speak } = useVoice();
   const { user } = useApp();
+  const { location, loading: locationLoading, error: locationError } = useLocation();
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
 
   const emergencyContacts = [
@@ -22,13 +24,30 @@ export function Emergency() {
   ];
 
   const handleEmergencyCall = () => {
+    // Use actual location if available, otherwise use fallback coordinates
+    const currentLocation = location || { lat: 28.6139, lng: 77.2090 };
+
+    console.log('Sending emergency call with location:', currentLocation);
+
     fetch('http://127.0.0.1:8000/send-emergency', {
-      method: "POST", body: JSON.stringify({
+      method: "POST",
+      body: JSON.stringify({
         "contacts": ["+919222001998", "+919321242515", "+918104439075"],
-        "latitude": 28.6139,
-        "longitude": 77.2090
-      }), headers: { "Content-Type": "application/json" }
-    })
+        "latitude": currentLocation.lat,
+        "longitude": currentLocation.lng
+      }),
+      headers: { "Content-Type": "application/json" }
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    }).then(data => {
+      console.log('Emergency call sent successfully:', data);
+    }).catch(error => {
+      console.error('Error sending emergency call:', error);
+    });
+
     setIsEmergencyActive(true);
     speak('Emergency help is being activated. Stay calm, help is on the way.');
 
@@ -68,7 +87,6 @@ export function Emergency() {
         </div>
       </div>
 
-
       {/* Content */}
       <div className="container mx-auto w-full max-w-2xl px-4 py-6 flex-1">
         {/* Emergency Button */}
@@ -85,7 +103,7 @@ export function Emergency() {
               <p className="text-white/90 mb-6">Press the button below for emergency assistance</p>
               <Button
                 onClick={handleEmergencyCall}
-                disabled={isEmergencyActive}
+                disabled={isEmergencyActive || locationLoading}
                 className={`relative z-10 ${isEmergencyActive
                   ? 'bg-white/90 text-red-600'
                   : 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700'
@@ -99,6 +117,14 @@ export function Emergency() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Getting Help...
+                  </span>
+                ) : locationLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Getting Location...
                   </span>
                 ) : (
                   t('Get Help')
@@ -114,14 +140,33 @@ export function Emergency() {
             <div className="flex items-center justify-center w-12 h-12 bg-blue-100/50 rounded-full mr-4">
               <MapPin className="text-blue-600" size={24} />
             </div>
-            <div>
+            <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-800 mb-2">Your Current Location</h3>
-              <p className="text-gray-600">
-                Location sharing is <span className="font-medium text-green-600">active</span> for emergency services.
-                Your approximate location will be automatically shared when you request help.
-              </p>
+              {locationLoading ? (
+                <p className="text-gray-600">
+                  <span className="font-medium text-yellow-600">Loading location...</span>
+                  Please allow location access for emergency services.
+                </p>
+              ) : locationError ? (
+                <p className="text-gray-600">
+                  <span className="font-medium text-red-600">Location unavailable</span>
+                  Please enable location permissions for emergency services.
+                </p>
+              ) : location ? (
+                <p className="text-gray-600">
+                  Location sharing is <span className="font-medium text-green-600">active</span> for emergency services.
+                  <br />
+                  <span className="text-sm text-gray-500">
+                    Coordinates: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+                  </span>
+                </p>
+              ) : (
+                <p className="text-gray-600">
+                  <span className="font-medium text-orange-600">Location not available</span>
+                  Using fallback coordinates for emergency services.
+                </p>
+              )}
             </div>
-
           </div>
           <div className='pt-3'>
             <LocationComponent />
