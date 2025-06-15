@@ -6,14 +6,22 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# Setup MongoDB client and collection
-mongo_client = MongoClient(os.getenv("MONGO_URI"))
-db = mongo_client["assistant_db"]
-collection = db["chat_history"]
+# MongoDB connection
+mongo_url = os.getenv("MONGO_URI")
+if not mongo_url:
+    raise RuntimeError("MONGO_URI (or MONGO_URL) environment variable is required")
+mongo_client = MongoClient(mongo_url)
+# Optional collection override via env
+db_name = os.getenv("DB_NAME", "assistant_db")
+collection_name = os.getenv("CHAT_COLLECTION", "chat_history")
+db = mongo_client[db_name]
+collection = db[collection_name]
 
 # LLM client
-client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
+api_key = os.getenv("TOGETHER_API_KEY")
+if not api_key:
+    raise RuntimeError("TOGETHER_API_KEY environment variable is required")
+client = Together(api_key=api_key)
 
 chat_bp = Blueprint('chat', __name__)
 
