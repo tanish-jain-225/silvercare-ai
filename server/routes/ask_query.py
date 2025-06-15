@@ -65,7 +65,7 @@ def get_chat_history():
 @chat_bp.route('/chat/message', methods=['POST'])
 def send_message():
     data = request.get_json()
-    user_message = data.get('message')
+    user_message = data.get('input')
     user_id = data.get('userId')
 
     if not user_message:

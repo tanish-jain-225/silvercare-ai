@@ -70,6 +70,10 @@ else:
     db = mongo_client['assistant_db']
     reminders_collection = db['reminders']
 
+# Add chat history collection for message logging (like ask_query.py)
+chat_collection_name = os.getenv("CHAT_COLLECTION", "chat_history")
+chat_collection = db[chat_collection_name]
+
 @format_reminder_bp.route('/format-reminder', methods=['POST', 'OPTIONS'])
 def format_reminder():
     # Handle preflight OPTIONS request
@@ -85,6 +89,7 @@ def format_reminder():
     
     # Important - ensure we have a JSON body with 'input' field or Voice Input
     user_input = request.json.get('input', '')
+    user_id = request.json.get('userId')
     # Ensure we have input to process
     if not user_input:
         return jsonify({"error": "No input provided. Please send JSON with 'input' field."}), 400
@@ -116,7 +121,7 @@ def format_reminder():
             array_text = next(group for group in array_match.groups() if group is not None)
             reminders_array = pyjson.loads(array_text)
             if isinstance(reminders_array, list) and len(reminders_array) > 0:
-                return process_reminders(reminders_array)
+                return process_reminders(reminders_array, user_id)
     except Exception as e:
         print(f"Error extracting array: {str(e)}")
     
@@ -142,17 +147,34 @@ def format_reminder():
                 return jsonify({"error": "Missing time in parsed reminder"}), 400
                 
             post_data = {"id": id, "title": title, "date": date, "time": time}
-              # Save to MongoDB and get JSON-safe version
-            saved_reminder = save_to_mongodb(post_data)
+            saved_reminder = save_to_mongodb(post_data, user_id)
             
-            return jsonify({"success": True, "reminder": saved_reminder})
+            # Save message to chat history (like /chat/message)
+            try:
+                history_doc = chat_collection.find_one({"userId": user_id})
+                history = history_doc.get("history", []) if history_doc else []
+                user_msg = {
+                    "role": "user",
+                    "content": user_input,
+                    "createdAt": datetime.now().isoformat()
+                }
+                history.append(user_msg)
+                chat_collection.update_one(
+                    {"userId": user_id},
+                    {"$set": {"history": history}},
+                    upsert=True
+                )
+            except Exception as e:
+                print(f"Error saving message history: {e}")
+            
+            return jsonify({"success": True, "reminder": saved_reminder, "message": "Your reminder on this time is set and you can see your reminders in the reminders page."})
         except Exception as e:
             return jsonify({"error": "Failed to parse or post JSON", "details": str(e), "raw": content}), 400
     return jsonify({"error": "No JSON found in LLM response", "raw": content}), 400
 
 
 
-def process_reminders(reminders_list):
+def process_reminders(reminders_list, user_id=None):
     """Process multiple reminders and save them to MongoDB"""
     results = []
     errors = []
@@ -172,7 +194,7 @@ def process_reminders(reminders_list):
             reminder_data = {"id": id, "title": title, "date": date, "time": time}
             
             # Save to MongoDB and get JSON-safe version
-            saved_reminder = save_to_mongodb(reminder_data)
+            saved_reminder = save_to_mongodb(reminder_data, user_id)
             
             results.append(saved_reminder)
         except Exception as e:
@@ -187,11 +209,12 @@ def process_reminders(reminders_list):
         "success": True,
         "reminders": results,
         "count": len(results),
-        "errors": errors if errors else None
+        "errors": errors if errors else None,
+        "message": "Your reminder is set and you can see your reminders in the reminders page."
     })
 
-def save_to_mongodb(reminder):
-    """Save a reminder to MongoDB"""
+def save_to_mongodb(reminder, user_id=None):
+    """Save a reminder to MongoDB, with userId if provided"""
     # Create a copy to avoid modifying the original
     reminder_to_save = reminder.copy()
     
@@ -199,7 +222,8 @@ def save_to_mongodb(reminder):
     now = datetime.now()
     reminder_to_save['created_at'] = now
     reminder_to_save['updated_at'] = now
-    
+    if user_id:
+        reminder_to_save['userId'] = user_id
     # Insert into MongoDB
     result = reminders_collection.insert_one(reminder_to_save)
     inserted_id = result.inserted_id
