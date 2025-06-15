@@ -9,6 +9,8 @@ import { useApp } from '../context/AppContext';
 import { useLocation } from '../hooks/useLocation';
 import LocationComponent from '../components/location/LocationComponet'
 
+const route_endpoint = 'http://localhost:8000'; // Update with your backend URL
+
 export default function Emergency() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -70,7 +72,7 @@ export default function Emergency() {
 
     console.log('Sending emergency call with location:', currentLocation);
 
-    fetch('http://127.0.0.1:8000/send-emergency', {
+    fetch(`${route_endpoint}/send-emergency`, {
       method: "POST",
       body: JSON.stringify({
         "contacts": ["+919222001998", "+919321242515", "+918104439075"],
