@@ -5,20 +5,23 @@ from datetime import datetime, timedelta, timezone
 import os
 from dotenv import load_dotenv
 
-# Load environment
+# Load environment variables
 load_dotenv()
-# MongoDB connection with fallback
+
+# MongoDB connection
 mongo_url = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
 if not mongo_url:
     print("WARNING: No MONGO_URI/MONGO_URL set; defaulting to localhost:27017")
     mongo_url = "mongodb://localhost:27017"
 mongo_client = MongoClient(mongo_url)
-# Setup DB and collection
+
+# Database and collection setup
 db_name = os.getenv("DB_NAME", "assistant_db")
 collection_name = os.getenv("CHAT_COLLECTION", "chat_history")
 db = mongo_client[db_name]
 collection = db[collection_name]
-# LLM client with fallback key
+
+# LLM API key setup
 api_key = os.getenv("TOGETHER_API_KEY")
 if not api_key:
     print("WARNING: No TOGETHER_API_KEY set; using default demo key")
@@ -27,37 +30,8 @@ client = Together(api_key=api_key)
 
 chat_bp = Blueprint('chat', __name__)
 
-
-@chat_bp.route('/chat/history', methods=['GET'])
-def get_chat_history():
-    user_id = request.args.get("userId", default="default")
-    history_doc = collection.find_one({"userId": user_id})
-
-    if not history_doc or "history" not in history_doc:
-        return jsonify({"history": []})
-
-    # Get only chats from the last 24 hours
-    twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
-
-    recent_history = [
-        msg for msg in history_doc["history"][1:]  # Skip system prompt
-        if msg.get("createdAt") and datetime.fromisoformat(msg["createdAt"]) > twenty_four_hours_ago
-    ]
-
-    return jsonify({"history": recent_history})
-
-
-@chat_bp.route('/chat/message', methods=['POST'])
-def send_message():
-    data = request.get_json()
-    user_message = data.get('message')
-    user_id = data.get('userId')
-
-    if not user_message:
-        return jsonify({"error": "No message provided"}), 400
-
-    # Define the assistant's tone and behavior
-    system_prompt = """You are a compassionate and knowledgeable virtual health assistant. Your primary role is to help patients, especially elderly users, understand their medical concerns in a simple, calm, and reassuring way.
+# Dynamic system prompt (injected at inference time only)
+SYSTEM_PROMPT = """You are a compassionate and knowledgeable virtual health assistant. Your primary role is to help patients, especially elderly users, understand their medical concerns in a simple, calm, and reassuring way.
 Speak slowly and clearly using plain, everyday language — no medical jargon unless it's explained.
 Keep your answers highly concise and to the point, ideally under 100 words.
 Always answer in a warm, conversational tone like you're gently explaining something to a grandparent.
@@ -70,47 +44,72 @@ Instead of "Hypertension", say "high blood pressure"
 Instead of "Type 2 Diabetes", say "a kind of diabetes that often happens with age"
 Do not include links or suggest websites. Just speak directly and clearly."""
 
-    # Load or initialize chat history
+@chat_bp.route('/chat/history', methods=['GET'])
+def get_chat_history():
+    user_id = request.args.get("userId", default="default")
     history_doc = collection.find_one({"userId": user_id})
-    chat_history = history_doc["history"] if history_doc else [
-        {
-            "role": "system",
-            "content": system_prompt,
-            "createdAt": datetime.now(timezone.utc).isoformat()
-        }
+
+    if not history_doc or "history" not in history_doc:
+        return jsonify({"history": []})
+
+    # Only return messages from the last 24 hours
+    twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
+    recent_history = [
+        msg for msg in history_doc["history"]
+        if msg.get("createdAt") and datetime.fromisoformat(msg["createdAt"]) > twenty_four_hours_ago
     ]
 
-    # Append user's message
+    return jsonify({"history": recent_history})
+
+@chat_bp.route('/chat/message', methods=['POST'])
+def send_message():
+    data = request.get_json()
+    user_message = data.get('message')
+    user_id = data.get('userId')
+
+    if not user_message:
+        return jsonify({"error": "No message provided"}), 400
+
+    # Fetch user chat history
+    history_doc = collection.find_one({"userId": user_id})
+    history = history_doc.get("history", []) if history_doc else []
+
+    # Append current user message
     user_msg = {
         "role": "user",
         "content": user_message,
         "createdAt": datetime.now(timezone.utc).isoformat()
     }
-    chat_history.append(user_msg)
+    history.append(user_msg)
 
-    # Generate assistant's reply from LLM
+    # Build full prompt for the LLM (include dynamic system prompt at the top)
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}] + [
+        {"role": msg["role"], "content": msg["content"]} for msg in history
+    ]
+
+    # Get assistant reply
     response = client.chat.completions.create(
         model="deepseek-ai/DeepSeek-V3",
-        messages=chat_history
+        messages=messages
     )
     reply = response.choices[0].message.content.strip()
 
-
+    # Append assistant response
     assistant_msg = {
         "role": "assistant",
         "content": reply,
         "createdAt": datetime.now(timezone.utc).isoformat()
     }
-    chat_history.append(assistant_msg)
+    history.append(assistant_msg)
 
-
+    # Save updated history (excluding system prompt)
     collection.update_one(
         {"userId": user_id},
-        {"$set": {"history": chat_history}},
+        {"$set": {"history": history}},
         upsert=True
     )
 
     return jsonify({
         "reply": reply,
-        "history": chat_history[1:]  # Exclude the system prompt
+        "history": history
     })

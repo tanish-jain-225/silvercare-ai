@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Send, Pause } from "lucide-react";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
@@ -24,6 +25,7 @@ export function AskQueries() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { speak, stop, isSpeaking } = useVoice();
+  const endOfMessagesRef = useRef(null);
 
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -114,6 +116,11 @@ export function AskQueries() {
   useEffect(() => {
     fetchHistory();
   }, [speak, t]);
+  useEffect(() => {
+    if (endOfMessagesRef.current) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
@@ -159,6 +166,7 @@ export function AskQueries() {
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
             </div>
           )}
+          <div ref={endOfMessagesRef} />
         </div>
 
         <div className="flex items-end gap-2">
