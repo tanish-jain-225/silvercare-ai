@@ -13,7 +13,7 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 def favicon():
     return ('', 204)
 
-# Register blueprints under /api prefix
+# Register blueprints at root paths
 app.register_blueprint(format_reminder_bp)
 app.register_blueprint(send_emergency_bp)
 app.register_blueprint(chat_bp)
@@ -30,9 +30,9 @@ def health_check():
 @app.errorhandler(404)
 def not_found(error):
     return {"error": "Resource not found"}, 404
-# Error handler for 500 Internal Server Error
-
-
+@app.errorhandler(500)
+def internal_error(error):
+    return {"error": "Internal Server Error"}, 500
 
 if __name__ == '__main__':
     app.run(port=8000, debug=True)
