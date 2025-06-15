@@ -203,7 +203,7 @@ def format_reminder():
             except Exception as e:
                 print(f"Error saving message history: {e}")
             
-            return jsonify({"success": True, "reminder": saved_reminder, "message": "Your reminder on this time is set and you can see your reminders in the reminders page."})
+            return jsonify({"success": True, "reminders": [saved_reminder], "count": 1, "message": "Your reminder on this time is set and you can see your reminders in the reminders page."})
         except Exception as e:
             return jsonify({"error": "Failed to parse or post JSON", "details": str(e), "raw": content}), 400
     return jsonify({"error": "No JSON found in LLM response", "raw": content}), 400
@@ -370,7 +370,7 @@ def save_reminder_data():
             response = jsonify({"success": True, "reminders": results, "count": len(results)})
         else:
             saved_reminder = save_to_mongodb(reminder_data)
-            response = jsonify({"success": True, "reminder": saved_reminder})
+            response = jsonify({"success": True, "reminders": [saved_reminder], "count": 1})
         
         # Explicitly set CORS headers
         response.headers.add('Access-Control-Allow-Origin', '*')

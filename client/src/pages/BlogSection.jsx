@@ -44,9 +44,11 @@ export function BlogSection() {
           <p>Loading blogs...</p>
         ) : blogError ? (
           <p className="text-red-600">Error loading blogs.</p>
+        ) : blogs.length === 0 ? (
+          <p className="text-gray-500">No blogs available.</p>
         ) : (
           <div className="flex flex-wrap -mx-2">
-            {blogs.map(blog => (
+            {blogs.filter(blog => blog.cover_image).map(blog => (
               <div key={blog.id} className="w-full sm:w-1/2 lg:w-1/3 px-2 mb-4">
                 <Card className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col">
                   <img
