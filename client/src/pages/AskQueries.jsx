@@ -223,7 +223,7 @@ export function AskQueries() {
   }, [messages]);
 
   return (
-    <div className="h-[89vh] bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col">
+    <div className="h-[90vh] bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col">
       {/* Main Content */}
       <div className="flex-1 flex flex-col max-w-7xl max-h-[90vh] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Page Title */}
@@ -262,7 +262,7 @@ export function AskQueries() {
               animate={{ y: 0 }}
               exit={{ y: "-120%" }}
               staggerDuration={0.025}
-              splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+              splitLevelClassName="overflow-hidden"
               transition={{
                 type: "spring",
                 damping: 30,
