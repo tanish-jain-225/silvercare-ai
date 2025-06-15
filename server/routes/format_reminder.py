@@ -1,20 +1,5 @@
 from flask import Blueprint, request, jsonify, Response
-try:
-    from together import Together
-except ImportError:
-    # Fallback if together import fails
-    class Together:
-        def __init__(self, api_key):
-            self.api_key = api_key
-        def chat(self):
-            return self
-        def completions(self):
-            return self
-        def create(self, **kwargs):
-            # Mock response
-            class MockResponse:
-                choices = [type('obj', (object,), {'message': type('obj', (object,), {'content': '{"error": "Together API not available"}'})()})]
-            return MockResponse()
+from together import Together
 import requests
 import re
 import json as pyjson
