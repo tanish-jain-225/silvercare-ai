@@ -104,30 +104,16 @@ def send_message():
     history.append(assistant_msg)
 
     # Save updated history (excluding system prompt)
-    collection.update_one(
-        {"userId": user_id},
-        {"$set": {"history": history}},
-        upsert=True
-    )
-
-    if "remind" in user_message.lower() or "reminder" in user_message.lower():
-        try:
-            reminder_resp = requests.post(
-                "http://localhost:8000/format-reminder",  # or full URL if hosted remotely
-                json={"input": user_message},
-                timeout=5
-            )
-            reminder_data = reminder_resp.json()
-            if reminder_resp.status_code == 200 and reminder_data.get("success"):
-                reply += "\n\nI've also set a reminder for you."
-            elif "reminder" in user_message.lower():
-                reply += "\n\nI tried setting a reminder, but there was a problem. Please check the date or time."
-
-        except Exception as e:
-            print(f"Reminder API error: {e}")
-            reply += "\n\nI couldn't set the reminder right now due to a technical issue."
+    if history_doc:
+        collection.update_one(
+            {"userId": user_id},
+            {"$set": {"history": history}},
+            upsert=True
+        )
+    else:
+        collection.insert_one({"userId": user_id, "history": history})
 
     return jsonify({
-        "reply": reply,
-        "history": history
+        "success": True,
+        "message": reply,
     })

@@ -129,7 +129,7 @@ def format_reminder():
             array_text = next(group for group in array_match.groups() if group is not None)
             reminders_array = pyjson.loads(array_text)
             if isinstance(reminders_array, list) and len(reminders_array) > 0:
-                return process_reminders(reminders_array, user_id)
+                return process_reminders(reminders_array, user_id, user_input)
     except Exception as e:
         print(f"Error extracting array: {str(e)}")
     
@@ -141,7 +141,6 @@ def format_reminder():
             json_text = next(group for group in match.groups() if group is not None)
             reminder_json = pyjson.loads(json_text)
             # Ensure the JSON matches the backend format with all required fields
-            id = reminder_json.get('id') or str(hash(user_input))
             title = reminder_json.get('title') or 'New Reminder'
             date = reminder_json.get('date') or dt_date.today().strftime('%Y-%m-%d')
             time = reminder_json.get('time')
@@ -150,7 +149,7 @@ def format_reminder():
             if not time:
                 return jsonify({"error": "Missing time in parsed reminder"}), 400
                 
-            post_data = {"id": id, "title": title, "date": date, "time": time}
+            post_data = {"title": title, "date": date, "time": time}
             saved_reminder = save_to_mongodb(post_data, user_id)
             
             # Save message to chat history (like /chat/message)
@@ -163,11 +162,44 @@ def format_reminder():
                     "createdAt": datetime.now().isoformat()
                 }
                 history.append(user_msg)
+                assistant_msg = {
+                    "role": "assistant",
+                    "content": "Your reminder on this time is set and you can see your reminders in the reminders page.",
+                    "createdAt": datetime.now().isoformat()
+                }
+                history.append(assistant_msg)
                 chat_collection.update_one(
                     {"userId": user_id},
                     {"$set": {"history": history}},
                     upsert=True
                 )
+            except Exception as e:
+                print(f"Error saving message history: {e}")
+            
+            response_message = "Your reminder on this time is set and you can see your reminders in the reminders page."
+            try:
+                history_doc = chat_collection.find_one({"userId": user_id})
+                history = history_doc.get("history", []) if history_doc else []
+                user_msg = {
+                    "role": "user",
+                    "content": user_input,
+                    "createdAt": datetime.now().isoformat()
+                }
+                history.append(user_msg)
+                assistant_msg = {
+                    "role": "assistant",
+                    "content": response_message,
+                    "createdAt": datetime.now().isoformat()
+                }
+                history.append(assistant_msg)
+                if history_doc:
+                    chat_collection.update_one(
+                        {"userId": user_id},
+                        {"$set": {"history": history}},
+                        upsert=True
+                    )
+                else:
+                    chat_collection.insert_one({"userId": user_id, "history": history})
             except Exception as e:
                 print(f"Error saving message history: {e}")
             
@@ -178,12 +210,38 @@ def format_reminder():
 
 
 
-def process_reminders(reminders_list, user_id=None):
-    """Process multiple reminders and save them to MongoDB"""
+def process_reminders(reminders_list, user_id=None, user_input=None):
     results = []
     errors = []
     today_str = dt_date.today().strftime('%Y-%m-%d')
-    
+    response_message = "Your reminder is set and you can see your reminders in the reminders page."
+    # Save user message to chat history (create doc if not exists)
+    if user_id and user_input:
+        try:
+            history_doc = chat_collection.find_one({"userId": user_id})
+            history = history_doc.get("history", []) if history_doc else []
+            user_msg = {
+                "role": "user",
+                "content": user_input,
+                "createdAt": datetime.now().isoformat()
+            }
+            history.append(user_msg)
+            assistant_msg = {
+                "role": "assistant",
+                "content": response_message,
+                "createdAt": datetime.now().isoformat()
+            }
+            history.append(assistant_msg)
+            if history_doc:
+                chat_collection.update_one(
+                    {"userId": user_id},
+                    {"$set": {"history": history}},
+                    upsert=True
+                )
+            else:
+                chat_collection.insert_one({"userId": user_id, "history": history})
+        except Exception as e:
+            print(f"Error saving message history: {e}")
     for reminder in reminders_list:
         try:
             # Extract and validate fields
@@ -209,13 +267,12 @@ def process_reminders(reminders_list, user_id=None):
     
     if not results:
         return jsonify({"error": "No valid reminders found", "details": errors}), 400
-        
     return jsonify({
         "success": True,
         "reminders": results,
         "count": len(results),
         "errors": errors if errors else None,
-        "message": "Your reminder is set and you can see your reminders in the reminders page."
+        "message": response_message
     })
 
 def save_to_mongodb(reminder, user_id=None):
