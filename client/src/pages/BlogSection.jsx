@@ -6,6 +6,19 @@ import { Card } from '../components/ui/Card';
 import { useVoice } from '../hooks/useVoice';
 import { InterestSelectionModal } from '../components/InterestSelectionModal';
 import { BlogCard } from '../components/BlogCard';
+
+// Define CSS for the fade-in animation
+const fadeInAnimation = document.createElement('style');
+fadeInAnimation.innerHTML = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+`;
+document.head.appendChild(fadeInAnimation);
 import {
   generateUserId,
   hasCompletedInterestSelection,
@@ -19,15 +32,17 @@ export function BlogSection() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { speak } = useVoice();
-
   // State management
   const [articles, setArticles] = useState([]);
+  const [displayedArticles, setDisplayedArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userInterests, setUserInterests] = useState([]);
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(0);
+  const [allImagesLoaded, setAllImagesLoaded] = useState(false);
 
   // User ID management
   const [userId] = useState(() => generateUserId());
@@ -91,24 +106,113 @@ export function BlogSection() {
       await fetchNewsByInterests(defaultInterests);
     }
   };
-
   const fetchNewsByInterests = async (interests) => {
     try {
       setLoading(true);
       setError(null);
+      setAllImagesLoaded(false);
+      setImagesLoaded(0);
 
-      const newsArticles = await newsAPI.fetchNewsWithFallback(interests);
-      setArticles(newsArticles);
-
+      // Get random news across multiple categories for variety
+      const randomInterests = [...interests];
+      // Add some default categories for more variety if user selected few interests
+      ['technology', 'business', 'health', 'entertainment'].forEach(interest => {
+        if (!randomInterests.includes(interest)) {
+          randomInterests.push(interest);
+        }
+      });
+      
+      // Shuffle interests for randomness
+      const shuffledInterests = randomInterests.sort(() => Math.random() - 0.5);
+      
+      // Fetch more articles than we need to ensure we have enough with images
+      const allNewsArticles = await newsAPI.fetchNewsWithFallback(shuffledInterests);
+      
+      // Add index for animation delay and shuffle articles
+      const articlesWithIndex = allNewsArticles
+        .filter(article => article.urlToImage) // Only keep articles with images
+        .map((article, index) => ({ ...article, animationIndex: index }));
+        
+      // Randomize articles
+      const shuffledArticles = articlesWithIndex.sort(() => Math.random() - 0.5);
+      
+      // Store all articles but don't display yet
+      setArticles(shuffledArticles);
+      
+      // Set a minimum loading time (3 seconds)
+      setTimeout(() => {
+        // After minimum loading time, start preloading images
+        preloadArticleImages(shuffledArticles);
+      }, 3000);
+      
     } catch (error) {
       console.error('Error fetching news:', error);
       setError('Failed to fetch news articles. Please try again.');
 
       // Provide fallback articles
-      setArticles(getFallbackArticles());
-    } finally {
-      setLoading(false);
+      const fallbackArticles = getFallbackArticles();
+      setArticles(fallbackArticles);
+      
+      // Still show loading for consistency
+      setTimeout(() => {
+        setLoading(false);
+        setDisplayedArticles(fallbackArticles);
+      }, 3000);
     }
+  };
+  
+  // Preload images to avoid broken layouts
+  const preloadArticleImages = (articles) => {
+    // Limit to 18 articles max
+    const limitedArticles = articles.slice(0, 18);
+    const totalImagesToLoad = limitedArticles.length;
+    
+    if (totalImagesToLoad === 0) {
+      setLoading(false);
+      setAllImagesLoaded(true);
+      return;
+    }
+    
+    let loadedCount = 0;
+    
+    limitedArticles.forEach(article => {
+      if (!article.urlToImage) {
+        loadedCount++;
+        setImagesLoaded(loadedCount);
+        if (loadedCount >= totalImagesToLoad) {
+          finishLoading(limitedArticles);
+        }
+        return;
+      }
+      
+      const img = new Image();
+      img.onload = () => {
+        loadedCount++;
+        setImagesLoaded(loadedCount);
+        if (loadedCount >= totalImagesToLoad) {
+          finishLoading(limitedArticles);
+        }
+      };
+      img.onerror = () => {
+        // Replace with placeholder for failed images
+        article.urlToImage = 'https://via.placeholder.com/800x400?text=News';
+        loadedCount++;
+        setImagesLoaded(loadedCount);
+        if (loadedCount >= totalImagesToLoad) {
+          finishLoading(limitedArticles);
+        }
+      };
+      img.src = article.urlToImage;
+    });
+  };
+  
+  const finishLoading = (articles) => {
+    // Show articles with a slight delay to ensure smooth transition
+    setTimeout(() => {
+      setDisplayedArticles(articles);
+      setLoading(false);
+      setAllImagesLoaded(true);
+    }, 500);
   };
 
   const handleSaveInterests = async (selectedInterests) => {
@@ -149,43 +253,67 @@ export function BlogSection() {
       setRefreshing(false);
     }
   };
-
   const getFallbackArticles = () => {
-    return [
-      {
-        source: { id: null, name: "TechCrunch" },
-        author: "John Smith",
-        title: "Latest Advances in AI Technology for 2025",
-        description: "Exploring the cutting-edge developments in artificial intelligence that are shaping our future in unexpected ways.",
-        url: "https://techcrunch.com/example",
-        urlToImage: "https://via.placeholder.com/800x400?text=AI+Technology",
-        publishedAt: "2025-06-15T08:40:00Z",
-        content: "AI continues to evolve at an unprecedented pace...",
-        category: "technology"
-      },
-      {
-        source: { id: null, name: "The Verge" },
-        author: "Sarah Johnson",
-        title: "New Quantum Computing Breakthrough Promises Faster Processing",
-        description: "Scientists have achieved a major milestone in quantum computing that could revolutionize data processing.",
-        url: "https://theverge.com/example",
-        urlToImage: "https://via.placeholder.com/800x400?text=Quantum+Computing",
-        publishedAt: "2025-06-14T15:30:00Z",
-        content: "Quantum computing reaches new heights with...",
-        category: "technology"
-      },
-      {
-        source: { id: null, name: "Wired" },
-        author: "Michael Brown",
-        title: "The Future of Augmented Reality Wearables",
-        description: "How AR glasses are becoming mainstream and changing how we interact with the digital world.",
-        url: "https://wired.com/example",
-        urlToImage: "https://via.placeholder.com/800x400?text=AR+Wearables",
-        publishedAt: "2025-06-13T12:15:00Z",
-        content: "Augmented reality is no longer science fiction...",
-        category: "technology"
-      }
+    // Generate 18 random fallback articles with variety
+    const categories = ['technology', 'business', 'health', 'sports', 'entertainment', 'science'];
+    const sources = [
+      { name: "TechCrunch" }, { name: "The Verge" }, { name: "Wired" }, 
+      { name: "Forbes" }, { name: "BBC" }, { name: "CNN" }, 
+      { name: "Bloomberg" }, { name: "Wall Street Journal" }, { name: "Time Magazine" }
     ];
+    const images = [
+      "https://via.placeholder.com/800x400?text=AI+Technology",
+      "https://via.placeholder.com/800x400?text=Quantum+Computing",
+      "https://via.placeholder.com/800x400?text=AR+Wearables",
+      "https://via.placeholder.com/800x400?text=Health+Tech",
+      "https://via.placeholder.com/800x400?text=Business+News",
+      "https://via.placeholder.com/800x400?text=Sports+Update"
+    ];
+    
+    const titles = [
+      "Latest Advances in AI Technology for 2025",
+      "New Quantum Computing Breakthrough Promises Faster Processing",
+      "The Future of Augmented Reality Wearables",
+      "Health Tech Innovations Transforming Patient Care",
+      "Global Markets React to New Economic Policies",
+      "Sports Teams Adopt AI for Performance Optimization",
+      "Entertainment Industry Transformed by Virtual Reality",
+      "Climate Science Breakthrough: New Carbon Capture Method",
+      "Business Leaders Predict Technology Trends for 2026",
+      "Biotech Startups Revolutionize Medicine with CRISPR",
+      "Renewable Energy Solutions Gaining Momentum Globally",
+      "Space Exploration: Private Companies Lead the Way",
+      "Cybersecurity Threats in Modern Computing",
+      "The Psychology of Social Media Use in 2025",
+      "Self-Driving Cars: Where We Stand Today",
+      "Nutrition Science Unveils New Diet Recommendations",
+      "Streaming Services Battle for Viewer Attention",
+      "IoT Devices Changing How We Live and Work"
+    ];
+    
+    return Array(18).fill(null).map((_, index) => {
+      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+      const randomSource = sources[Math.floor(Math.random() * sources.length)];
+      const randomImage = images[Math.floor(Math.random() * images.length)];
+      const randomTitle = titles[index % titles.length]; // Ensure all titles are used
+      
+      // Generate a random date within the last week
+      const date = new Date();
+      date.setDate(date.getDate() - Math.floor(Math.random() * 7));
+      
+      return {
+        source: { id: null, name: randomSource.name },
+        author: ["John Smith", "Sarah Johnson", "Michael Brown", "Emma Wilson", "David Chen"][Math.floor(Math.random() * 5)],
+        title: randomTitle,
+        description: `This is a sample article about ${randomCategory}. The content is generated as a fallback when the news API is unavailable.`,
+        url: `https://example.com/${randomCategory}/${index}`,
+        urlToImage: randomImage,
+        publishedAt: date.toISOString(),
+        content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris...`,
+        category: randomCategory,
+        animationIndex: index
+      };
+    });
   };
 
   const getInterestDisplayNames = () => {
@@ -255,14 +383,23 @@ export function BlogSection() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* News Articles Grid */}
+      )}      {/* News Articles Grid */}
       <div className="container mx-auto px-4 py-8 flex-1">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
             <p className="text-gray-600">Loading your personalized news...</p>
+            {imagesLoaded > 0 && (
+              <div className="mt-4 text-sm text-gray-500">
+                <div className="w-56 bg-gray-200 rounded-full h-2 mt-2">
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${(imagesLoaded / 18) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-center mt-2">Preparing {imagesLoaded} of 18 articles</p>
+              </div>
+            )}
           </div>
         ) : error ? (
           <div className="text-center p-8 bg-red-50 rounded-xl border border-red-200">
@@ -276,7 +413,7 @@ export function BlogSection() {
               Try Again
             </Button>
           </div>
-        ) : articles.length === 0 ? (
+        ) : displayedArticles.length === 0 ? (
           <div className="text-center p-8 bg-yellow-50 rounded-xl border border-yellow-200">
             <div className="text-yellow-600 text-4xl mb-4">📰</div>
             <h3 className="text-lg font-semibold text-yellow-800 mb-2">No articles found</h3>
@@ -295,13 +432,22 @@ export function BlogSection() {
                 Your Personalized News Feed
               </h2>
               <p className="text-gray-600">
-                {articles.length} articles based on your interests
+                {displayedArticles.length} articles based on your interests
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {articles.map((article, index) => (
-                <BlogCard key={index} article={article} />
+              {displayedArticles.map((article, index) => (
+                <div 
+                  key={index} 
+                  className="opacity-0 animate-fade-in"
+                  style={{
+                    animationDelay: `${(article.animationIndex % 18) * 150}ms`,
+                    animationFillMode: 'forwards'
+                  }}
+                >
+                  <BlogCard article={article} />
+                </div>
               ))}
             </div>
           </>
