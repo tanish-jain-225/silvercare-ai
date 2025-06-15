@@ -18,8 +18,7 @@ import { useVoice } from "../hooks/useVoice";
 import { useApp } from "../context/AppContext";
 import { useLocation } from "../hooks/useLocation";
 import LocationComponent from "../components/location/LocationComponet";
-
-const route_endpoint = "http://localhost:8000"; // Update with your backend URL
+import { route_endpoint } from "../utils/helper";
 
 export default function Emergency() {
   const navigate = useNavigate();
@@ -42,27 +41,7 @@ export default function Emergency() {
   // const initialContacts = []; // No longer using hardcoded initial contacts here
   const [emergencyContacts, setEmergencyContacts] = useState(() => {
     const savedContacts = localStorage.getItem("emergencyContacts");
-    let contacts = savedContacts ? JSON.parse(savedContacts) : [];
-
-    // Add default contacts from user profile if available and not already added
-    if (user && user.emergencyContacts && user.emergencyContacts.length > 0) {
-      const defaultContacts = user.emergencyContacts.map((contact, index) => ({
-        id: `default-${index}`,
-        name: contact.name,
-        phone: contact.number,
-        relationship: "Emergency Contact",
-        isDefault: true,
-      }));
-
-      // Only add default contacts if they don't already exist
-      const existingDefaults = contacts.filter((c) => c.isDefault);
-      if (existingDefaults.length === 0) {
-        contacts = [...defaultContacts, ...contacts];
-        localStorage.setItem("emergencyContacts", JSON.stringify(contacts));
-      }
-    }
-
-    return contacts;
+    return savedContacts ? JSON.parse(savedContacts) : []; // Initialize with empty array if nothing in localStorage
   });
 
   const [showAddContactForm, setShowAddContactForm] = useState(false);
@@ -94,15 +73,6 @@ export default function Emergency() {
     speak(`${newContact.name} has been added to your emergency contacts.`);
   };
   const handleDeleteContact = (contactId) => {
-    // Prevent deletion of default contacts
-    const contactToDelete = emergencyContacts.find((c) => c.id === contactId);
-    if (contactToDelete && contactToDelete.isDefault) {
-      speak(
-        "Default emergency contacts cannot be deleted. Please update them in your profile settings."
-      );
-      return;
-    }
-
     setEmergencyContacts((prevContacts) => {
       const updatedContacts = prevContacts.filter(
         (contact) => contact.id !== contactId
@@ -370,7 +340,6 @@ export default function Emergency() {
             </div>
           </Card>
         </div>
-
         {/* Location Info */}
         <Card className="mb-8 p-6 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-start">
@@ -419,7 +388,7 @@ export default function Emergency() {
           <div className="pt-3">
             <LocationComponent />
           </div>
-        </Card>
+        </Card>{" "}
         {/* Emergency Chat Section */}
         <div className="mb-8">
           {/* Section Header */}
@@ -582,204 +551,79 @@ export default function Emergency() {
                 </Card>
               )}
             </div>
-            {/* Default Contacts Section */}
-            <div className="mb-6">
-              <h4 className="text-xl font-semibold text-gray-800 mb-2">
-                Default Contacts
-              </h4>
-              {emergencyContacts.some((c) => c.isDefault) ? (
-                <div className="space-y-4">
-                  {emergencyContacts
-                    .filter((c) => c.isDefault)
-                    .map((contact) => (
-                      <Card
-                        key={contact.id}
-                        className="p-4 sm:p-6 bg-white border border-gray-200 hover:border-gray-300 transition-all duration-200"
-                      >
-                        {/* Contact Info Header */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                              <span className="text-red-600 font-bold text-lg">
-                                {contact.name.charAt(0)}
-                              </span>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900 text-lg">
-                                {contact.name}
-                              </h4>
-                              <p className="text-gray-600 text-sm">
-                                {contact.phone}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {/* Microphone Button */}
-                            <button
-                              onClick={() => handleSpeechToText(contact.id)}
-                              className={`p-3 rounded-full transition-all duration-200 ${
-                                isListening[contact.id]
-                                  ? "bg-red-600 text-white animate-pulse"
-                                  : "bg-red-50 text-red-600 hover:bg-red-100"
-                              }`}
-                              title={
-                                isListening[contact.id]
-                                  ? "Listening..."
-                                  : "Start voice recording"
-                              }
-                            >
-                              {isListening[contact.id] ? (
-                                <MicOff size={22} />
-                              ) : (
-                                <Mic size={22} />
-                              )}
-                            </button>
-                            {/* Delete Contact Button - Hidden for default contacts */}
-                            {!contact.isDefault && (
-                              <button
-                                onClick={() => handleDeleteContact(contact.id)}
-                                className="p-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all duration-200"
-                                title="Delete Contact"
-                              >
-                                <Trash2 size={22} />
-                              </button>
-                            )}
-                            {contact.isDefault && (
-                              <div className="px-3 py-1 bg-blue-100 text-blue-600 text-xs rounded-full font-medium">
-                                Default
-                              </div>
-                            )}
-                          </div>
-                        </div>
+            {emergencyContacts.map((contact) => (
+              <Card
+                key={contact.id}
+                className="p-4 sm:p-6 bg-white border border-gray-200 hover:border-red-200 transition-all duration-200"
+              >
+                {/* Contact Info Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                      <span className="text-red-600 font-bold text-lg">
+                        {contact.name.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 text-lg">
+                        {contact.name}
+                      </h4>
+                      <p className="text-gray-600 text-sm">{contact.phone}</p>
+                    </div>
+                  </div>
 
-                        {/* Message Input */}
-                        <div className="mb-4">
-                          <textarea
-                            value={messages[contact.id] || ""}
-                            onChange={(e) =>
-                              setMessages((prev) => ({
-                                ...prev,
-                                [contact.id]: e.target.value,
-                              }))
-                            }
-                            placeholder="Type emergency message or use microphone..."
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                            rows={3}
-                          />
-                          {isListening[contact.id] && (
-                            <p className="text-red-600 text-sm mt-2 animate-pulse">
-                              Listening for your voice...
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Send WhatsApp Button */}
-                        <button
-                          onClick={() => handleSendWhatsApp(contact)}
-                          disabled={!messages[contact.id]?.trim()}
-                          className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
-                        >
-                          <Send size={20} />
-                          Send via WhatsApp
-                        </button>
-                      </Card>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    {/* Microphone Button */}
+                    <button
+                      onClick={() => handleSpeechToText(contact.id)}
+                      className={`p-3 rounded-full transition-all duration-200 ${
+                        isListening[contact.id]
+                          ? "bg-red-600 text-white animate-pulse"
+                          : "bg-red-50 text-red-600 hover:bg-red-100"
+                      }`}
+                      title={
+                        isListening[contact.id]
+                          ? "Listening..."
+                          : "Start voice recording"
+                      }
+                    >
+                      {isListening[contact.id] ? (
+                        <MicOff size={22} />
+                      ) : (
+                        <Mic size={22} />
+                      )}
+                    </button>
+                    {/* Delete Contact Button */}
+                    <button
+                      onClick={() => handleDeleteContact(contact.id)}
+                      className="p-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all duration-200"
+                      title="Delete Contact"
+                    >
+                      <Trash2 size={22} />
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-gray-500">No default contacts added.</p>
-              )}
-            </div>
 
-            {/* Saved Contacts Section */}
-            <div className="mb-6">
-              <h4 className="text-xl font-semibold text-gray-800 mb-2">
-                Saved Contacts
-              </h4>
-              {emergencyContacts.filter((c) => !c.isDefault).length > 0 ? (
-                <div className="space-y-4">
-                  {emergencyContacts
-                    .filter((c) => !c.isDefault)
-                    .map((contact) => (
-                      <Card
-                        key={contact.id}
-                        className="p-4 sm:p-6 bg-white border border-gray-200 hover:border-gray-300 transition-all duration-200"
-                      >
-                        {/* Contact Info Header */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                              <span className="text-red-600 font-bold text-lg">
-                                {contact.name.charAt(0)}
-                              </span>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900 text-lg">
-                                {contact.name}
-                              </h4>
-                              <p className="text-gray-600 text-sm">
-                                {contact.phone}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {/* Microphone Button */}
-                            <button
-                              onClick={() => handleSpeechToText(contact.id)}
-                              className={`p-3 rounded-full transition-all duration-200 ${
-                                isListening[contact.id]
-                                  ? "bg-red-600 text-white animate-pulse"
-                                  : "bg-red-50 text-red-600 hover:bg-red-100"
-                              }`}
-                              title={
-                                isListening[contact.id]
-                                  ? "Listening..."
-                                  : "Start voice recording"
-                              }
-                            >
-                              {isListening[contact.id] ? (
-                                <MicOff size={22} />
-                              ) : (
-                                <Mic size={22} />
-                              )}
-                            </button>
-                            {/* Delete Contact Button - Hidden for default contacts */}
-                            {!contact.isDefault && (
-                              <button
-                                onClick={() => handleDeleteContact(contact.id)}
-                                className="p-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all duration-200"
-                                title="Delete Contact"
-                              >
-                                <Trash2 size={22} />
-                              </button>
-                            )}
-                            {contact.isDefault && (
-                              <div className="px-3 py-1 bg-blue-100 text-blue-600 text-xs rounded-full font-medium">
-                                Default
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Message Input */}
-                        <div className="mb-4">
-                          <textarea
-                            value={messages[contact.id] || ""}
-                            onChange={(e) =>
-                              setMessages((prev) => ({
-                                ...prev,
-                                [contact.id]: e.target.value,
-                              }))
-                            }
-                            placeholder="Type emergency message or use microphone..."
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                            rows={3}
-                          />
-                          {isListening[contact.id] && (
-                            <p className="text-red-600 text-sm mt-2 animate-pulse">
-                              Listening for your voice...
-                            </p>
-                          )}
-                        </div>
+                {/* Message Input */}
+                <div className="mb-4">
+                  <textarea
+                    value={messages[contact.id] || ""}
+                    onChange={(e) =>
+                      setMessages((prev) => ({
+                        ...prev,
+                        [contact.id]: e.target.value,
+                      }))
+                    }
+                    placeholder="Type emergency message or use microphone..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                    rows={3}
+                  />
+                  {isListening[contact.id] && (
+                    <p className="text-red-600 text-sm mt-2 animate-pulse">
+                      Listening for your voice...
+                    </p>
+                  )}
+                </div>
 
                         {/* Send WhatsApp Button */}
                         <button
@@ -799,7 +643,6 @@ export default function Emergency() {
             </div>
           </div>
         </div>
-
         {/* Important Notice */}
         <Card className="bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-2xl p-6 shadow-sm my-20">
           <div className="flex items-start">

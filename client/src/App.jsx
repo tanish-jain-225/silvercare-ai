@@ -4,7 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
-  useLocation
+  useLocation,
 } from "react-router-dom";
 import { AppProvider, useApp } from "./context/AppContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -29,11 +29,12 @@ import "./utils/i18n";
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useApp();
   // While auth state is loading, don't render anything (or show a loader)
-  if (loading) return (
-    <div className="flex-1 flex items-center justify-center theme-bg-primary theme-text-primary">
-      Loading...
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="flex-1 flex items-center justify-center theme-bg-primary theme-text-primary">
+        Loading...
+      </div>
+    );
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
@@ -44,7 +45,13 @@ function AppRoutes() {
   const hasSelectedLanguage = storage.get("silvercare_language");
 
   // Define routes where layout should be hidden
-  const hideLayoutRoutes = ["/login", "/signup", "/user-details", "/language-selection"];
+  const hideLayoutRoutes = [
+    "/login",
+    "/signup",
+    "/user-details",
+    "/language-selection",
+    "/ask-queries", // Hide layout (including BottomNavigation) on AskQueries page
+  ];
 
   // Check if current path matches any of the hideLayoutRoutes
   const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
@@ -57,11 +64,13 @@ function AppRoutes() {
   return (
     <RootLayout>
       {!shouldHideLayout && <Header />}
-      <Suspense fallback={
-        <div className="flex-1 flex items-center justify-center theme-bg-primary theme-text-primary">
-          Loading...
-        </div>
-      }>
+      <Suspense
+        fallback={
+          <div className="flex-1 flex items-center justify-center theme-bg-primary theme-text-primary">
+            Loading...
+          </div>
+        }
+      >
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/language-selection" element={<LanguageSelection />} />
