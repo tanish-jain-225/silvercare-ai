@@ -3,6 +3,7 @@ from flask_cors import CORS
 from routes.format_reminder import format_reminder_bp
 from routes.send_emergency import send_emergency_bp
 from routes.ask_query import chat_bp
+from routes.interests import interests_bp
 import traceback
 
 app = Flask(__name__)
@@ -18,6 +19,7 @@ def favicon():
 app.register_blueprint(format_reminder_bp)
 app.register_blueprint(send_emergency_bp)
 app.register_blueprint(chat_bp)
+app.register_blueprint(interests_bp)
 
 @app.route('/', methods=['GET'])
 def index():
