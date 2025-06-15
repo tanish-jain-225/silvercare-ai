@@ -11,8 +11,8 @@ interests_bp = Blueprint('interests', __name__)
 # MongoDB connection
 MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
 client = MongoClient(MONGO_URI)
-db = client.voicebuddy_ai
-interests_collection = db.user_interests
+db = client["assistant_db"]  # Using assistant_db as the database name
+interests_collection = db["interests"]  # Using interests as the collection name
 
 @interests_bp.route('/api/interests/<user_id>', methods=['GET'])
 def get_user_interests(user_id):
