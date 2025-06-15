@@ -395,7 +395,7 @@ export default function Emergency() {
         </Card>{" "}
         
         {/* Emergency Chat Section */}
-        <div className="mb-8">
+        <div className="mb-20">
           {/* Section Header */}
           <div className="flex items-center mb-6">
             <div className="flex items-center justify-center w-12 h-12 bg-red-50 rounded-lg mr-4">
@@ -750,25 +750,6 @@ export default function Emergency() {
             </div>
           </div>
         </div>
-        
-        {/* Important Notice */}
-        <Card className="bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-start">
-            <div className="flex items-center justify-center w-12 h-12 bg-amber-100/50 rounded-full mr-4">
-              <AlertTriangle className="text-amber-600" size={24} />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-amber-800 mb-2">
-                Important Notice
-              </h3>
-              <p className="text-amber-700/90">
-                For immediate medical emergencies, always call 911 directly.
-                This app is designed to supplement, not replace, emergency
-                services.
-              </p>
-            </div>
-          </div>
-        </Card>
       </div>
     </div>
   );

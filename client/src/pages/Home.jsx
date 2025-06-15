@@ -116,7 +116,7 @@ export function Home() {
               whileTap={{ scale: 0.95 }}
               className="pl-6 pt-2"
             >
-              <button className="px-6 py-2.5 theme-button-primary font-medium rounded-lg shadow-sm transition-all duration-300 transform">
+              <button className="px-6 py-2.5 theme-button-primary font-medium rounded-lg shadow-sm transition-all duration-300 transform" onClick={() => navigate("/ask-queries")}>
                 Get Started
               </button>
             </motion.div>
