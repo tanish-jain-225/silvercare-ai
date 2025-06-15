@@ -98,6 +98,29 @@ export function UserDetails() {
     "Recovering",
     "Chronic",
   ];
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        age: user.age || "",
+        gender: user.gender || "",
+        address: user.address || "",
+        emergencyContacts: user.emergencyContacts || [
+          { name: "", number: "" },
+          { name: "", number: "" },
+        ],
+        healthCondition: {
+          selected: user.healthCondition || "",
+          custom: "",
+        },
+        currentMedicalStatus: user.currentMedicalStatus || "",
+        medicalCertificates: null,
+        profileImage: null,
+      });
+    }
+  }, [user]);
+
   // Update form field with transcript - MODIFIED VERSION
   useEffect(() => {
     console.log("Current transcript:", transcript);
