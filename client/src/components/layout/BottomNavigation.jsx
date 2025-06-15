@@ -39,8 +39,8 @@ export function BottomNavigation() {
               onClick={() => navigate(path)}
               // Reduced h-20 to h-16 and sm:h-24 to sm:h-20
               className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-indigo-200/50 dark:focus:ring-indigo-800/50 focus:ring-offset-2 focus:ring-offset-white/80 dark:focus:ring-offset-gray-900/80 w-20 h-16 sm:w-24 sm:h-20 justify-center ${isActive
-                  ? 'bg-indigo-50/80 dark:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/60 dark:hover:bg-indigo-900/60'
+                ? 'bg-indigo-50/80 dark:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/60 dark:hover:bg-indigo-900/60'
                 }`}
             >
               {/* Reduced icon size from 24 to 20 */}

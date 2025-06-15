@@ -126,3 +126,33 @@ def send_message():
         "success": True,
         "message": reply,
     })
+
+@chat_bp.route('/chat/clear', methods=['DELETE'])
+def clear_chat_history():
+    try:
+        data = request.get_json()
+        user_id = data.get('userId')
+        
+        if not user_id:
+            return jsonify({"error": "User ID is required"}), 400
+        
+        # Delete the user's chat history from MongoDB
+        result = collection.delete_one({"userId": user_id})
+        
+        if result.deleted_count > 0:
+            return jsonify({
+                "success": True,
+                "message": "Chat history cleared successfully"
+            }), 200
+        else:
+            return jsonify({
+                "success": True,
+                "message": "No chat history found to clear"
+            }), 200
+            
+    except Exception as e:
+        print(f"Error clearing chat history: {str(e)}")
+        return jsonify({
+            "error": "Failed to clear chat history",
+            "details": str(e)
+        }), 500

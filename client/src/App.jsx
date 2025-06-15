@@ -50,11 +50,18 @@ function AppRoutes() {
     "/signup",
     "/user-details",
     "/language-selection",
-    "/ask-queries", // Hide layout (including BottomNavigation) on AskQueries page
+  ];
+
+  // Define routes where only bottom navigation should be hidden
+  const hideBottomNavRoutes = [
+    "/ask-queries",
   ];
 
   // Check if current path matches any of the hideLayoutRoutes
   const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
+
+  // Check if current path matches any of the hideBottomNavRoutes
+  const shouldHideBottomNav = hideBottomNavRoutes.includes(location.pathname);
 
   // Redirect to language selection if no language is selected and not already there
   if (!hasSelectedLanguage && location.pathname !== "/language-selection") {
@@ -136,7 +143,7 @@ function AppRoutes() {
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </Suspense>
-      {!shouldHideLayout && <BottomNavigation />}
+      {!shouldHideLayout && !shouldHideBottomNav && <BottomNavigation />}
     </RootLayout>
   );
 }

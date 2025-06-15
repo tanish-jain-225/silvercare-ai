@@ -8,7 +8,7 @@ const resources = {
       // Language Selection
       selectLanguage: "Select Your Language",
       continue: "Continue",
-      
+
       // Authentication
       login: "Login",
       signup: "Sign Up",
@@ -20,7 +20,7 @@ const resources = {
       continueWithGoogle: "Continue with Google",
       noAccount: "Don't have an account?",
       haveAccount: "Already have an account?",
-      
+
       // User Details
       userDetails: "Tell Us About Yourself",
       age: "Age",
@@ -30,14 +30,14 @@ const resources = {
       heartDisease: "Heart Disease",
       arthritis: "Arthritis",
       saveDetails: "Save Details",
-      
+
       // Home
       welcome: "Hello {{name}}",
       blog: "Blog Section",
       reminders: "Reminders",
       emergency: "Emergency",
       askQueries: "Ask Queries",
-      
+
       // Navigation
       home: "Home",
       voiceAssistant: "Voice Assistant",
@@ -45,10 +45,10 @@ const resources = {
       // Blog Section
       blog: "Blog",
       blogSection: "Blog Section",
-      
+
       planYourDay: "Entertain Your Day",
       typeOrSpeak: "Type your message or speak...",
-      
+
       // Reminders
       addReminder: "Add Reminder",
       reminderTitle: "Title",
@@ -58,7 +58,7 @@ const resources = {
       saveReminder: "Save Reminder",
       upcomingReminders: "Upcoming Reminders",
       noReminders: "No reminders yet",
-      
+
       // Emergency
       emergencyContacts: "Emergency Contacts",
       addEmergencyContact: "Add Contact",
@@ -71,20 +71,22 @@ const resources = {
       police: "Police",
       ambulance: "Ambulance",
       fire: "Fire Department",
-      
+
       // Voice Assistant
       listening: "I'm listening...",
       tapToSpeak: "Tap to speak",
       holdToSpeak: "Hold to speak",
       releaseToStop: "Release to stop",
-      
+
       // Queries
       askAnything: "Ask me anything",
       sampleQueries: "Sample Queries",
       weatherQuery: "What's the weather like today?",
       medicationQuery: "When should I take my medication?",
       newsQuery: "What's happening in the news?",
-      
+      typeMessage: "Type your message...",
+      healthQuestions: "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
+
       // Profile
       yourProfile: "Your Profile",
       editProfile: "Edit Profile",
@@ -92,7 +94,7 @@ const resources = {
       darkMode: "Dark Mode",
       fontSize: "Font Size",
       language: "Language",
-      
+
       // Settings
       settings: "Settings",
       notifications: "Notifications",

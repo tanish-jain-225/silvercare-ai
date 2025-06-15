@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+    box-sizing: border-box;
+}
+
 /* CSS Variables for theme colors */
 :root {
     /* Light mode variables */
