@@ -1,11 +1,11 @@
-const API_BASE_URL = 'http://localhost:8000';
+import { route_endpoint } from "./helper";
 
 // User Interests API
 export const interestsAPI = {
     // Get user interests
     async getUserInterests(userId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/interests/${userId}`);
+            const response = await fetch(`${route_endpoint}/api/interests/${userId}`);
             const data = await response.json();
             return data;
         } catch (error) {
@@ -17,7 +17,7 @@ export const interestsAPI = {
     // Create new user interests
     async createUserInterests(userId, interests) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/interests`, {
+            const response = await fetch(`${route_endpoint}/api/interests`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ export const interestsAPI = {
     // Update user interests
     async updateUserInterests(userId, interests) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/interests/${userId}`, {
+            const response = await fetch(`${route_endpoint}/api/interests/${userId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ export const interestsAPI = {
     // Delete user interests
     async deleteUserInterests(userId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/interests/${userId}`, {
+            const response = await fetch(`${route_endpoint}/api/interests/${userId}`, {
                 method: 'DELETE',
             });
             const data = await response.json();
