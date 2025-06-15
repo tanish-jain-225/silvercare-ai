@@ -43,7 +43,7 @@ export function MessageBubble({ message, isUser, isError, timestamp, index }) {
                             <User className="w-5 h-5" />
                         )
                     ) : (
-                        <img src="/voice-search.png" className="w-5 h-5" />
+                        <img src="/bot-image.png" className="w-5 h-5" />
                     )}
                 </div>
 
