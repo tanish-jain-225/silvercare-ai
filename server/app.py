@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from routes.format_reminder import format_reminder_bp
 from routes.send_emergency import send_emergency_bp
 from routes.ask_query import chat_bp
+import traceback
 
 app = Flask(__name__)
 # Enable CORS to allow all origins
@@ -30,9 +31,10 @@ def health_check():
 @app.errorhandler(404)
 def not_found(error):
     return {"error": "Resource not found"}, 404
-@app.errorhandler(500)
-def internal_error(error):
-    return {"error": "Internal Server Error"}, 500
+@app.errorhandler(Exception)
+def handle_exception(error):
+    app.logger.error('Unhandled Exception:\n' + traceback.format_exc())
+    return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
     app.run(port=8000, debug=True)

@@ -5,22 +5,24 @@ from datetime import datetime, timedelta, timezone
 import os
 from dotenv import load_dotenv
 
+# Load environment
 load_dotenv()
-# MongoDB connection
-mongo_url = os.getenv("MONGO_URI")
+# MongoDB connection with fallback
+mongo_url = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
 if not mongo_url:
-    raise RuntimeError("MONGO_URI (or MONGO_URL) environment variable is required")
+    print("WARNING: No MONGO_URI/MONGO_URL set; defaulting to localhost:27017")
+    mongo_url = "mongodb://localhost:27017"
 mongo_client = MongoClient(mongo_url)
-# Optional collection override via env
+# Setup DB and collection
 db_name = os.getenv("DB_NAME", "assistant_db")
 collection_name = os.getenv("CHAT_COLLECTION", "chat_history")
 db = mongo_client[db_name]
 collection = db[collection_name]
-
-# LLM client
+# LLM client with fallback key
 api_key = os.getenv("TOGETHER_API_KEY")
 if not api_key:
-    raise RuntimeError("TOGETHER_API_KEY environment variable is required")
+    print("WARNING: No TOGETHER_API_KEY set; using default demo key")
+    api_key = "tgp_v1_WSJUCyB6cAaCZff7oVSK30nK1rxEgSlqAWBHzYdipfM"
 client = Together(api_key=api_key)
 
 chat_bp = Blueprint('chat', __name__)
