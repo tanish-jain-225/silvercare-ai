@@ -7,6 +7,8 @@ import { Button } from "../components/ui/Button";
 import { VoiceButton } from "../components/voice/VoiceButton";
 import { useVoice } from "../hooks/useVoice";
 import ReactMarkdown from "react-markdown";
+import { useApp } from "../context/AppContext";
+import { route_endpoint } from "../utils/helper";
 
 const sampleQuestions = [
   "What should I eat for better heart health?",
@@ -17,23 +19,27 @@ const sampleQuestions = [
   "How can I improve my sleep quality?",
 ];
 
-const route_endpoint = "http://localhost:8000";
-
-const userId = "default"; // Replace with dynamic user ID in production
-
 export function AskQueries() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { speak, stop, isSpeaking } = useVoice();
   const endOfMessagesRef = useRef(null);
+  const { user } = useApp();
 
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Helper: Detect reminder keywords
+  const isReminder = (text) => {
+    const keywords = ["remind", "reminder"];
+    const lower = text.toLowerCase();
+    return keywords.some((kw) => lower.includes(kw));
+  };
+
   const handleSendMessage = async (message) => {
     const messageToSend = message || inputMessage;
-    if (!messageToSend.trim()) return;
+    if (!messageToSend.trim() || !user?.id) return;
 
     const userMessage = {
       id: Date.now().toString(),
@@ -47,23 +53,38 @@ export function AskQueries() {
     setIsLoading(true); // Start loading
 
     try {
-      const response = await fetch(`${route_endpoint}/chat/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: messageToSend, userId }),
-      });
-
-      const data = await response.json();
-
-      const aiMessage = {
-        id: (Date.now() + 1).toString(),
-        message: data.reply || "Sorry, I could not understand that.",
-        isUser: false,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-      speak(aiMessage.message);
+      let response, data;
+      if (isReminder(messageToSend)) {
+        response = await fetch(`/format-reminder`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input: messageToSend, userId: user.id }),
+        });
+        data = await response.json();
+        const aiMessage = {
+          id: (Date.now() + 1).toString(),
+          message: data.message || "Your reminder is set.",
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+        speak(aiMessage.message);
+      } else {
+        response = await fetch(`/chat/message`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input: messageToSend, userId: user.id }),
+        });
+        data = await response.json();
+        const aiMessage = {
+          id: (Date.now() + 1).toString(),
+          message: data.message || "Sorry, I could not understand that.",
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+        speak(aiMessage.message);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage = {
@@ -83,17 +104,16 @@ export function AskQueries() {
   };
 
   const fetchHistory = async () => {
+    if (!user?.id) return;
     try {
-      const res = await fetch(
-        `${route_endpoint}/chat/history?userId=${userId}`
-      );
+      const res = await fetch(`/chat/history?userId=${user.id}`);
       const data = await res.json();
 
       const loadedMessages = data.history.map((msg, index) => ({
         id: `${Date.now()}-${index}`,
         message: msg.content,
         isUser: msg.role === "user",
-        timestamp: new Date(),
+        timestamp: msg.createdAt ? new Date(msg.createdAt) : new Date(),
       }));
 
       if (loadedMessages.length === 0) {
@@ -115,7 +135,8 @@ export function AskQueries() {
 
   useEffect(() => {
     fetchHistory();
-  }, [speak, t]);
+    // eslint-disable-next-line
+  }, [user, speak, t]);
   useEffect(() => {
     if (endOfMessagesRef.current) {
       endOfMessagesRef.current.scrollIntoView({ behavior: "smooth" });

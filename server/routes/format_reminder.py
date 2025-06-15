@@ -302,13 +302,14 @@ def save_to_mongodb(reminder, user_id=None):
 
 @format_reminder_bp.route('/reminders', methods=['GET'])
 def get_reminders():
-    """Get all reminders from MongoDB"""
+    """Get all reminders for a specific userId from MongoDB"""
     print("GET /reminders endpoint called")
+    user_id = request.args.get('userId')
     try:
-        # Fetch all reminders from the collection
-        cursor = reminders_collection.find({})
+        query = {"userId": user_id} if user_id else {}
+        cursor = reminders_collection.find(query)
         reminders_list = list(cursor)
-        print(f"Found {len(reminders_list)} reminders")
+        print(f"Found {len(reminders_list)} reminders for userId={user_id}")
         reminders = convert_to_json_friendly(reminders_list)
         response = jsonify({"success": True, "reminders": reminders, "count": len(reminders)})
         # Explicitly set CORS headers to ensure they're applied
