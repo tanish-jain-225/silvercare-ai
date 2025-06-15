@@ -6,6 +6,7 @@ import {
   Volume2,
   Trash2,
   RefreshCw,
+  Mic,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -13,6 +14,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { useVoice } from "../hooks/useVoice";
+import { VoiceButton } from "../components/voice/VoiceButton";
 import axios from "axios";
 import { route_endpoint } from "../utils/helper";
 import { useApp } from "../context/AppContext";
@@ -30,28 +32,37 @@ export function Reminders() {
     date: "",
   });
   const [alarmAudio, setAlarmAudio] = useState(null);
-  const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);  const [isLoading, setIsLoading] = useState(false);
+  const [isVoiceLoading, setIsVoiceLoading] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'syncing', 'success', 'error'
+
   // Filter out duplicate reminders by created_at
   const uniqueReminders = React.useMemo(
     () => Array.from(new Map(reminders.map((r) => [r.created_at, r])).values()),
     [reminders]
   );
-  // Function to fetch reminders from the server
-  const fetchReminders = async () => {
-    if (!user?.id) return;
+
+  // Enhanced fetch with better error handling and sync status
+  const fetchReminders = async (showLoadingState = true) => {
+    if (!user?.id) {
+      console.log("No user ID available for fetching reminders");
+      return;
+    }
+    
     try {
-      setIsLoading(true);
-      console.log("Fetching reminders...");
+      if (showLoadingState) setIsLoading(true);
+      setSyncStatus('syncing');
+      
+      console.log(`Fetching reminders for user: ${user.id}`);
       const response = await fetch(
-        `${route_endpoint}/reminders?userId=${user.id}`,
+        `${route_endpoint}/reminders?userId=${user.id}&timestamp=${Date.now()}`, // Cache busting
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          credentials: "omit", // Don't send credentials to avoid CORS preflight
+          credentials: "omit",
         }
       );
 
@@ -63,32 +74,51 @@ export function Reminders() {
       const data = await response.json();
       console.log("Reminders data received:", data);
 
-      if (data.success && data.reminders) {
+      if (data.success && Array.isArray(data.reminders)) {
         setReminders(data.reminders);
+        setSyncStatus('success');
+        console.log(`Successfully loaded ${data.reminders.length} reminders`);
       } else {
         setReminders([]);
+        setSyncStatus('success');
+        console.log("No reminders found or invalid response format");
       }
     } catch (error) {
       console.error("Error fetching reminders:", error);
-      speak("Sorry, there was an issue fetching your reminders");
+      setSyncStatus('error');
+      speak("Sorry, there was an issue syncing your reminders");      // Don't clear existing reminders on fetch error to maintain offline capability
     } finally {
-      setIsLoading(false);
+      if (showLoadingState) setIsLoading(false);
+      // Auto-reset sync status after a delay
+      setTimeout(() => setSyncStatus('idle'), 2000);
     }
   };
-
   const handleAddReminder = async () => {
     if (!newReminder.title || !newReminder.time || !newReminder.date) return;
+    if (!user?.id) {
+      speak("Please log in to add reminders");
+      return;
+    }
+    
     const reminder = {
       id: Date.now().toString(),
       title: newReminder.title,
       time: newReminder.time,
       date: newReminder.date,
       isActive: true,
+      userId: user.id,
     };
+
+    // Optimistic update - add reminder to UI immediately
+    const optimisticReminder = { ...reminder, created_at: new Date().toISOString() };
+    setReminders(prev => [...prev, optimisticReminder]);
+    
     setShowAddForm(false);
     setNewReminder({ title: "", time: "", date: "" });
     speak("Reminder added successfully");
+
     try {
+      setSyncStatus('syncing');
       const response = await fetch(`${route_endpoint}/reminder-data`, {
         method: "POST",
         headers: {
@@ -100,21 +130,36 @@ export function Reminders() {
           title: reminder.title,
           date: reminder.date,
           time: reminder.time,
+          userId: user.id,
         }),
       });
+
       if (!response.ok) {
         throw new Error("Failed to save reminder to server");
       }
-      // Refresh reminders from backend
-      fetchReminders();
+
+      // Sync with backend to get the actual saved reminder
+      await fetchReminders(false); // Don't show loading state
+      setSyncStatus('success');
     } catch (error) {
       console.error("Error saving reminder:", error);
+      // Revert optimistic update on error
+      setReminders(prev => prev.filter(r => r.id !== reminder.id));
+      speak("Failed to save reminder. Please try again.");
+      setSyncStatus('error');
     }
   };
-
   const handleDeleteReminder = async (createdAt) => {
+    // Find the reminder to delete for optimistic update
+    const reminderToDelete = reminders.find(r => r.created_at === createdAt);
+    if (!reminderToDelete) return;
+
+    // Optimistic update - remove from UI immediately
+    setReminders(prev => prev.filter(r => r.created_at !== createdAt));
+    speak("Reminder deleted");
+
     try {
-      // Send DELETE request to backend
+      setSyncStatus('syncing');
       const response = await fetch(
         `${route_endpoint}/reminders/${encodeURIComponent(createdAt)}`,
         {
@@ -122,15 +167,20 @@ export function Reminders() {
           headers: { "Content-Type": "application/json" },
         }
       );
+
       if (!response.ok) {
         throw new Error("Failed to delete reminder from server");
       }
-      speak("Reminder deleted");
-      // Refresh reminders from backend
-      fetchReminders();
+
+      // Successful deletion
+      setSyncStatus('success');
+      console.log("Reminder successfully deleted from server");
     } catch (error) {
       console.error("Error deleting reminder:", error);
-      speak("Failed to delete reminder");
+      // Revert optimistic update on error
+      setReminders(prev => [...prev, reminderToDelete]);
+      speak("Failed to delete reminder. Please try again.");
+      setSyncStatus('error');
     }
   };
 
@@ -216,18 +266,103 @@ export function Reminders() {
     setIsAlarmPlaying(false);
     setAlarmAudio(null);
   };
-
   React.useEffect(() => {
     speak(
       "Here are your reminders. You can add new ones or listen to existing reminders."
     );
   }, [speak]);
 
-  // Fetch reminders when the component mounts
+  const handleVoiceReminder = async (voiceInput) => {
+    if (!user?.id) {
+      speak("Please log in to create voice reminders");
+      return;
+    }
+
+    setIsVoiceLoading(true);
+    setSyncStatus('syncing');
+    
+    try {
+      console.log("Sending voice input for reminder creation:", voiceInput);
+      
+      const response = await fetch(`${route_endpoint}/format-reminder`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          input: voiceInput,
+          userId: user.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create voice reminder: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Voice reminder response:", data);
+
+      if (data.success && data.reminders) {
+        speak(data.message || "Voice reminder created successfully");
+        
+        // Sync with backend to get the latest reminders including the new one
+        await fetchReminders(false); // Don't show loading state
+        setSyncStatus('success');
+        
+        console.log(`Voice reminder created: ${data.reminders.length} reminders processed`);
+      } else {
+        throw new Error(data.error || "Failed to create voice reminder");
+      }
+    } catch (error) {
+      console.error("Error creating voice reminder:", error);
+      speak("Sorry, there was an issue creating your voice reminder");
+      setSyncStatus('error');
+    } finally {
+      setIsVoiceLoading(false);
+    }
+  };
+
+  // Auto-sync when user changes
   useEffect(() => {
-    fetchReminders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (user?.id) {
+      console.log("User changed, fetching reminders for:", user.id);
+      fetchReminders();
+    }
+  }, [user?.id]);
+
+  // Auto-sync every 30 seconds to keep data fresh
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const syncInterval = setInterval(() => {
+      console.log("Auto-syncing reminders...");
+      fetchReminders(false); // Silent sync without loading indicator
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [user?.id]);
+
+  // Sync when window regains focus (user comes back to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user?.id) {
+        console.log("Window focused, syncing reminders...");
+        fetchReminders(false);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user?.id]);
+
+  // Initial load on component mount
+  useEffect(() => {
+    if (user?.id) {
+      fetchReminders();
+    }
   }, []);
+
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-green-50 to-emerald-100 flex flex-col">
       {/* Show Stop Alarm button if alarm is playing */}
@@ -252,21 +387,19 @@ export function Reminders() {
               aria-label={t("back", "Back")}
             >
               <ArrowLeft size={20} className="text-gray-600 sm:w-6 sm:h-6" />
-            </button>
-
+            </button>            
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 truncate flex-1 text-center px-2">
               {t("reminders")}
             </h1>
-
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">              
               <Button
-                onClick={fetchReminders}
+                onClick={() => fetchReminders(true)}
                 variant="outline"
                 size="sm"
                 icon={RefreshCw}
-                disabled={isLoading}
+                disabled={isLoading || syncStatus === 'syncing'}
                 ariaLabel={t("refreshReminders", "Refresh reminders")}
-                className="p-1.5 sm:p-2"
+                className={`p-1.5 sm:p-2 ${syncStatus === 'syncing' ? 'animate-pulse' : ''}`}
               />
               <Button
                 onClick={() => setShowAddForm(true)}

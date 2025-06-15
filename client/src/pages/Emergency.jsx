@@ -234,18 +234,20 @@ export default function Emergency() {
       }
     }
   }, [user]);
-
   React.useEffect(() => {
     speak(
       "Emergency chat is ready. Use the microphone to record messages or type manually, then send via WhatsApp."
     );
   }, [speak]);
 
+  const defaultContacts = emergencyContacts.filter((c) => c.isDefault);
+  const savedContacts = emergencyContacts.filter((c) => !c.isDefault);
+
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-red-50 to-orange-50 flex flex-col">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200/50 w-full sticky top-0 z-10 flex items-center justify-start">
-        <div className="w-full max-w-2xl px-4 py-3">
+        <div className="w-full max-w-2xl px-6 py-4">
           <div className="flex items-center">
             <button
               onClick={() => navigate("/")}
@@ -259,8 +261,9 @@ export default function Emergency() {
           </div>
         </div>
       </div>
+      
       {/* Content */}
-      <div className="container mx-auto w-full max-w-2xl px-4 py-6 flex-1">
+      <div className="container mx-auto w-full max-w-2xl px-6 py-8 flex-1">
         {/* Emergency Button */}
         <div className="mb-8 relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl shadow-xl opacity-90 group-hover:opacity-100 transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-2xl"></div>
@@ -340,6 +343,7 @@ export default function Emergency() {
             </div>
           </Card>
         </div>
+        
         {/* Location Info */}
         <Card className="mb-8 p-6 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-start">
@@ -389,6 +393,7 @@ export default function Emergency() {
             <LocationComponent />
           </div>
         </Card>{" "}
+        
         {/* Emergency Chat Section */}
         <div className="mb-8">
           {/* Section Header */}
@@ -402,7 +407,7 @@ export default function Emergency() {
           </div>
 
           {/* Send to Any Number Section */}
-          <Card className="p-4 sm:p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 mb-6">
+          <Card className="mb-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl">
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                 <Send className="text-green-600" size={24} />
@@ -417,7 +422,7 @@ export default function Emergency() {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <input
                 type="tel"
                 placeholder="Enter phone number (e.g., +919876543210)"
@@ -510,7 +515,8 @@ export default function Emergency() {
           </Card>
 
           {/* Emergency Chat Cards */}
-          <div className="space-y-4">
+          <div className="space-y-8">
+            {/* Add Contact Form */}
             <div>
               <button
                 onClick={() => setShowAddContactForm(!showAddContactForm)}
@@ -522,11 +528,11 @@ export default function Emergency() {
                   : "Add New Contact"}
               </button>
               {showAddContactForm && (
-                <Card className="p-4 sm:p-6 bg-white border border-gray-200 mb-4">
-                  <h4 className="font-semibold text-gray-900 text-lg mb-3">
+                <Card className="mb-4 p-6 bg-white border border-gray-200 rounded-2xl">
+                  <h4 className="font-semibold text-gray-900 text-lg mb-4">
                     Add New Emergency Contact
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <input
                       type="text"
                       placeholder="Contact Name"
@@ -550,100 +556,203 @@ export default function Emergency() {
                   </div>
                 </Card>
               )}
-            </div>
-            {emergencyContacts.map((contact) => (
-              <Card
-                key={contact.id}
-                className="p-4 sm:p-6 bg-white border border-gray-200 hover:border-red-200 transition-all duration-200"
-              >
-                {/* Contact Info Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                      <span className="text-red-600 font-bold text-lg">
-                        {contact.name.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 text-lg">
-                        {contact.name}
-                      </h4>
-                      <p className="text-gray-600 text-sm">{contact.phone}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* Microphone Button */}
-                    <button
-                      onClick={() => handleSpeechToText(contact.id)}
-                      className={`p-3 rounded-full transition-all duration-200 ${
-                        isListening[contact.id]
-                          ? "bg-red-600 text-white animate-pulse"
-                          : "bg-red-50 text-red-600 hover:bg-red-100"
-                      }`}
-                      title={
-                        isListening[contact.id]
-                          ? "Listening..."
-                          : "Start voice recording"
-                      }
+            </div>            {/* Default Contacts Section */}
+            <div>
+              <h4 className="text-xl font-semibold text-gray-900 mb-6">
+                Default Contacts
+              </h4>
+              <div className="space-y-4">
+                {defaultContacts.length > 0 ? (
+                  defaultContacts.map((contact) => (
+                    <Card
+                      key={contact.id}
+                      className="p-6 bg-blue-50/50 border border-blue-200 hover:border-blue-300 transition-all duration-200 rounded-2xl"
                     >
-                      {isListening[contact.id] ? (
-                        <MicOff size={22} />
-                      ) : (
-                        <Mic size={22} />
-                      )}
-                    </button>
-                    {/* Delete Contact Button */}
-                    <button
-                      onClick={() => handleDeleteContact(contact.id)}
-                      className="p-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all duration-200"
-                      title="Delete Contact"
-                    >
-                      <Trash2 size={22} />
-                    </button>
-                  </div>
-                </div>
+                      {/* Contact Info Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-blue-600 font-bold text-lg">
+                              {contact.name.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900 text-lg">
+                              {contact.name}
+                            </h4>
+                            <p className="text-gray-600 text-sm">
+                              {contact.phone}
+                            </p>
+                            <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                              Default Contact
+                            </span>
+                          </div>
+                        </div>
 
-                {/* Message Input */}
-                <div className="mb-4">
-                  <textarea
-                    value={messages[contact.id] || ""}
-                    onChange={(e) =>
-                      setMessages((prev) => ({
-                        ...prev,
-                        [contact.id]: e.target.value,
-                      }))
-                    }
-                    placeholder="Type emergency message or use microphone..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                    rows={3}
-                  />
-                  {isListening[contact.id] && (
-                    <p className="text-red-600 text-sm mt-2 animate-pulse">
-                      Listening for your voice...
-                    </p>
-                  )}
-                </div>
-
-                        {/* Send WhatsApp Button */}
+                        {/* Microphone Button */}
                         <button
-                          onClick={() => handleSendWhatsApp(contact)}
-                          disabled={!messages[contact.id]?.trim()}
-                          className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                          onClick={() => handleSpeechToText(contact.id)}
+                          className={`p-3 rounded-full transition-all duration-200 ${
+                            isListening[contact.id]
+                              ? "bg-red-600 text-white animate-pulse"
+                              : "bg-red-50 text-red-600 hover:bg-red-100"
+                          }`}
+                          title={
+                            isListening[contact.id]
+                              ? "Listening..."
+                              : "Start voice recording"
+                          }
                         >
-                          <Send size={20} />
-                          Send via WhatsApp
+                          {isListening[contact.id] ? (
+                            <MicOff size={22} />
+                          ) : (
+                            <Mic size={22} />
+                          )}
                         </button>
-                      </Card>
-                    ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">No contacts added.</p>
-              )
-        </div>
+                      </div>
 
-      </div>
-        <Card className="bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-2xl p-6 shadow-sm my-20">
+                      {/* Message Input */}
+                      <div className="mb-4">
+                        <textarea
+                          value={messages[contact.id] || ""}
+                          onChange={(e) =>
+                            setMessages((prev) => ({
+                              ...prev,
+                              [contact.id]: e.target.value,
+                            }))
+                          }
+                          placeholder="Type emergency message or use microphone..."
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                          rows={3}
+                        />
+                        {isListening[contact.id] && (
+                          <p className="text-red-600 text-sm mt-2 animate-pulse">
+                            Listening for your voice...
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Send WhatsApp Button */}
+                      <button
+                        onClick={() => handleSendWhatsApp(contact)}
+                        disabled={!messages[contact.id]?.trim()}
+                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                      >
+                        <Send size={20} />
+                        Send via WhatsApp
+                      </button>
+                    </Card>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-8">No default contacts available.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Saved Contacts Section */}
+            <div>
+              <h4 className="text-xl font-semibold text-gray-900 mb-6">
+                Saved Contacts
+              </h4>
+              <div className="space-y-4">
+                {savedContacts.length > 0 ? (
+                  savedContacts.map((contact) => (
+                    <Card
+                      key={contact.id}
+                      className="p-6 bg-white border border-gray-200 hover:border-red-200 transition-all duration-200 rounded-2xl"
+                    >
+                      {/* Contact Info Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                            <span className="text-red-600 font-bold text-lg">
+                              {contact.name.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900 text-lg">
+                              {contact.name}
+                            </h4>
+                            <p className="text-gray-600 text-sm">
+                              {contact.phone}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {/* Microphone Button */}
+                          <button
+                            onClick={() => handleSpeechToText(contact.id)}
+                            className={`p-3 rounded-full transition-all duration-200 ${
+                              isListening[contact.id]
+                                ? "bg-red-600 text-white animate-pulse"
+                                : "bg-red-50 text-red-600 hover:bg-red-100"
+                            }`}
+                            title={
+                              isListening[contact.id]
+                                ? "Listening..."
+                                : "Start voice recording"
+                            }
+                          >
+                            {isListening[contact.id] ? (
+                              <MicOff size={22} />
+                            ) : (
+                              <Mic size={22} />
+                            )}
+                          </button>
+                          {/* Delete Contact Button */}
+                          <button
+                            onClick={() => handleDeleteContact(contact.id)}
+                            className="p-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all duration-200"
+                            title="Delete Contact"
+                          >
+                            <Trash2 size={22} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Message Input */}
+                      <div className="mb-4">
+                        <textarea
+                          value={messages[contact.id] || ""}
+                          onChange={(e) =>
+                            setMessages((prev) => ({
+                              ...prev,
+                              [contact.id]: e.target.value,
+                            }))
+                          }
+                          placeholder="Type emergency message or use microphone..."
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                          rows={3}
+                        />
+                        {isListening[contact.id] && (
+                          <p className="text-red-600 text-sm mt-2 animate-pulse">
+                            Listening for your voice...
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Send WhatsApp Button */}
+                      <button
+                        onClick={() => handleSendWhatsApp(contact)}
+                        disabled={!messages[contact.id]?.trim()}
+                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                      >
+                        <Send size={20} />
+                        Send via WhatsApp
+                      </button>
+                    </Card>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-8">No saved contacts added.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Important Notice */}
+        <Card className="bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-2xl p-6 shadow-sm">
           <div className="flex items-start">
             <div className="flex items-center justify-center w-12 h-12 bg-amber-100/50 rounded-full mr-4">
               <AlertTriangle className="text-amber-600" size={24} />
@@ -660,6 +769,7 @@ export default function Emergency() {
             </div>
           </div>
         </Card>
+      </div>
     </div>
   );
 }
