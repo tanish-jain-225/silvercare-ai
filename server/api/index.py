@@ -1,4 +1,4 @@
-from app import app # Import the main Flask app
+from app import app
 
-def handler(request):
-    return app(request.environ, lambda status, headers: None)
+# Export the Flask app for Vercel
+app = app
