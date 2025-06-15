@@ -639,11 +639,10 @@ export default function Emergency() {
                 </div>
               ) : (
                 <p className="text-gray-500">No contacts added.</p>
-              )}
-            </div>
-          </div>
+              )
         </div>
-        {/* Important Notice */}
+
+      </div>
         <Card className="bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-2xl p-6 shadow-sm my-20">
           <div className="flex items-start">
             <div className="flex items-center justify-center w-12 h-12 bg-amber-100/50 rounded-full mr-4">
@@ -661,7 +660,6 @@ export default function Emergency() {
             </div>
           </div>
         </Card>
-      </div>{" "}
     </div>
   );
 }
