@@ -39,10 +39,29 @@ export default function Emergency() {
 
   // State for emergency contacts
   // const initialContacts = []; // No longer using hardcoded initial contacts here
-  const [emergencyContacts, setEmergencyContacts] = useState(() => {
+  // const [emergencyContacts, setEmergencyContacts] = useState(() => {
+  //   const savedContacts = localStorage.getItem("emergencyContacts");
+  //   return savedContacts ? JSON.parse(savedContacts) : []; // Initialize with empty array if nothing in localStorage
+  // });
+  const [emergencyContacts, setEmergencyContacts] = useState([]);
+
+  useEffect(() => {
+    // Always use latest from context, plus any saved contacts from localStorage
     const savedContacts = localStorage.getItem("emergencyContacts");
-    return savedContacts ? JSON.parse(savedContacts) : []; // Initialize with empty array if nothing in localStorage
-  });
+    const extraContacts = savedContacts
+      ? JSON.parse(savedContacts).filter((c) => !c.isDefault)
+      : [];
+    const defaultContacts = (user?.emergencyContacts || []).map(
+      (contact, index) => ({
+        id: `default-${index}`,
+        name: contact.name,
+        phone: contact.number,
+        relationship: "Emergency Contact",
+        isDefault: true,
+      })
+    );
+    setEmergencyContacts([...defaultContacts, ...extraContacts]);
+  }, [user]);
 
   const [showAddContactForm, setShowAddContactForm] = useState(false);
   const [newContactName, setNewContactName] = useState("");
@@ -261,7 +280,7 @@ export default function Emergency() {
           </div>
         </div>
       </div>
-      
+
       {/* Content */}
       <div className="container mx-auto w-full max-w-2xl px-6 py-8 flex-1">
         {/* Emergency Button */}
@@ -343,7 +362,6 @@ export default function Emergency() {
             </div>
           </Card>
         </div>
-        
         {/* Location Info */}
         <Card className="mb-8 p-6 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-start">
@@ -393,7 +411,6 @@ export default function Emergency() {
             <LocationComponent />
           </div>
         </Card>{" "}
-        
         {/* Emergency Chat Section */}
         <div className="mb-20">
           {/* Section Header */}
@@ -556,7 +573,8 @@ export default function Emergency() {
                   </div>
                 </Card>
               )}
-            </div>            {/* Default Contacts Section */}
+            </div>{" "}
+            {/* Default Contacts Section */}
             <div>
               <h4 className="text-xl font-semibold text-gray-900 mb-6">
                 Default Contacts
@@ -644,11 +662,12 @@ export default function Emergency() {
                     </Card>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-8">No default contacts available.</p>
+                  <p className="text-gray-500 text-center py-8">
+                    No default contacts available.
+                  </p>
                 )}
               </div>
             </div>
-
             {/* Saved Contacts Section */}
             <div>
               <h4 className="text-xl font-semibold text-gray-900 mb-6">
@@ -744,7 +763,9 @@ export default function Emergency() {
                     </Card>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-8">No saved contacts added.</p>
+                  <p className="text-gray-500 text-center py-8">
+                    No saved contacts added.
+                  </p>
                 )}
               </div>
             </div>
