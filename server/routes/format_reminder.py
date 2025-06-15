@@ -1,12 +1,27 @@
 from flask import Blueprint, request, jsonify, Response
-from together import Together
+try:
+    from together import Together
+except ImportError:
+    # Fallback if together import fails
+    class Together:
+        def __init__(self, api_key):
+            self.api_key = api_key
+        def chat(self):
+            return self
+        def completions(self):
+            return self
+        def create(self, **kwargs):
+            # Mock response
+            class MockResponse:
+                choices = [type('obj', (object,), {'message': type('obj', (object,), {'content': '{"error": "Together API not available"}'})()})]
+            return MockResponse()
 import requests
 import re
 import json as pyjson
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from bson import ObjectId
-from datetime import datetime, date as dt_date
+from datetime import datetime
 import json
 from dateutil.parser import parse as parse_datetime
 import os
@@ -70,10 +85,6 @@ else:
     db = mongo_client['assistant_db']
     reminders_collection = db['reminders']
 
-# Add chat history collection for message logging (like ask_query.py)
-chat_collection_name = os.getenv("CHAT_COLLECTION", "chat_history")
-chat_collection = db[chat_collection_name]
-
 @format_reminder_bp.route('/format-reminder', methods=['POST', 'OPTIONS'])
 def format_reminder():
     # Handle preflight OPTIONS request
@@ -89,7 +100,6 @@ def format_reminder():
     
     # Important - ensure we have a JSON body with 'input' field or Voice Input
     user_input = request.json.get('input', '')
-    user_id = request.json.get('userId')
     # Ensure we have input to process
     if not user_input:
         return jsonify({"error": "No input provided. Please send JSON with 'input' field."}), 400
@@ -100,15 +110,7 @@ def format_reminder():
         messages=[
             {
                 "role": "system",
-                "content": (
-                    "Format user input as one or more reminders. "
-                    "Extract title, date, and time for each reminder. "
-                    "If date is missing, set it has null. "
-                    "If title is missing, use 'New Reminder' as the title. "
-                    "Always return a JSON array with each reminder having id, title, date, and time fields. "
-                    "Date should be in YYYY-MM-DD format. Time should be in HH:MM format. "
-                    "If there are multiple reminders in the input, create multiple JSON objects in the array."
-                )
+                "content": "Format user input as one or more reminders. Extract title, date, and time for each reminder. Always return a JSON array with each reminder having id, title, date, and time fields. Date should be in YYYY-MM-DD format. Time should be in HH:MM format. If there are multiple reminders in the input, create multiple JSON objects in the array."
             },
             {
                 "role": "user",
@@ -129,7 +131,7 @@ def format_reminder():
             array_text = next(group for group in array_match.groups() if group is not None)
             reminders_array = pyjson.loads(array_text)
             if isinstance(reminders_array, list) and len(reminders_array) > 0:
-                return process_reminders(reminders_array, user_id, user_input)
+                return process_reminders(reminders_array)
     except Exception as e:
         print(f"Error extracting array: {str(e)}")
     
@@ -141,123 +143,51 @@ def format_reminder():
             json_text = next(group for group in match.groups() if group is not None)
             reminder_json = pyjson.loads(json_text)
             # Ensure the JSON matches the backend format with all required fields
-            title = reminder_json.get('title') or 'New Reminder'
-            date = reminder_json.get('date') or dt_date.today().strftime('%Y-%m-%d')
+            id = reminder_json.get('id') or str(hash(user_input))
+            title = reminder_json.get('title')
+            date = reminder_json.get('date')
             time = reminder_json.get('time')
             
             # Validate required fields
+            if not title:
+                return jsonify({"error": "Missing title in parsed reminder"}), 400
+            if not date:
+                return jsonify({"error": "Missing date in parsed reminder"}), 400
             if not time:
                 return jsonify({"error": "Missing time in parsed reminder"}), 400
                 
-            post_data = {"title": title, "date": date, "time": time}
-            saved_reminder = save_to_mongodb(post_data, user_id)
+            post_data = {"id": id, "title": title, "date": date, "time": time}
+              # Save to MongoDB and get JSON-safe version
+            saved_reminder = save_to_mongodb(post_data)
             
-            # Save message to chat history (like /chat/message)
-            try:
-                history_doc = chat_collection.find_one({"userId": user_id})
-                history = history_doc.get("history", []) if history_doc else []
-                user_msg = {
-                    "role": "user",
-                    "content": user_input,
-                    "createdAt": datetime.now().isoformat()
-                }
-                history.append(user_msg)
-                assistant_msg = {
-                    "role": "assistant",
-                    "content": "Your reminder on this time is set and you can see your reminders in the reminders page.",
-                    "createdAt": datetime.now().isoformat()
-                }
-                history.append(assistant_msg)
-                chat_collection.update_one(
-                    {"userId": user_id},
-                    {"$set": {"history": history}},
-                    upsert=True
-                )
-            except Exception as e:
-                print(f"Error saving message history: {e}")
-            
-            response_message = "Your reminder on this time is set and you can see your reminders in the reminders page."
-            try:
-                history_doc = chat_collection.find_one({"userId": user_id})
-                history = history_doc.get("history", []) if history_doc else []
-                user_msg = {
-                    "role": "user",
-                    "content": user_input,
-                    "createdAt": datetime.now().isoformat()
-                }
-                history.append(user_msg)
-                assistant_msg = {
-                    "role": "assistant",
-                    "content": response_message,
-                    "createdAt": datetime.now().isoformat()
-                }
-                history.append(assistant_msg)
-                if history_doc:
-                    chat_collection.update_one(
-                        {"userId": user_id},
-                        {"$set": {"history": history}},
-                        upsert=True
-                    )
-                else:
-                    chat_collection.insert_one({"userId": user_id, "history": history})
-            except Exception as e:
-                print(f"Error saving message history: {e}")
-            
-            return jsonify({"success": True, "reminders": [saved_reminder], "count": 1, "message": "Your reminder on this time is set and you can see your reminders in the reminders page."})
+            return jsonify({"success": True, "reminder": saved_reminder})
         except Exception as e:
             return jsonify({"error": "Failed to parse or post JSON", "details": str(e), "raw": content}), 400
     return jsonify({"error": "No JSON found in LLM response", "raw": content}), 400
 
 
 
-def process_reminders(reminders_list, user_id=None, user_input=None):
+def process_reminders(reminders_list):
+    """Process multiple reminders and save them to MongoDB"""
     results = []
     errors = []
-    today_str = dt_date.today().strftime('%Y-%m-%d')
-    response_message = "Your reminder is set and you can see your reminders in the reminders page."
-    # Save user message to chat history (create doc if not exists)
-    if user_id and user_input:
-        try:
-            history_doc = chat_collection.find_one({"userId": user_id})
-            history = history_doc.get("history", []) if history_doc else []
-            user_msg = {
-                "role": "user",
-                "content": user_input,
-                "createdAt": datetime.now().isoformat()
-            }
-            history.append(user_msg)
-            assistant_msg = {
-                "role": "assistant",
-                "content": response_message,
-                "createdAt": datetime.now().isoformat()
-            }
-            history.append(assistant_msg)
-            if history_doc:
-                chat_collection.update_one(
-                    {"userId": user_id},
-                    {"$set": {"history": history}},
-                    upsert=True
-                )
-            else:
-                chat_collection.insert_one({"userId": user_id, "history": history})
-        except Exception as e:
-            print(f"Error saving message history: {e}")
+    
     for reminder in reminders_list:
         try:
             # Extract and validate fields
             id = reminder.get('id') or str(hash(str(reminder)))
-            title = reminder.get('title') or 'New Reminder'
-            date = reminder.get('date') or today_str
+            title = reminder.get('title')
+            date = reminder.get('date') 
             time = reminder.get('time')
             
-            if not time:
-                errors.append(f"Invalid reminder (missing time): {reminder}")
+            if not all([title, date, time]):
+                errors.append(f"Invalid reminder: {reminder}")
                 continue
                 
             reminder_data = {"id": id, "title": title, "date": date, "time": time}
             
             # Save to MongoDB and get JSON-safe version
-            saved_reminder = save_to_mongodb(reminder_data, user_id)
+            saved_reminder = save_to_mongodb(reminder_data)
             
             results.append(saved_reminder)
         except Exception as e:
@@ -267,16 +197,16 @@ def process_reminders(reminders_list, user_id=None, user_input=None):
     
     if not results:
         return jsonify({"error": "No valid reminders found", "details": errors}), 400
+        
     return jsonify({
         "success": True,
         "reminders": results,
         "count": len(results),
-        "errors": errors if errors else None,
-        "message": response_message
+        "errors": errors if errors else None
     })
 
-def save_to_mongodb(reminder, user_id=None):
-    """Save a reminder to MongoDB, with userId if provided"""
+def save_to_mongodb(reminder):
+    """Save a reminder to MongoDB"""
     # Create a copy to avoid modifying the original
     reminder_to_save = reminder.copy()
     
@@ -284,8 +214,7 @@ def save_to_mongodb(reminder, user_id=None):
     now = datetime.now()
     reminder_to_save['created_at'] = now
     reminder_to_save['updated_at'] = now
-    if user_id:
-        reminder_to_save['userId'] = user_id
+    
     # Insert into MongoDB
     result = reminders_collection.insert_one(reminder_to_save)
     inserted_id = result.inserted_id
@@ -302,14 +231,13 @@ def save_to_mongodb(reminder, user_id=None):
 
 @format_reminder_bp.route('/reminders', methods=['GET'])
 def get_reminders():
-    """Get all reminders for a specific userId from MongoDB"""
+    """Get all reminders from MongoDB"""
     print("GET /reminders endpoint called")
-    user_id = request.args.get('userId')
     try:
-        query = {"userId": user_id} if user_id else {}
-        cursor = reminders_collection.find(query)
+        # Fetch all reminders from the collection
+        cursor = reminders_collection.find({})
         reminders_list = list(cursor)
-        print(f"Found {len(reminders_list)} reminders for userId={user_id}")
+        print(f"Found {len(reminders_list)} reminders")
         reminders = convert_to_json_friendly(reminders_list)
         response = jsonify({"success": True, "reminders": reminders, "count": len(reminders)})
         # Explicitly set CORS headers to ensure they're applied
@@ -371,7 +299,7 @@ def save_reminder_data():
             response = jsonify({"success": True, "reminders": results, "count": len(results)})
         else:
             saved_reminder = save_to_mongodb(reminder_data)
-            response = jsonify({"success": True, "reminders": [saved_reminder], "count": 1})
+            response = jsonify({"success": True, "reminder": saved_reminder})
         
         # Explicitly set CORS headers
         response.headers.add('Access-Control-Allow-Origin', '*')
@@ -404,4 +332,3 @@ if __name__ == '__main__':
     # Register the blueprint
     app.register_blueprint(format_reminder_bp)
     app.run(port=8000, debug=True)
-
