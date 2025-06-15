@@ -83,6 +83,7 @@ def format_reminder():
     print("POST /format-reminder endpoint called")
     print(f"Request data: {request.json}")
     
+    # Important - ensure we have a JSON body with 'input' field or Voice Input
     user_input = request.json.get('input', '')
     # Ensure we have input to process
     if not user_input:
