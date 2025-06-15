@@ -55,7 +55,7 @@ export function AskQueries() {
     try {
       let response, data;
       if (isReminder(messageToSend)) {
-        response = await fetch(`/format-reminder`, {
+        response = await fetch(`${route_endpoint}/format-reminder`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ input: messageToSend, userId: user.id }),
@@ -70,7 +70,7 @@ export function AskQueries() {
         setMessages((prev) => [...prev, aiMessage]);
         speak(aiMessage.message);
       } else {
-        response = await fetch(`/chat/message`, {
+        response = await fetch(`${route_endpoint}/chat/message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ input: messageToSend, userId: user.id }),
@@ -106,7 +106,9 @@ export function AskQueries() {
   const fetchHistory = async () => {
     if (!user?.id) return;
     try {
-      const res = await fetch(`/chat/history?userId=${user.id}`);
+      const res = await fetch(
+        `${route_endpoint}/chat/history?userId=${user.id}`
+      );
       const data = await res.json();
 
       const loadedMessages = data.history.map((msg, index) => ({

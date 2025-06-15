@@ -47,7 +47,7 @@ Do not include links or suggest websites. Just speak directly and clearly."""
 
 @chat_bp.route('/chat/history', methods=['GET'])
 def get_chat_history():
-    user_id = request.args.get("userId", default="default")
+    user_id = request.args.get("userId")
     history_doc = collection.find_one({"userId": user_id})
 
     if not history_doc or "history" not in history_doc:

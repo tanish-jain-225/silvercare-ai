@@ -32,6 +32,11 @@ export function Reminders() {
   const [alarmAudio, setAlarmAudio] = useState(null);
   const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // Filter out duplicate reminders by created_at
+  const uniqueReminders = React.useMemo(
+    () => Array.from(new Map(reminders.map((r) => [r.created_at, r])).values()),
+    [reminders]
+  );
   // Function to fetch reminders from the server
   const fetchReminders = async () => {
     if (!user?.id) return;
@@ -152,48 +157,37 @@ export function Reminders() {
     }
   }, []);
 
-  // Filter out duplicate reminders by created_at
-  const uniqueReminders = Array.from(
-    new Map(reminders.map((r) => [r.created_at, r])).values()
-  );
-
+  // Alarm scheduling with cleanup and limit
   React.useEffect(() => {
-    // Clear previous timers
     let timers = [];
     let alarmActive = false;
-    uniqueReminders.forEach((reminder) => {
+    // Only schedule alarms for future reminders, and limit to 1 audio at a time
+    const now = new Date();
+    const futureReminders = uniqueReminders.filter((reminder) => {
+      if (!reminder.date || !reminder.time) return false;
       const reminderTime = new Date(`${reminder.date}T${reminder.time}`);
-      const now = new Date();
+      return reminderTime > now;
+    });
+    futureReminders.forEach((reminder) => {
+      const reminderTime = new Date(`${reminder.date}T${reminder.time}`);
       const delay = reminderTime - now;
       if (delay > 0) {
         const timer = setTimeout(() => {
           if (alarmActive) return; // Prevent overlapping alarms
           alarmActive = true;
-          // Play alarm sound
+          // Only create one Audio object at a time
+          if (alarmAudio) return;
           const audio = new Audio("/alarm.mp3");
           setAlarmAudio(audio);
           setIsAlarmPlaying(true);
-          audio.play();
+          audio.play().catch(() => {});
           // Show notification if allowed
           if (window.Notification && Notification.permission === "granted") {
             new Notification("Alarm", {
               body: `${reminder.title} at ${reminder.time} on ${reminder.date}`,
               icon: "/voice-search.png",
             });
-          } else if (
-            window.Notification &&
-            Notification.permission !== "denied"
-          ) {
-            Notification.requestPermission().then((permission) => {
-              if (permission === "granted") {
-                new Notification("Alarm", {
-                  body: `${reminder.title} at ${reminder.time} on ${reminder.date}`,
-                  icon: "/voice-search.png",
-                });
-              }
-            });
           }
-          // When alarm ends naturally, reset state (ensure only if this audio is still current)
           audio.onended = () => {
             setIsAlarmPlaying(false);
             setAlarmAudio((current) => (current === audio ? null : current));
@@ -203,7 +197,15 @@ export function Reminders() {
         timers.push(timer);
       }
     });
-    return () => timers.forEach((timer) => clearTimeout(timer));
+    // Cleanup timers and audio on unmount or reminders change
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      if (alarmAudio) {
+        alarmAudio.pause();
+        alarmAudio.currentTime = 0;
+        setAlarmAudio(null);
+      }
+    };
   }, [uniqueReminders]);
 
   const handleStopAlarm = () => {
