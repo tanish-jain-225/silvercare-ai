@@ -6,7 +6,7 @@ import json as pyjson
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, date as dt_date
 import json
 from dateutil.parser import parse as parse_datetime
 import os
@@ -100,7 +100,15 @@ def format_reminder():
         messages=[
             {
                 "role": "system",
-                "content": "Format user input as one or more reminders. Extract title, date, and time for each reminder. Always return a JSON array with each reminder having id, title, date, and time fields. Date should be in YYYY-MM-DD format. Time should be in HH:MM format. If there are multiple reminders in the input, create multiple JSON objects in the array."
+                "content": (
+                    "Format user input as one or more reminders. "
+                    "Extract title, date, and time for each reminder. "
+                    "If date is missing, set it has null. "
+                    "If title is missing, use 'New Reminder' as the title. "
+                    "Always return a JSON array with each reminder having id, title, date, and time fields. "
+                    "Date should be in YYYY-MM-DD format. Time should be in HH:MM format. "
+                    "If there are multiple reminders in the input, create multiple JSON objects in the array."
+                )
             },
             {
                 "role": "user",
@@ -134,15 +142,11 @@ def format_reminder():
             reminder_json = pyjson.loads(json_text)
             # Ensure the JSON matches the backend format with all required fields
             id = reminder_json.get('id') or str(hash(user_input))
-            title = reminder_json.get('title')
-            date = reminder_json.get('date')
+            title = reminder_json.get('title') or 'New Reminder'
+            date = reminder_json.get('date') or dt_date.today().strftime('%Y-%m-%d')
             time = reminder_json.get('time')
             
             # Validate required fields
-            if not title:
-                return jsonify({"error": "Missing title in parsed reminder"}), 400
-            if not date:
-                return jsonify({"error": "Missing date in parsed reminder"}), 400
             if not time:
                 return jsonify({"error": "Missing time in parsed reminder"}), 400
                 
@@ -178,17 +182,18 @@ def process_reminders(reminders_list, user_id=None):
     """Process multiple reminders and save them to MongoDB"""
     results = []
     errors = []
+    today_str = dt_date.today().strftime('%Y-%m-%d')
     
     for reminder in reminders_list:
         try:
             # Extract and validate fields
             id = reminder.get('id') or str(hash(str(reminder)))
-            title = reminder.get('title')
-            date = reminder.get('date') 
+            title = reminder.get('title') or 'New Reminder'
+            date = reminder.get('date') or today_str
             time = reminder.get('time')
             
-            if not all([title, date, time]):
-                errors.append(f"Invalid reminder: {reminder}")
+            if not time:
+                errors.append(f"Invalid reminder (missing time): {reminder}")
                 continue
                 
             reminder_data = {"id": id, "title": title, "date": date, "time": time}
