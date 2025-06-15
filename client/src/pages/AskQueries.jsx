@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Send, Pause, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
 import { VoiceButton } from "../components/voice/VoiceButton";
@@ -10,11 +10,12 @@ import { MessageBubble } from "../components/chat/MessageBubble";
 import { LoadingIndicator } from "../components/chat/LoadingIndicator";
 import { useApp } from "../context/AppContext";
 import { route_endpoint } from "../utils/helper";
-import TrueFocus from '../components/ask-queries/TrueFocus';
+import TrueFocus from "../components/ask-queries/TrueFocus";
 import { motion } from "framer-motion";
 
 export function AskQueries() {
   const navigate = useNavigate();
+  const { location } = useLocation();
   const { t } = useTranslation();
   const { speak, stop, isSpeaking } = useVoice();
   const endOfMessagesRef = useRef(null);
@@ -29,6 +30,12 @@ export function AskQueries() {
   // Helper: Detect reminder keywords
   const isReminder = (text) => {
     const keywords = ["remind", "reminder"];
+    const lower = text.toLowerCase();
+    return keywords.some((kw) => lower.includes(kw));
+  };
+
+  const isEmergency = (text) => {
+    const keywords = ["emergency", "sos"];
     const lower = text.toLowerCase();
     return keywords.some((kw) => lower.includes(kw));
   };
@@ -48,12 +55,15 @@ export function AskQueries() {
       }
 
       // Reset local state after successful API call
-      setMessages([{
-        id: "1",
-        message: "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
-        isUser: false,
-        timestamp: new Date(),
-      }]);
+      setMessages([
+        {
+          id: "1",
+          message:
+            "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
       setError(null);
       setHasSpoken(false);
     } catch (error) {
@@ -90,6 +100,38 @@ export function AskQueries() {
         const aiMessage = {
           id: (Date.now() + 1).toString(),
           message: data.message || "Your reminder is set.",
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+        speak(aiMessage.message);
+      } else if (isEmergency(messageToSend)) {
+        const currentLocation = location || { lat: 28.6139, lng: 77.209 };
+        // Prepare contacts and location (replace with real data if available)
+        const contacts =
+          user?.emergencyContacts
+            ?.map((c) => "+91" + c.number)
+            .filter(Boolean) || [];
+        console.log(contacts);
+        // You can get real location using Geolocation API if needed
+        const latitude = currentLocation.lat || "19.0760";
+        const longitude = currentLocation?.lng || "72.8777";
+
+        response = await fetch(`${route_endpoint}/send-emergency`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contacts,
+            latitude,
+            longitude,
+          }),
+        });
+        data = await response.json();
+        const aiMessage = {
+          id: (Date.now() + 1).toString(),
+          message:
+            data.message ||
+            "Emergency contacts have been notified with your location.",
           isUser: false,
           timestamp: new Date(),
         };
@@ -195,7 +237,14 @@ export function AskQueries() {
             className="inline-flex items-center justify-center"
           >
             <TrueFocus
-              texts={['Health', 'Medicines', 'Sleep', 'Diet', 'Pain', 'Anxiety']}
+              texts={[
+                "Health",
+                "Medicines",
+                "Sleep",
+                "Diet",
+                "Pain",
+                "Anxiety",
+              ]}
               mainClassName="
         text-2xl sm:text-3xl font-semibold 
         text-white
@@ -209,13 +258,13 @@ export function AskQueries() {
         transition-all duration-500 ease-in-out
       "
               staggerFrom="last"
-              initial={{ y: '100%' }}
+              initial={{ y: "100%" }}
               animate={{ y: 0 }}
-              exit={{ y: '-120%' }}
+              exit={{ y: "-120%" }}
               staggerDuration={0.025}
               splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
               transition={{
-                type: 'spring',
+                type: "spring",
                 damping: 30,
                 stiffness: 400,
               }}
@@ -326,32 +375,32 @@ export function AskQueries() {
             transform: translateY(0);
           }
         }
-        
+
         .animate-fade-in {
           animation: fade-in 0.3s ease-out forwards;
         }
-        
+
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }
-        
+
         .custom-scrollbar::-webkit-scrollbar-track {
           background: transparent;
         }
-        
+
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(156, 163, 175, 0.5);
           border-radius: 3px;
         }
-        
+
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(156, 163, 175, 0.7);
         }
-        
+
         .dark .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(75, 85, 99, 0.5);
         }
-        
+
         .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(75, 85, 99, 0.7);
         }
