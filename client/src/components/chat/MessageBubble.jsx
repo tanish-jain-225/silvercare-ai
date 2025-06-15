@@ -33,11 +33,15 @@ export function MessageBubble({ message, isUser, isError, timestamp, index }) {
                         }`}
                 >
                     {isUser ? (
-                        <img
-                            src={user.profileImage}
-                            alt="Profile"
-                            className="w-8 h-8 rounded-full"
-                        />
+                        user.profileImage ? (
+                            <img
+                                src={user.profileImage}
+                                alt="Profile"
+                                className="w-8 h-8 rounded-full"
+                            />
+                        ) : (
+                            <User className="w-5 h-5" />
+                        )
                     ) : (
                         <img src="/voice-search.png" className="w-5 h-5" />
                     )}
