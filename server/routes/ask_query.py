@@ -1,7 +1,22 @@
 from flask import Blueprint, request, jsonify
 from pymongo import MongoClient
 import requests
-from together import Together
+try:
+    from together import Together
+except ImportError:
+    # Fallback if together import fails
+    class Together:
+        def __init__(self, api_key):
+            self.api_key = api_key
+        def chat(self):
+            return self
+        def completions(self):
+            return self
+        def create(self, **kwargs):
+            # Mock response
+            class MockResponse:
+                choices = [type('obj', (object,), {'message': type('obj', (object,), {'content': 'I apologize, but the AI service is temporarily unavailable.'})()})]
+            return MockResponse()
 from datetime import datetime, timedelta, timezone
 import os
 from dotenv import load_dotenv
