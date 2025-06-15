@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Send, Brain } from "lucide-react";
+import { ArrowLeft, Send, Pause } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
@@ -23,7 +23,7 @@ const userId = "default"; // Replace with dynamic user ID in production
 export function AskQueries() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { speak } = useVoice();
+  const { speak, stop, isSpeaking } = useVoice();
 
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -171,13 +171,23 @@ export function AskQueries() {
             placeholder={t("typeMessage")}
             onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
           />
-          <Button
-            onClick={() => handleSendMessage()}
-            icon={Send}
-            size="sm"
-            className="px-3 py-2"
-            aria-label="Send"
-          />
+          {isSpeaking ? (
+            <Button
+              onClick={stop}
+              icon={Pause}
+              size="sm"
+              className="px-3 py-2 text-red-600 border-red-300"
+              aria-label="Stop Speaking"
+            />
+          ) : (
+            <Button
+              onClick={() => handleSendMessage()}
+              icon={Send}
+              size="sm"
+              className="px-3 py-2"
+              aria-label="Send"
+            />
+          )}
         </div>
 
         <div className="mt-6">
