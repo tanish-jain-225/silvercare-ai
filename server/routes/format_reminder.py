@@ -49,10 +49,11 @@ def convert_to_json_friendly(document):
             result[key] = value
     return result
 
-# Initialize MongoDB client
+# Initialize MongoDB connection settings
 mongo_url = os.environ.get('MONGO_URI')
-db_name = mongo_client["assistant_db"]
-collection_name = db["reminders"]
+# Database and collection names from env vars
+db_name = os.environ.get('DB_NAME')  # Database name override, default in code below
+collection_name = os.environ.get('COLLECTION_NAME')  # Collection name override
 
 # Initialize Together AI client
 together_api_key = os.environ.get('TOGETHER_API_KEY', 'tgp_v1_WSJUCyB6cAaCZff7oVSK30nK1rxEgSlqAWBHzYdipfM')
