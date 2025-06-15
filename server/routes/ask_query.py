@@ -55,11 +55,20 @@ def get_chat_history():
 
     # Only return messages from the last 24 hours
     twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
-    recent_history = [
-        msg for msg in history_doc["history"]
-        if msg.get("createdAt") and datetime.fromisoformat(msg["createdAt"]) > twenty_four_hours_ago
-    ]
-
+    recent_history = []
+    for msg in history_doc["history"]:
+        created_at = msg.get("createdAt")
+        if created_at:
+            try:
+                dt = datetime.fromisoformat(created_at)
+                # If dt is naive, make it UTC
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                if dt > twenty_four_hours_ago:
+                    recent_history.append(msg)
+            except Exception as e:
+                # If parsing fails, skip this message
+                continue
     return jsonify({"history": recent_history})
 
 @chat_bp.route('/chat/message', methods=['POST'])
