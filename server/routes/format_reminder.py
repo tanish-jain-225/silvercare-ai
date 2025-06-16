@@ -231,19 +231,18 @@ def save_to_mongodb(reminder):
 
 @format_reminder_bp.route('/reminders', methods=['GET'])
 def get_reminders():
-    """Get all reminders from MongoDB"""
-    print("GET /reminders endpoint called")
+    """Get all reminders for a specific user"""
+    user_id = request.args.get("userId")
+    if not user_id:
+        return jsonify({"error": "userId is required"}), 400
+
     try:
-        # Fetch all reminders from the collection
-        cursor = reminders_collection.find({})
+        # Fetch reminders for the specific user
+        cursor = reminders_collection.find({"userId": user_id})
         reminders_list = list(cursor)
-        print(f"Found {len(reminders_list)} reminders")
+        print(f"Found {len(reminders_list)} reminders for user {user_id}")
         reminders = convert_to_json_friendly(reminders_list)
-        response = jsonify({"success": True, "reminders": reminders, "count": len(reminders)})
-        # Explicitly set CORS headers to ensure they're applied
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
+        return jsonify({"success": True, "reminders": reminders, "count": len(reminders)})
     except Exception as e:
         print(f"Error in get_reminders: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -308,27 +307,24 @@ def save_reminder_data():
         print(f"Error in save_reminder_data: {str(e)}")
         return jsonify({"error": f"Failed to save reminder data: {str(e)}"}), 500
 
-@format_reminder_bp.route('/reminders/<created_at>', methods=['DELETE'])
-def delete_reminder(created_at):
-    """Delete a reminder by its created_at timestamp (string match)"""
+@format_reminder_bp.route('/delete-reminder', methods=['POST'])
+def delete_reminder():
+    """Delete a reminder by ID and userId"""
     try:
-        # Parse the string to a datetime object
-        dt = parse_datetime(created_at)
-        result = reminders_collection.delete_one({'created_at': dt})
-        if result.deleted_count == 0:
-            return jsonify({'error': 'Reminder not found'}), 404
-        return jsonify({'success': True, 'message': 'Reminder deleted'})
-    except Exception as e:
-        print(f"Error deleting reminder: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        data = request.json
+        reminder_id = data.get("id")
+        user_id = data.get("userId")
 
-if __name__ == '__main__':
-    from flask import Flask
-    from flask_cors import CORS
-    
-    app = Flask(__name__)
-    # Enable CORS with specific configuration
-    CORS(app, resources={r"/*": {"origins": ["*"], "supports_credentials": True}})
-    # Register the blueprint
-    app.register_blueprint(format_reminder_bp)
-    app.run(port=8000, debug=True)
+        if not reminder_id or not user_id:
+            return jsonify({"error": "Both id and userId are required"}), 400
+
+        # Attempt to delete the reminder by ID and userId
+        result = reminders_collection.delete_one({"id": reminder_id, "userId": user_id})
+
+        if result.deleted_count == 0:
+            return jsonify({"error": f"Reminder with ID {reminder_id} and userId {user_id} not found"}), 404
+
+        return jsonify({"success": True, "message": f"Reminder with ID {reminder_id} deleted"})
+    except Exception as e:
+        print(f"Error in delete_reminder: {str(e)}")
+        return jsonify({"error": str(e)}), 500
