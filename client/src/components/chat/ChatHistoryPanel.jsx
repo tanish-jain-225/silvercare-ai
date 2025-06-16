@@ -21,39 +21,39 @@ export function ChatHistoryPanel({
 }) {
   const [hoveredChatId, setHoveredChatId] = useState(null);
 
-  // Sample chat history data for demonstration
-  const sampleChats = [
-    {
-      id: "1",
-      title: "Health consultation about sleep",
-      preview: "I've been having trouble sleeping lately...",
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      messageCount: 8,
-    },
-    {
-      id: "2",
-      title: "Diet and nutrition advice",
-      preview: "What foods should I eat for better energy?",
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-      messageCount: 12,
-    },
-    {
-      id: "3",
-      title: "Exercise routine questions",
-      preview: "I want to start a workout routine...",
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      messageCount: 6,
-    },
-    {
-      id: "4",
-      title: "Mental health support",
-      preview: "I've been feeling anxious lately...",
-      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
-      messageCount: 15,
-    },
-  ];
+  // // Sample chat history data for demonstration
+  // const sampleChats = [
+  //   {
+  //     id: "1",
+  //     title: "Health consultation about sleep",
+  //     preview: "I've been having trouble sleeping lately...",
+  //     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+  //     messageCount: 8,
+  //   },
+  //   {
+  //     id: "2",
+  //     title: "Diet and nutrition advice",
+  //     preview: "What foods should I eat for better energy?",
+  //     timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+  //     messageCount: 12,
+  //   },
+  //   {
+  //     id: "3",
+  //     title: "Exercise routine questions",
+  //     preview: "I want to start a workout routine...",
+  //     timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+  //     messageCount: 6,
+  //   },
+  //   {
+  //     id: "4",
+  //     title: "Mental health support",
+  //     preview: "I've been feeling anxious lately...",
+  //     timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
+  //     messageCount: 15,
+  //   },
+  // ];
 
-  const chats = chatHistory.length > 0 ? chatHistory : sampleChats;
+  const chats = chatHistory
 
   const formatTimestamp = (timestamp) => {
     const now = new Date();

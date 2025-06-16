@@ -278,31 +278,6 @@ export function Header() {
               </Link>
             </li>
             <li>
-              <div className="relative">
-                <button
-                  className="block w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-2 px-2 text-sm font-medium rounded-lg"
-                  onClick={() => setIsLangOpen(!isLangOpen)}
-                >
-                  {LANGUAGES.find((l) => l.code === i18n.language)?.label ||
-                    "Language"}
-                </button>
-                {isLangOpen && (
-                  <ul className="absolute left-0 mt-2 bg-white dark:bg-dark-50 shadow-lg rounded-lg py-2 w-full">
-                    {LANGUAGES.map((lang) => (
-                      <li key={lang.code}>
-                        <button
-                          className="block w-full text-left px-4 py-2 text-sm text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5"
-                          onClick={() => handleLanguageChange(lang.code)}
-                        >
-                          {lang.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </li>
-            <li>
               <button
                 className="block w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-2 px-2 text-sm font-medium rounded-lg"
                 onClick={() => {

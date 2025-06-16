@@ -85,25 +85,24 @@ export function AskQueries() {
   // Handle responsive behavior on window resize
   useEffect(() => {
     const handleResize = () => {
-      const largeScreen = window.innerWidth >= 1024;
-      const mediumScreen = window.innerWidth >= 768 && window.innerWidth < 1024;
-
-      setIsLargeScreen(largeScreen);
-
-      // On large screens, always start with panel hidden (overlay mode)
-      if (largeScreen) {
-        setIsHistoryPanelOpen(false);
-      }
-
-      // Auto-hide panel on medium screens if it was open
-      if (mediumScreen && isHistoryPanelOpen) {
-        setIsHistoryPanelOpen(false);
-      }
+      setIsLargeScreen(window.innerWidth >= 1024);
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [isHistoryPanelOpen]);
+  }, []);
+
+  const containerClasses = isLargeScreen
+    ? "flex flex-row h-full"
+    : "flex flex-col h-full";
+
+  const chatPanelClasses = isLargeScreen
+    ? "w-1/4 border-r border-gray-300 dark:border-gray-700"
+    : "w-full border-b border-gray-300 dark:border-gray-700";
+
+  const chatAreaClasses = isLargeScreen
+    ? "w-3/4"
+    : "w-full";
 
   // Helper: Detect reminder keywords
   const isReminder = (text) => {
