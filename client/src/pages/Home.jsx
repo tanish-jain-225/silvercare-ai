@@ -214,22 +214,22 @@ export function Home() {
                 <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-white/5 dark:bg-white/10 rounded-full blur-3xl transform group-hover:scale-150 transition-transform duration-500"></div>
               </div>
 
-              <div className="text-center flex flex-col justify-center items-center h-full space-y-2 sm:space-y-6 relative z-10">
-                {/* Icon Container */}
+              <div className="text-center flex flex-col justify-center items-center h-full space-y-2 sm:space-y-4 relative z-10">
+                {/* Icon Container - Removed background and border */}
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  className={`inline-flex items-center justify-center w-12 h-12 sm:w-20 sm:h-20 rounded-3xl ${feature.iconBg} transition-all duration-300 group-hover:shadow-lg shadow-md group-hover:scale-110`}
+                  className="inline-flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                 >
                   <feature.icon
                     size={28}
-                    className={`${feature.iconColor} opacity-90 transition-all duration-300 group-hover:opacity-100 group-hover:scale-110 sm:size-36`}
+                    className={`${feature.iconColor} opacity-90 transition-all duration-300 group-hover:opacity-100 group-hover:scale-110 sm:size-24 lg:size-20`}
                     aria-hidden="true"
                   />
                 </motion.div>
 
                 {/* Title and Description */}
-                <div className="space-y-1 sm:space-y-3">
+                <div className="space-y-1 sm:space-y-2">
                   <h3
                     className={`text-lg sm:text-2xl font-bold theme-text-primary transition-colors duration-300 ${feature.textHover}`}
                   >
@@ -242,12 +242,12 @@ export function Home() {
                   </p>
                 </div>
 
-                {/* Interactive Arrow */}
+                {/* Interactive Arrow - Hidden on small/medium screens */}
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="mt-4"
+                  className="mt-2 hidden lg:block"
                 >
                   <div
                     className={`inline-flex items-center space-x-2 ${feature.textHover} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
@@ -260,10 +260,9 @@ export function Home() {
 
               {/* Hover Border Effect */}
               <div
-                className={`absolute inset-0 rounded-2xl border-2 border-transparent ${
-                  feature.borderColor ||
+                className={`absolute inset-0 rounded-2xl border-2 border-transparent ${feature.borderColor ||
                   "group-hover:border-primary-200/20 dark:group-hover:border-primary-100/20"
-                } transition-colors duration-300 pointer-events-none`}
+                  } transition-colors duration-300 pointer-events-none`}
               ></div>
             </motion.div>
           ))}

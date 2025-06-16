@@ -243,7 +243,7 @@ export function Reminders() {
           const audio = new Audio("/alarm.mp3");
           setAlarmAudio(audio);
           setIsAlarmPlaying(true);
-          audio.play().catch(() => {});
+          audio.play().catch(() => { });
           // Show notification if allowed
           if (window.Notification && Notification.permission === "granted") {
             new Notification("Alarm", {
@@ -394,34 +394,68 @@ export function Reminders() {
           </button>
         </div>
       )}
+
       {/* Page Header */}
-      <div className="w-full bg-gradient-to-r from-primary-100/80 via-primary-200/80 to-accent-yellow/30 dark:from-dark-100/80 dark:via-dark-200/80 dark:to-accent-yellow/20 backdrop-blur-sm border-b border-primary-200/30 dark:border-dark-600/30">
-        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex flex-col items-center text-center gap-3">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-300 dark:text-primary-100">
-              {t("reminders")}
+      <div className="w-full bg-gradient-to-br from-primary-50 via-primary-100/50 to-accent-yellow/20 dark:from-dark-50 dark:via-dark-100/50 dark:to-accent-yellow/10 backdrop-blur-sm border-b border-primary-100/20 dark:border-dark-600/20">
+        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+          <div className="flex flex-col items-center text-center gap-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-300 dark:text-primary-100">
+              {t("Reminders")}
             </h1>
-            <div className="flex items-center gap-2 mt-2">
+            <p className="text-primary-200/80 dark:text-primary-100/60 text-sm sm:text-base max-w-md">
+              {t("manageReminders", "Manage your daily reminders and stay on track")}
+            </p>
+            <div className="flex items-center gap-4 mt-4">
               <Button
                 onClick={() => fetchReminders(true)}
                 variant="outline"
-                size="sm"
-                icon={RefreshCw}
+                size="lg"
                 disabled={isLoading || syncStatus === "syncing"}
                 ariaLabel={t("refreshReminders", "Refresh reminders")}
-                className={`${syncStatus === "syncing" ? "animate-pulse" : ""} dark:hover:bg-dark-200`}
+                className={`${syncStatus === "syncing" ? "animate-pulse" : ""} 
+                  px-6 py-3 
+                  hover:bg-primary-50 dark:hover:bg-dark-200 
+                  border-2 border-primary-200/30 dark:border-dark-600/30
+                  rounded-xl
+                  transition-all duration-300
+                  hover:scale-105
+                  hover:shadow-lg
+                  focus:ring-2 focus:ring-primary-200/50 dark:focus:ring-primary-100/50
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  text-base font-medium
+                  flex items-center justify-center gap-2`}
               >
-                <span className="hidden sm:inline ml-1">{t("refresh")}</span>
+                <div className="flex items-center gap-1 align-middle">
+                  <RefreshCw className="w-5 h-5" />
+                  <span>{t("Refresh")}</span>
+                </div>
+
               </Button>
               <Button
                 onClick={() => setShowAddForm(true)}
                 variant="primary"
-                size="sm"
-                icon={Plus}
+                size="lg"
                 ariaLabel={t("add")}
-                className="dark:bg-dark-300"
+                className="
+                  px-6 py-3
+                  bg-gradient-to-r from-primary-300 to-primary-400 
+                  dark:from-primary-200 dark:to-primary-300 
+                  hover:from-primary-400 hover:to-primary-500 
+                  dark:hover:from-primary-300 dark:hover:to-primary-400 
+                  text-white 
+                  rounded-xl
+                  shadow-lg
+                  transition-all duration-300
+                  hover:scale-105
+                  hover:shadow-xl
+                  focus:ring-2 focus:ring-primary-200/50 dark:focus:ring-primary-100/50
+                  text-base font-medium
+                  flex items-center justify-center gap-2"
               >
-                <span className="ml-1">{t("addReminder")}</span>
+                <div className="flex items-center gap-1">
+                  <Plus className="w-5 h-5" />
+                  <span>{t("addReminder")}</span>
+                </div>
               </Button>
             </div>
           </div>

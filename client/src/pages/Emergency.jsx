@@ -289,11 +289,10 @@ export default function Emergency() {
                     onClick={handleEmergencyCall}
                     disabled={isEmergencyActive || locationLoading}
                     className={`relative z-10
-                      ${
-                        isEmergencyActive
-                          ? "bg-white/90 text-primary-400 dark:bg-white/80 dark:text-primary-200"
-                          : // Red button in light mode, keep gradient in dark mode
-                            "bg-red-600 hover:bg-red-700 text-white dark:bg-gradient-to-r dark:from-primary-500 dark:to-primary-600 dark:text-white dark:hover:from-primary-600 dark:hover:to-primary-700"
+                      ${isEmergencyActive
+                        ? "bg-white/90 text-primary-400 dark:bg-white/80 dark:text-primary-200"
+                        : // Red button in light mode, keep gradient in dark mode
+                        "bg-red-600 hover:bg-red-700 text-white dark:bg-gradient-to-r dark:from-primary-500 dark:to-primary-600 dark:text-white dark:hover:from-primary-600 dark:hover:to-primary-700"
                       }
                       text-lg font-bold px-8 py-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 w-full max-w-xs`}
                     size="xl"
@@ -384,7 +383,7 @@ export default function Emergency() {
                   ) : location ? (
                     <p className="text-primary-200 dark:text-primary-100/90">
                       Location sharing is{" "}
-                      <span className="font-medium text-primary-300 dark:text-primary-100">
+                      <span className="font-medium text-green-500 dark:text-green-500">
                         active
                       </span>{" "}
                       for emergency services.
@@ -456,11 +455,10 @@ export default function Emergency() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleSpeechToText("any-number")}
-                    className={`p-3 rounded-full transition-all duration-200 ${
-                      isListening["any-number"]
-                        ? "bg-primary-400 text-white animate-pulse"
-                        : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
-                    }`}
+                    className={`p-3 rounded-full transition-all duration-200 ${isListening["any-number"]
+                      ? "bg-primary-400 text-white animate-pulse"
+                      : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
+                      }`}
                     title={
                       isListening["any-number"]
                         ? "Listening..."
@@ -616,11 +614,10 @@ export default function Emergency() {
                           {/* Microphone Button */}
                           <button
                             onClick={() => handleSpeechToText(contact.id)}
-                            className={`p-3 rounded-full transition-all duration-200 ${
-                              isListening[contact.id]
-                                ? "bg-primary-400 text-white animate-pulse"
-                                : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
-                            }`}
+                            className={`p-3 rounded-full transition-all duration-200 ${isListening[contact.id]
+                              ? "bg-primary-400 text-white animate-pulse"
+                              : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
+                              }`}
                             title={
                               isListening[contact.id]
                                 ? "Listening..."
@@ -709,11 +706,10 @@ export default function Emergency() {
                             {/* Microphone Button */}
                             <button
                               onClick={() => handleSpeechToText(contact.id)}
-                              className={`p-3 rounded-full transition-all duration-200 ${
-                                isListening[contact.id]
-                                  ? "bg-primary-400 text-white animate-pulse"
-                                  : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
-                              }`}
+                              className={`p-3 rounded-full transition-all duration-200 ${isListening[contact.id]
+                                ? "bg-primary-400 text-white animate-pulse"
+                                : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
+                                }`}
                               title={
                                 isListening[contact.id]
                                   ? "Listening..."

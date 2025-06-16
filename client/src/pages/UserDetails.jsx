@@ -29,20 +29,18 @@ const VoiceButton = ({ listening, onClick, fieldName }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`p-2.5 rounded-full transition-all duration-300 transform hover:scale-110 ${
-      listening
-        ? "bg-gradient-to-r from-red-500 to-pink-500 text-white animate-pulse shadow-lg shadow-red-500/50"
-        : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 shadow-md hover:shadow-lg"
-    }`}
+    className={`p-2.5 rounded-full transition-all duration-300 transform hover:scale-110 ${listening
+      ? "bg-gradient-to-r from-red-500 to-pink-500 text-white animate-pulse shadow-lg shadow-red-500/50"
+      : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 shadow-md hover:shadow-lg"
+      }`}
     aria-label={
       listening ? "Stop recording" : `Start voice input for ${fieldName}`
     }
   >
     <Mic
       size={18}
-      className={`transition-transform duration-300 ${
-        listening ? "animate-bounce" : ""
-      }`}
+      className={`transition-transform duration-300 ${listening ? "animate-bounce" : ""
+        }`}
     />
   </button>
 );
@@ -500,20 +498,18 @@ export function UserDetails() {
           {steps.map((label, idx) => (
             <div key={label} className="flex-1 flex flex-col items-center">
               <div
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-white text-base sm:text-lg shadow-lg transition-all duration-300 ${
-                  step === idx + 1
-                    ? "bg-gradient-to-br from-purple-500 to-indigo-500 scale-110"
-                    : step > idx + 1
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-white text-base sm:text-lg shadow-lg transition-all duration-300 ${step === idx + 1
+                  ? "bg-gradient-to-br from-purple-500 to-indigo-500 scale-110"
+                  : step > idx + 1
                     ? "bg-green-400 scale-100"
                     : "bg-gray-300 scale-90"
-                }`}
+                  }`}
               >
                 {idx + 1}
               </div>
               <span
-                className={`text-[10px] sm:text-xs mt-1 font-medium ${
-                  step === idx + 1 ? "text-indigo-700" : "text-gray-400"
-                }`}
+                className={`text-[10px] sm:text-xs mt-1 font-medium ${step === idx + 1 ? "text-indigo-700" : "text-gray-400"
+                  }`}
               >
                 {label}
               </span>
