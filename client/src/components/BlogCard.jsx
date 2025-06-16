@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from './ui/Button';
+import { Navigate } from 'react-router-dom';
 
 const CATEGORY_COLORS = {
     business: 'bg-blue-100 text-blue-800',
@@ -21,7 +22,7 @@ const CATEGORY_ICONS = {
     technology: '💻'
 };
 
-export function BlogCard({ article, className = '' }) {
+export function BlogCard({ article, className = '', onReadMore }) {
     const {
         title,
         description,
@@ -32,9 +33,22 @@ export function BlogCard({ article, className = '' }) {
         category = 'general'
     } = article;
 
-    const handleReadMore = () => {
-        window.open(url, '_blank', 'noopener,noreferrer');
-    };
+    const popUpCard = () => {
+        const articleDetails = {
+            title,
+            description,
+            url,
+            urlToImage,
+            source,
+            publishedAt,
+            category
+        };
+
+        // Trigger the popup in BlogSection
+        if (onReadMore) {
+            onReadMore(articleDetails);
+        }
+    }
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -69,7 +83,7 @@ export function BlogCard({ article, className = '' }) {
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
+                            e.target.src = '/public/voice-search.png'; // Local fallback image
                         }}
                     />
                 ) : (
@@ -121,17 +135,14 @@ export function BlogCard({ article, className = '' }) {
 
                 {/* Read More Button */}
                 <Button
-                    onClick={handleReadMore}
+                    onClick={() => {popUpCard()}}
                     className="mt-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg
                      transition-all duration-200 transform hover:scale-105 hover:shadow-md
                      flex items-center justify-center space-x-2"
                 >
-                    <span>Read More</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
+                    <span>View Insights</span>
                 </Button>
             </div>
         </div>
     );
-} 
+}

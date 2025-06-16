@@ -43,6 +43,7 @@ export function BlogSection() {
   const [refreshing, setRefreshing] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(0);
   const [allImagesLoaded, setAllImagesLoaded] = useState(false);
+  const [selectedBlog, setSelectedBlog] = useState(null); // State for selected blog
 
   // User ID management
   const [userId] = useState(() => generateUserId());
@@ -330,6 +331,14 @@ export function BlogSection() {
     return userInterests.map(interest => displayNames[interest] || interest).join(', ');
   };
 
+  const handleShowPopup = (blog) => {
+    setSelectedBlog(blog);
+  };
+
+  const handleClosePopup = () => {
+    setSelectedBlog(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex flex-col">
       {/* Header */}
@@ -439,14 +448,14 @@ export function BlogSection() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {displayedArticles.map((article, index) => (
                 <div 
-                  key={index} 
+                  key={article.id} 
                   className="opacity-0 animate-fade-in"
                   style={{
                     animationDelay: `${(article.animationIndex % 18) * 150}ms`,
                     animationFillMode: 'forwards'
                   }}
                 >
-                  <BlogCard article={article} />
+                  <BlogCard article={article} onReadMore={handleShowPopup} />
                 </div>
               ))}
             </div>
@@ -471,6 +480,48 @@ export function BlogSection() {
           : "Update your interests to see different news articles."
         }
       />
+
+      {/* Popup for Blog Details */}
+      {selectedBlog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-3xl w-full relative overflow-y-auto max-h-screen">
+            <button
+              onClick={handleClosePopup}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            >
+              ✖
+            </button>
+            <h2 className="text-2xl font-bold mb-4">{selectedBlog.title}</h2>
+            <img
+              src={selectedBlog.urlToImage || '/public/voice-search.png'}
+              alt={selectedBlog.title}
+              className="w-full h-auto mb-4 rounded-lg"
+            />
+            <p className="text-gray-700 mb-4">{selectedBlog.description}</p>
+            <a
+              href={selectedBlog.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline"
+            >
+              Read Full Article
+            </a>
+            <div className="text-sm text-gray-500 mt-4">Published on: {new Date(selectedBlog.publishedAt).toLocaleDateString()}</div>
+            <button
+              onClick={() => {
+                const utterance = new SpeechSynthesisUtterance(selectedBlog.title);
+                window.speechSynthesis.speak(utterance);
+              }}
+              className="mt-4 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full
+               transition-all duration-200 transform hover:scale-105 hover:shadow-md
+               flex items-center justify-center text-sm"
+              title="Speak Headline"
+            >
+              🔊 Speak
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

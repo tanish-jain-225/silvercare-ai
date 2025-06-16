@@ -13,7 +13,8 @@ export function Button({
   className = "",
   ariaLabel,
   ...props
-}) {  const baseClasses =
+}) {
+  const baseClasses =
     "font-semibold rounded-xl sm:rounded-2xl transition-all duration-200 focus:outline-none focus-visible:ring-2 sm:focus-visible:ring-4 focus-visible:ring-offset-1 sm:focus-visible:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow-md";
 
   const variantClasses = {
@@ -92,14 +93,4 @@ Button.propTypes = {
   fullWidth: PropTypes.bool,
   className: PropTypes.string,
   ariaLabel: PropTypes.string,
-};
-
-Button.defaultProps = {
-  variant: "primary",
-  size: "md",
-  disabled: false,
-  type: "button",
-  fullWidth: false,
-  className: "",
-  ariaLabel: undefined,
 };
