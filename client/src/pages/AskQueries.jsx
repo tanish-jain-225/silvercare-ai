@@ -100,13 +100,11 @@ export function AskQueries() {
     ? "w-1/4 border-r border-gray-300 dark:border-gray-700"
     : "w-full border-b border-gray-300 dark:border-gray-700";
 
-  const chatAreaClasses = isLargeScreen
-    ? "w-3/4"
-    : "w-full";
+  const chatAreaClasses = isLargeScreen ? "w-3/4" : "w-full";
 
   // Helper: Detect reminder keywords
   const isReminder = (text) => {
-    const keywords = ["remind", "reminder"];
+    const keywords = ["remind", "reminder", "alarm", "alert"];
     const lower = text.toLowerCase();
     return keywords.some((kw) => lower.includes(kw));
   };
@@ -320,7 +318,8 @@ export function AskQueries() {
       setError("Unable to connect to the server. Please try again.");
       const errorMessage = {
         id: (Date.now() + 2).toString(),
-        message: error.message || "Unable to connect to the server. Please try again.",
+        message:
+          error.message || "Unable to connect to the server. Please try again.",
         isUser: false,
         timestamp: new Date(),
         isError: true,
@@ -429,8 +428,9 @@ export function AskQueries() {
         <motion.div
           layout
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${isLargeScreen ? "justify-center" : "justify-between"
-            }`}
+          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${
+            isLargeScreen ? "justify-center" : "justify-between"
+          }`}
         >
           {/* Show Chats Button - Only visible when panel is hidden on large screens */}
           <AnimatePresence>
