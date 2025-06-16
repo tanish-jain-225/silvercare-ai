@@ -9,7 +9,9 @@ const LANGUAGES = [
   { code: "en", name: "English", label: "English" },
   { code: "hi", name: "Hindi", label: "हिंदी" },
   { code: "mr", name: "Marathi", label: "मराठी" },
-  { code: "gu", name: "Gujarati", label: "ગુજરાતી" },
+  { code: "bn", name: "Bengali", label: "বাংলা" },
+  { code: "fr", name: "French", label: "Français" },
+  { code: "es", name: "Spanish", label: "Español" },
 ];
 
 export function Header() {
@@ -66,21 +68,29 @@ export function Header() {
         {/* Logo and Brand */}
         <Link
           to="/home"
-          className="flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 rounded-lg p-1 transition-all hover:scale-105"
+          className="flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 rounded-lg p-1 transition-all hover:scale-105"
         >
           <img
             src="/voice-search.png"
             alt="SilverCare AI Logo"
             className="w-10 h-10"
           />
-          <span className="text-xl font-bold text-primary-300 dark:text-primary-100 tracking-tight">
-            SilverCare AI
+          <span className="text-lg font-bold text-primary-300 dark:text-primary-100 tracking-tight">
+            SilverCareAI
           </span>
         </Link>
 
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden text-primary-300 dark:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 rounded-lg p-2"
+          onClick={() => setIsMenuOpen((v) => !v)}
+        >
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-4">
-          <div className="flex items-center gap-8 px-4">
+          <div className="flex items-center gap-4">
             <Link
               to="/home"
               className="text-primary-300 dark:text-primary-100 hover:text-primary-200 dark:hover:text-primary-200 transition-colors font-medium"
@@ -113,220 +123,210 @@ export function Header() {
             </Link>
           </div>
 
-          {/* Theme Toggle */}
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
-          {/* Language Dropdown */}
-          <div className="relative">
-            <button
-              className="flex items-center gap-2 text-primary-300 dark:text-primary-100 font-medium hover:text-primary-200 dark:hover:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 rounded-lg px-3 py-2 transition-all hover:bg-primary-100/10 dark:hover:bg-primary-100/5"
-              onClick={() => setIsLangOpen((v) => !v)}
-              aria-haspopup="listbox"
-              aria-expanded={isLangOpen}
-              type="button"
-            >
-              <Globe size={18} />
-              <span className="hidden sm:inline">
-                {LANGUAGES.find((l) => l.code === i18n.language)?.label ||
-                  "Language"}
-              </span>
-              <ChevronDown
-                size={14}
-                className="transition-transform duration-200"
-                style={{
-                  transform: isLangOpen ? "rotate(180deg)" : "rotate(0deg)",
-                }}
-              />
-            </button>
-            {isLangOpen && (
-              <ul
-                className="absolute right-0 mt-2 w-40 rounded-xl shadow-lg bg-white dark:bg-dark-50 py-2 z-50 border border-primary-100/20 dark:border-dark-600/20 backdrop-blur-sm"
-                role="listbox"
-                tabIndex={-1}
-              >
-                {LANGUAGES.map((lang) => (
-                  <li key={lang.code}>
-                    <button
-                      className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
-                        i18n.language === lang.code
-                          ? "text-primary-200 dark:text-primary-100 font-bold bg-primary-100/10 dark:bg-primary-100/5"
-                          : "text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5"
-                      }`}
-                      onClick={() => handleLanguageChange(lang.code)}
-                      role="option"
-                      aria-selected={i18n.language === lang.code}
-                      type="button"
-                    >
-                      {lang.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* User Profile Dropdown */}
-          {user && (
-            <div className="relative flex items-center" ref={menuRef}>
+            {/* Language Dropdown */}
+            <div className="relative">
               <button
-                className="flex items-center gap-2 text-primary-300 dark:text-primary-100 font-medium hover:text-primary-200 dark:hover:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 rounded-lg px-3 py-2 transition-all hover:bg-primary-100/10 dark:hover:bg-primary-100/5"
-                onClick={() => setIsMenuOpen((v) => !v)}
+                className="flex items-center gap-1 text-primary-300 dark:text-primary-100 font-medium hover:text-primary-200 dark:hover:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 rounded-lg px-1 py-2 transition-all hover:bg-primary-100/10 dark:hover:bg-primary-100/5"
+                onClick={() => setIsLangOpen((v) => !v)}
                 aria-haspopup="listbox"
-                aria-expanded={isMenuOpen}
+                aria-expanded={isLangOpen}
                 type="button"
               >
-                {user.profileImage ? (
-                  <img
-                    src={user.profileImage}
-                    alt="Profile"
-                    className="w-8 h-8 rounded-full object-cover border-2 border-primary-200 dark:border-primary-100 shadow-sm"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary-100/20 dark:bg-primary-100/10 flex items-center justify-center text-primary-200 dark:text-primary-100 font-bold">
-                    <User size={22} />
-                  </div>
-                )}
+                <Globe size={18} />
+                <span className="hidden sm:inline">
+                  {LANGUAGES.find((l) => l.code === i18n.language)?.label ||
+                    "Language"}
+                </span>
                 <ChevronDown
-                  size={16}
+                  size={14}
                   className="transition-transform duration-200"
                   style={{
-                    transform: isMenuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    transform: isLangOpen ? "rotate(180deg)" : "rotate(0deg)",
                   }}
                 />
               </button>
-              {isMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl shadow-lg bg-white dark:bg-dark-50 py-2 z-50 border border-primary-100/20 dark:border-dark-600/20 backdrop-blur-sm">
-                  <Link
-                    to="/profile"
-                    className="flex items-center px-4 py-2 text-sm text-primary-300 dark:text-primary-100 hover:bg-primary-100/10 dark:hover:bg-primary-100/5 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <User size={16} className="mr-2" />
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="flex items-center w-full text-left px-4 py-2 text-sm text-accent-orange dark:text-accent-orange hover:bg-primary-100/10 dark:hover:bg-primary-100/5 transition-colors"
-                    type="button"
-                  >
-                    <LogOut size={16} className="mr-2" />
-                    Logout
-                  </button>
-                </div>
+
+              {isLangOpen && (
+                <ul
+                  className="absolute right-0 mt-2 w-40 rounded-xl shadow-lg bg-white dark:bg-dark-50 py-2 z-50 border border-primary-100/20 dark:border-dark-600/20 backdrop-blur-sm"
+                  role="listbox"
+                  tabIndex={-1}
+                >
+                  {LANGUAGES.map((lang) => (
+                    <li key={lang.code}>
+                      <button
+                        className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
+                          i18n.language === lang.code
+                            ? "text-primary-200 dark:text-primary-100 font-bold bg-primary-100/10 dark:bg-primary-100/5"
+                            : "text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5"
+                        }`}
+                        onClick={() => handleLanguageChange(lang.code)}
+                        role="option"
+                        aria-selected={i18n.language === lang.code}
+                        type="button"
+                      >
+                        {lang.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
-          )}
-        </nav>
 
-        {/* Mobile Profile and Menu Combined */}
-        <div className="flex md:hidden items-center gap-3">
-          {/* Theme Toggle for Mobile */}
-          <ThemeToggle />
-
-          <div
-            className="flex items-center gap-2 rounded-xl border border-primary-100/20 dark:border-dark-600/20 bg-white dark:bg-dark-50 shadow-sm p-2 cursor-pointer transition-all hover:shadow-md hover:scale-105"
-            onClick={() => setIsMenuOpen((v) => !v)}
-            aria-haspopup="listbox"
-            aria-expanded={isMenuOpen}
-          >
-            {user && user.profileImage ? (
-              <img
-                src={user.profileImage}
-                alt="Profile"
-                className="w-8 h-8 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-primary-100/20 dark:bg-primary-100/10 flex items-center justify-center text-primary-200 dark:text-primary-100 font-bold">
-                <User size={22} />
+            {/* User Profile Dropdown */}
+            {user && (
+              <div className="relative flex items-center" ref={menuRef}>
+                <button
+                  className="flex items-center gap-2 text-primary-300 dark:text-primary-100 font-medium hover:text-primary-200 dark:hover:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 rounded-lg px-1 py-2 transition-all hover:bg-primary-100/10 dark:hover:bg-primary-100/5"
+                  onClick={() => setIsMenuOpen((v) => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={isMenuOpen}
+                  type="button"
+                >
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full object-cover border-2 border-primary-200 dark:border-primary-100 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-primary-100/20 dark:bg-primary-100/10 flex items-center justify-center text-primary-200 dark:text-primary-100 font-bold">
+                      <User size={22} />
+                    </div>
+                  )}
+                  <ChevronDown
+                    size={16}
+                    className="transition-transform duration-200"
+                    style={{
+                      transform: isMenuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    }}
+                  />
+                </button>
+                {isMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 rounded-xl shadow-lg bg-white dark:bg-dark-50 py-2 z-50 border border-primary-100/20 dark:border-dark-600/20 backdrop-blur-sm">
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5"
+                      onClick={() => navigateAndClose("/profile")}
+                    >
+                      Profile
+                    </button>
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-            {isMenuOpen ? (
-              <X size={24} className="text-primary-300 dark:text-primary-100" />
-            ) : (
-              <Menu
-                size={24}
-                className="text-primary-300 dark:text-primary-100"
-              />
             )}
           </div>
-        </div>
+        </nav>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden absolute right-4 top-16 bg-white dark:bg-dark-50 border border-primary-100/20 dark:border-dark-600/20 shadow-lg rounded-xl z-50 backdrop-blur-sm">
-          <nav className="flex flex-col gap-1 px-6 py-4">
-            <Link
-              to="/home"
-              className="py-2 text-primary-300 dark:text-primary-100 hover:text-primary-200 dark:hover:text-primary-200 transition-colors font-medium"
-              onClick={handleMenuLinkClick}
-            >
-              Home
-            </Link>
-            <Link
-              to="/emergency"
-              className="py-2 text-primary-300 dark:text-primary-100 hover:text-accent-orange dark:hover:text-accent-orange transition-colors font-medium"
-              onClick={handleMenuLinkClick}
-            >
-              Emergency
-            </Link>
-            <Link
-              to="/reminders"
-              className="py-2 text-primary-300 dark:text-primary-100 hover:text-primary-200 dark:hover:text-primary-200 transition-colors font-medium"
-              onClick={handleMenuLinkClick}
-            >
-              Reminders
-            </Link>
-            <Link
-              to="/ask-queries"
-              className="py-2 text-primary-300 dark:text-primary-100 hover:text-accent-yellow dark:hover:text-accent-yellow transition-colors font-medium"
-              onClick={handleMenuLinkClick}
-            >
-              Ask
-            </Link>
-            <Link
-              to="/blog"
-              className="py-2 text-primary-300 dark:text-primary-100 hover:text-primary-200 dark:hover:text-primary-200 transition-colors font-medium"
-              onClick={handleMenuLinkClick}
-            >
-              Blog
-            </Link>
-            {/* Language Switcher Mobile */}
-            <div className="py-3">
-              <span className="block text-xs text-primary-200 dark:text-primary-100 mb-2 font-medium">
-                Language
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.code}
-                    className={`px-3 py-1.5 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 transition-all ${
-                      i18n.language === lang.code
-                        ? "bg-primary-200 dark:bg-primary-100 text-white border-primary-200 dark:border-primary-100"
-                        : "bg-white dark:bg-dark-50 text-primary-300 dark:text-primary-100 border-primary-100/20 dark:border-dark-600/20 hover:bg-primary-100/10 dark:hover:bg-primary-100/5"
-                    }`}
-                    onClick={() => handleLanguageChange(lang.code)}
-                  >
-                    {lang.label}
-                  </button>
-                ))}
+        <nav className="md:hidden bg-white dark:bg-dark-50 shadow-lg rounded-b-xl py-4 px-6">
+          <ul className="space-y-4">
+            <li>
+              <Link
+                to="/home"
+                className="block text-primary-300 dark:text-primary-100 hover:text-primary-200 dark:hover:text-primary-200 transition-colors font-medium px-2 py-1 rounded-lg"
+                onClick={handleMenuLinkClick}
+              >
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/emergency"
+                className="block text-primary-300 dark:text-primary-100 hover:text-accent-orange dark:hover:text-accent-orange transition-colors font-medium px-2 py-1 rounded-lg"
+                onClick={handleMenuLinkClick}
+              >
+                Emergency
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/reminders"
+                className="block text-primary-300 dark:text-primary-100 hover:text-primary-200 dark:hover:text-primary-200 transition-colors font-medium px-2 py-1 rounded-lg"
+                onClick={handleMenuLinkClick}
+              >
+                Reminders
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/ask-queries"
+                className="block text-primary-300 dark:text-primary-100 hover:text-accent-yellow dark:hover:text-accent-yellow transition-colors font-medium px-2 py-1 rounded-lg"
+                onClick={handleMenuLinkClick}
+              >
+                Ask
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/blog"
+                className="block text-primary-300 dark:text-primary-100 hover:text-primary-200 dark:hover:text-primary-200 transition-colors font-medium px-2 py-1 rounded-lg"
+                onClick={handleMenuLinkClick}
+              >
+                Blog
+              </Link>
+            </li>
+            <li>
+              <div className="relative">
+                <button
+                  className="block w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-2 px-2 text-sm font-medium rounded-lg"
+                  onClick={() => setIsLangOpen(!isLangOpen)}
+                >
+                  {LANGUAGES.find((l) => l.code === i18n.language)?.label ||
+                    "Language"}
+                </button>
+                {isLangOpen && (
+                  <ul className="absolute left-0 mt-2 bg-white dark:bg-dark-50 shadow-lg rounded-lg py-2 w-full">
+                    {LANGUAGES.map((lang) => (
+                      <li key={lang.code}>
+                        <button
+                          className="block w-full text-left px-4 py-2 text-sm text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5"
+                          onClick={() => handleLanguageChange(lang.code)}
+                        >
+                          {lang.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            </div>
-            <button
-              onClick={() => {
-                handleMenuLinkClick();
-                handleLogout();
-              }}
-              className="py-2 flex items-center text-accent-orange dark:text-accent-orange hover:bg-primary-100/10 dark:hover:bg-primary-100/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 transition-colors"
-            >
-              <LogOut size={18} className="mr-2" />
-              Logout
-            </button>
-          </nav>
-        </div>
+            </li>
+            <li>
+              <button
+                className="block w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-2 px-2 text-sm font-medium rounded-lg"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate("/profile");
+                }}
+              >
+                Profile
+              </button>
+            </li>
+            <li>
+              <button
+                className="block w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-2 px-2 text-sm font-medium rounded-lg"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </li>
+            <li className="flex items-center gap-2 p-1">
+              {/* Toggle  */}
+              <ThemeToggle className="w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-1 px-1 text-sm font-medium rounded-full" />
+            </li>
+          </ul>
+        </nav>
       )}
     </header>
   );

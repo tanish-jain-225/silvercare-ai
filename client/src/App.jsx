@@ -45,7 +45,6 @@ function AppRoutes() {
     "/login",
     "/signup",
     "/user-details",
-    "/language-selection",
   ];
 
   // Define routes where only bottom navigation should be hidden
@@ -57,18 +56,12 @@ function AppRoutes() {
   // Check if current path matches any of the hideBottomNavRoutes
   const shouldHideBottomNav = hideBottomNavRoutes.includes(location.pathname);
 
-  // Redirect to language selection if no language is selected and not already there
-  if (!hasSelectedLanguage && location.pathname !== "/language-selection") {
-    return <Navigate to="/language-selection" replace />;
-  }
-
   return (
     <RootLayout>
       {!shouldHideLayout && <Header />}
       <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/language-selection" element={<LanguageSelection />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route

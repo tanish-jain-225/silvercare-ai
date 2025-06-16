@@ -32,7 +32,11 @@ export const Input = forwardRef(function Input({
       <div className="relative flex items-center">
         {Icon && (
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Icon className={`w-5 h-5 ${error ? 'text-red-500' : isFocused ? 'text-blue-500' : 'text-gray-400'}`} aria-hidden="true" />
+            {typeof Icon === 'string' ? (
+              <img src={Icon} alt="icon" className={`w-5 h-5 ${error ? 'text-red-500' : isFocused ? 'text-blue-500' : 'text-gray-400'}`} aria-hidden="true" />
+            ) : (
+              <Icon className={`w-5 h-5 ${error ? 'text-red-500' : isFocused ? 'text-blue-500' : 'text-gray-400'}`} aria-hidden="true" />
+            )}
           </div>
         )}
         <input

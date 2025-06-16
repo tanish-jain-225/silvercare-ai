@@ -209,41 +209,6 @@ export function Profile() {
           </Card>
         )}
 
-        {/* Language Selection */}
-        <Card className="w-full max-w-2xl mb-8 animate-fade-in-up bg-white dark:bg-dark-50/95 border border-slate-200 dark:border-dark-600/30 backdrop-blur-md shadow-xl rounded-2xl transition-shadow hover:shadow-2xl">
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center mb-3">
-                <div className="p-2 rounded-full bg-slate-100 dark:bg-primary-100/20 mr-3">
-                  <Globe
-                    className="text-slate-600 dark:text-primary-100"
-                    size={24}
-                    aria-hidden="true"
-                  />
-                </div>
-                <p className="font-bold text-slate-800 dark:text-primary-100 text-lg">
-                  {t("Change Language")}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {languages.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => handleLanguageChange(lang.code)}
-                    className={`p-3 rounded-lg border-2 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:focus-visible:ring-primary-100 ${language === lang.code
-                      ? "bg-slate-100 dark:bg-primary-100/20 border-slate-200 dark:border-primary-100 text-slate-800 dark:text-primary-100"
-                      : "border-slate-200 dark:border-primary-100/10 hover:border-slate-300 dark:hover:border-primary-100/20 text-slate-600 dark:text-primary-100/80 hover:bg-slate-50/50 dark:hover:bg-primary-100/10"
-                      }`}
-                    aria-label={lang.name}
-                  >
-                    <span className="text-sm font-medium">{lang.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Card>
-
         {/* Logout */}
         <Button
           onClick={handleLogout}
