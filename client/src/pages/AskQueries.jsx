@@ -360,7 +360,7 @@ export function AskQueries() {
   }, [messages]);
 
   return (
-    <div className="h-[90vh] bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex">
+    <div className="h-[90vh] bg-gradient-to-br from-primary-100/90 via-primary-200/90 to-accent-yellow/40 dark:from-dark-100/90 dark:via-dark-200/90 dark:to-accent-yellow/30 flex">
       {/* Chat History Panel - Only visible on small/medium screens in layout */}
       <div className="lg:hidden">
         <ChatHistoryPanel
@@ -415,7 +415,7 @@ export function AskQueries() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 onClick={handleToggleHistoryPanel}
-                className="absolute left-4 sm:left-6 lg:left-8 flex items-center justify-center w-12 h-12 lg:w-14 lg:h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg lg:rounded-xl transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg"
+                className="absolute left-4 sm:left-6 lg:left-8 flex items-center justify-center w-12 h-12 lg:w-14 lg:h-12 bg-primary-200 hover:bg-primary-100 text-white rounded-lg lg:rounded-xl transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-lg"
                 aria-label="Show chat history"
               >
                 <MessageSquare size={20} className="lg:w-6 lg:h-6" />
@@ -455,7 +455,7 @@ export function AskQueries() {
           text-white
           px-2 sm:px-2 md:px-3 
           py-0.5 sm:py-1 md:py-2 
-          bg-violet-500 
+          bg-primary-200 
           overflow-hidden 
           justify-center 
           rounded-lg 
@@ -491,7 +491,7 @@ export function AskQueries() {
                 {/* Add New Chat Button */}
                 <button
                   onClick={handleNewChat}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500 hover:bg-primary-600 text-white transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-lg"
                   aria-label="New Chat"
                 >
                   <Plus size={16} />
@@ -518,7 +518,7 @@ export function AskQueries() {
         <motion.div
           layout
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-          className="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mx-4 sm:mx-6 lg:mx-8 mb-4 sm:mb-6"
+          className="flex-1 flex flex-col bg-primary-50/80 dark:bg-dark-200/80 rounded-2xl shadow-lg border border-primary-100/30 dark:border-primary-200/40 overflow-hidden mx-4 sm:mx-6 lg:mx-8 mb-4 sm:mb-6"
         >
           {/* Messages Area - Scrollable */}
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 custom-scrollbar">
@@ -530,6 +530,11 @@ export function AskQueries() {
                 isError={msg.isError}
                 timestamp={msg.timestamp}
                 index={index}
+                className={
+                  msg.isUser
+                    ? "bg-accent-yellow/20 text-primary-300 border border-primary-100/30 dark:bg-primary-900/40 dark:text-accent-yellow dark:border-primary-800/40"
+                    : "bg-primary-100/80 text-primary-400 border border-primary-100/30 dark:bg-primary-900/40 dark:text-primary-100 dark:border-primary-700/40"
+                }
               />
             ))}
 
@@ -539,8 +544,8 @@ export function AskQueries() {
             {/* Error State */}
             {error && (
               <div className="flex justify-center animate-fade-in">
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 max-w-md">
-                  <p className="text-red-800 dark:text-red-200 text-sm text-center">
+                <div className="bg-accent-yellow/20 border border-primary-100/30 rounded-lg px-4 py-3 max-w-md dark:bg-blue-900/40 dark:text-accent-yellow dark:border-blue-700/40">
+                  <p className="text-primary-400 text-sm text-center">
                     {error}
                   </p>
                 </div>
@@ -551,59 +556,56 @@ export function AskQueries() {
           </div>
 
           {/* Input Area - Fixed at Bottom */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6 bg-gray-50 dark:bg-gray-900/50 shadow-lg">
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Voice Button */}
-              <VoiceButton onResult={handleVoiceInput} size="md" />
-
-              {/* Text Input */}
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/20 text-sm sm:text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 transition-all duration-200"
-                  placeholder={t("typeMessage") || "Type your message..."}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  disabled={isLoading}
-                />
-              </div>
-
-              {/* Clear Chat Button */}
+          <div className="border-t border-primary-100/30 dark:border-blue-800/40 p-3 sm:p-4 lg:p-6 bg-white/95 dark:bg-dark-200/90 shadow-xl rounded-2xl mx-2 sm:mx-4 mb-2 flex items-center gap-3">
+            {/* Voice Button */}
+            <VoiceButton
+              onResult={handleVoiceInput}
+              size="lg"
+              className="!w-12 !h-12 rounded-full bg-primary-100/80 dark:bg-primary-200/80 shadow-md flex items-center justify-center"
+            />
+            {/* Text Input */}
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              className="flex-1 px-5 py-3 rounded-xl border-2 border-primary-100/30 dark:border-blue-800/40 bg-primary-50/80 dark:bg-dark-100/80 text-primary-300 dark:text-accent-yellow placeholder:text-primary-200 dark:placeholder:text-blue-200/60 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-blue-700 text-base shadow-sm transition-all duration-200"
+              placeholder={t("typeMessage") || "Type your message..."}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              disabled={isLoading}
+            />
+            {/* Clear Button */}
+            <button
+              onClick={handleClearChat}
+              disabled={isLoading}
+              className="w-12 h-12 rounded-full bg-accent-yellow hover:bg-primary-200 dark:bg-primary-200 dark:hover:bg-blue-700 text-primary-400 dark:text-accent-yellow border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+              aria-label="Clear Chat"
+            >
+              <Trash2 size={22} />
+            </button>
+            {/* Send/Stop Button */}
+            {isSpeaking ? (
               <button
-                onClick={handleClearChat}
-                disabled={isLoading}
-                className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Clear Chat"
+                onClick={stop}
+                className="w-12 h-12 rounded-full bg-accent-yellow hover:bg-primary-200 dark:bg-primary-200 dark:hover:bg-blue-700 text-primary-400 dark:text-accent-yellow border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-105"
+                aria-label="Stop Speaking"
               >
-                <Trash2 size={18} className="sm:w-5 sm:h-5" />
+                <Pause size={22} />
               </button>
-
-              {/* Send/Stop Button */}
-              {isSpeaking ? (
-                <button
-                  onClick={stop}
-                  className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Stop Speaking"
-                >
-                  <Pause size={18} className="sm:w-5 sm:h-5" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleSendMessage()}
-                  disabled={!inputMessage.trim() || isLoading}
-                  className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Send Message"
-                >
-                  <Send size={18} className="sm:w-5 sm:h-5" />
-                </button>
-              )}
-            </div>
+            ) : (
+              <button
+                onClick={() => handleSendMessage()}
+                disabled={!inputMessage.trim() || isLoading}
+                className="w-12 h-12 rounded-full bg-accent-yellow hover:bg-primary-200 dark:bg-primary-200 dark:hover:bg-blue-700 text-primary-400 dark:text-accent-yellow border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                aria-label="Send Message"
+              >
+                <Send size={22} />
+              </button>
+            )}
           </div>
         </motion.div>
       </motion.div>
