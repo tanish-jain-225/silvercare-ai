@@ -207,27 +207,42 @@ def process_reminders(reminders_list):
 
 def save_to_mongodb(reminder):
     """Save a reminder to MongoDB"""
-    # Create a copy to avoid modifying the original
-    reminder_to_save = reminder.copy()
-    
-    # Add metadata
-    now = datetime.now()
-    reminder_to_save['created_at'] = now
-    reminder_to_save['updated_at'] = now
-    
-    # Insert into MongoDB
-    result = reminders_collection.insert_one(reminder_to_save)
-    inserted_id = result.inserted_id
-    print(f"Saved reminder to MongoDB with _id: {inserted_id}")
-    
-    # Add the string version of ObjectId to the reminder for the return value
-    reminder['mongo_id'] = str(inserted_id)
-    
-    # Convert to JSON-safe format for posting to Node.js backend
-    json_safe_reminder = convert_to_json_friendly(reminder_to_save)
-    json_safe_reminder['id'] = json_safe_reminder.get('id') or str(inserted_id)
-    
-    return json_safe_reminder
+    try:
+        # Create a copy to avoid modifying the original
+        reminder_to_save = reminder.copy()
+        
+        # Add metadata
+        now = datetime.now()
+        reminder_to_save['created_at'] = now
+        reminder_to_save['updated_at'] = now
+        
+        # Ensure userId is present
+        if 'userId' not in reminder_to_save:
+            print("Warning: userId not found in reminder data")
+            return None
+            
+        print(f"Saving reminder to MongoDB: {reminder_to_save}")
+        
+        # Insert into MongoDB
+        result = reminders_collection.insert_one(reminder_to_save)
+        inserted_id = result.inserted_id
+        print(f"Saved reminder to MongoDB with _id: {inserted_id}")
+        
+        # Create the response object
+        saved_reminder = {
+            "id": str(inserted_id),
+            "title": reminder_to_save.get("title", ""),
+            "date": reminder_to_save.get("date", ""),
+            "time": reminder_to_save.get("time", ""),
+            "userId": reminder_to_save.get("userId", ""),
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat()
+        }
+        
+        return saved_reminder
+    except Exception as e:
+        print(f"Error saving to MongoDB: {str(e)}")
+        return None
 
 @format_reminder_bp.route('/reminders', methods=['GET'])
 def get_reminders():
@@ -237,12 +252,32 @@ def get_reminders():
         return jsonify({"error": "userId is required"}), 400
 
     try:
+        print(f"Fetching reminders for user ID: {user_id}")
         # Fetch reminders for the specific user
         cursor = reminders_collection.find({"userId": user_id})
         reminders_list = list(cursor)
         print(f"Found {len(reminders_list)} reminders for user {user_id}")
-        reminders = convert_to_json_friendly(reminders_list)
-        return jsonify({"success": True, "reminders": reminders, "count": len(reminders)})
+        
+        # Convert ObjectId to string and ensure all fields are properly formatted
+        formatted_reminders = []
+        for reminder in reminders_list:
+            formatted_reminder = {
+                "id": str(reminder.get("_id", reminder.get("id", ""))),
+                "title": reminder.get("title", ""),
+                "date": reminder.get("date", ""),
+                "time": reminder.get("time", ""),
+                "userId": reminder.get("userId", ""),
+                "created_at": reminder.get("created_at", datetime.now()).isoformat(),
+                "updated_at": reminder.get("updated_at", datetime.now()).isoformat()
+            }
+            formatted_reminders.append(formatted_reminder)
+        
+        print(f"Formatted reminders: {formatted_reminders}")
+        return jsonify({
+            "success": True, 
+            "reminders": formatted_reminders, 
+            "count": len(formatted_reminders)
+        })
     except Exception as e:
         print(f"Error in get_reminders: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -289,23 +324,46 @@ def save_reminder_data():
         
     try:
         print(f"Processing reminder data: {reminder_data}")
+        
+        # Validate required fields
+        required_fields = ['title', 'date', 'time', 'userId']
+        missing_fields = [field for field in required_fields if field not in reminder_data]
+        if missing_fields:
+            return jsonify({
+                "error": f"Missing required fields: {', '.join(missing_fields)}"
+            }), 400
+            
         # This will handle both single reminder objects and arrays of reminders
         if isinstance(reminder_data, list):
             results = []
             for reminder in reminder_data:
                 saved = save_to_mongodb(reminder)
-                results.append(saved)
-            response = jsonify({"success": True, "reminders": results, "count": len(results)})
+                if saved:
+                    results.append(saved)
+            response = jsonify({
+                "success": True, 
+                "reminders": results, 
+                "count": len(results)
+            })
         else:
             saved_reminder = save_to_mongodb(reminder_data)
-            response = jsonify({"success": True, "reminder": saved_reminder})
+            if not saved_reminder:
+                return jsonify({
+                    "error": "Failed to save reminder"
+                }), 500
+            response = jsonify({
+                "success": True, 
+                "reminder": saved_reminder
+            })
         
         # Explicitly set CORS headers
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
     except Exception as e:
         print(f"Error in save_reminder_data: {str(e)}")
-        return jsonify({"error": f"Failed to save reminder data: {str(e)}"}), 500
+        return jsonify({
+            "error": f"Failed to save reminder data: {str(e)}"
+        }), 500
 
 @format_reminder_bp.route('/delete-reminder', methods=['POST'])
 def delete_reminder():
