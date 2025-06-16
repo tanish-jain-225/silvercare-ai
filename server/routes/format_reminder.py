@@ -89,14 +89,14 @@ def process_reminders(reminders_list, user_id):
     """Process multiple reminders and save them to MongoDB"""
     results = []
     errors = []
+    today_str = datetime.now().strftime("%Y-%m-%d")
     for reminder in reminders_list:
         try:
-            title = reminder.get('title')
-            date = reminder.get('date')
-            time = reminder.get('time')
-            if not all([title, date, time]):
-                errors.append(f"Invalid reminder: {reminder}")
-                continue
+            # Use today's date if no date is provided
+            date = reminder.get('date') or today_str
+            # Use "New Reminder" as title if not provided
+            title = reminder.get('title') or "New Reminder"
+            time = reminder.get('time') or ""
             reminder_data = {"userId": user_id, "title": title, "date": date, "time": time}
             saved_reminder = save_to_mongodb(reminder_data)
             results.append(saved_reminder)
@@ -141,7 +141,7 @@ def format_reminder():
         messages=[
             {
                 "role": "system",
-                "content": "Format user input as one or more reminders. Extract title, date, and time for each reminder. Always return a JSON array with each reminder having id, title, date, and time fields. Date should be in YYYY-MM-DD format. Time should be in HH:MM format. If there are multiple reminders in the input, create multiple JSON objects in the array."
+                "content": "Format user input as one or more reminders. Extract title, date, and time for each reminder. Always return a JSON array with each reminder having id, title, date, and time fields. Date should be in YYYY-MM-DD format. If date is not mentioned set it has null and same for the title. Time should be in HH:MM format. If there are multiple reminders in the input, create multiple JSON objects in the array."
             },
             {
                 "role": "user",
@@ -162,6 +162,12 @@ def format_reminder():
             array_text = next(group for group in array_match.groups() if group is not None)
             reminders_array = pyjson.loads(array_text)
             if isinstance(reminders_array, list) and len(reminders_array) > 0:
+                # Use today's date and default title if missing
+                for r in reminders_array:
+                    if not r.get('date'):
+                        r['date'] = datetime.now().strftime("%Y-%m-%d")
+                    if not r.get('title'):
+                        r['title'] = "New Reminder"
                 return process_reminders(reminders_array, user_id)
     except Exception as e:
         print(f"Error extracting array: {str(e)}")
@@ -173,15 +179,10 @@ def format_reminder():
             # Get the first matching group that's not None
             json_text = next(group for group in match.groups() if group is not None)
             reminder_json = pyjson.loads(json_text)
-            title = reminder_json.get('title')
-            date = reminder_json.get('date')
-            time = reminder_json.get('time')
-            if not title:
-                return jsonify({"error": "Missing title in parsed reminder"}), 400
-            if not date:
-                return jsonify({"error": "Missing date in parsed reminder"}), 400
-            if not time:
-                return jsonify({"error": "Missing time in parsed reminder"}), 400
+            # Use today's date and default title if missing
+            title = reminder_json.get('title') or "New Reminder"
+            date = reminder_json.get('date') or datetime.now().strftime("%Y-%m-%d")
+            time = reminder_json.get('time') or ""
             post_data = {"userId": user_id, "title": title, "date": date, "time": time}
             saved_reminder = save_to_mongodb(post_data)
             return jsonify({"success": True, "reminder": saved_reminder})
