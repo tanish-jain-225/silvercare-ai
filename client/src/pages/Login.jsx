@@ -70,6 +70,7 @@ export function Login() {
           <form
             onSubmit={handleSubmit}
             className="space-y-4 sm:space-y-5 md:space-y-7"
+            autoComplete="off"
           >
             {/* Email Field */}
             <div className="relative flex items-center min-w-0">
@@ -87,6 +88,7 @@ export function Login() {
                   onResult={handleVoiceInput("email")}
                   size="sm"
                   className="!w-9 sm:!w-10"
+                  type="button"
                 />
               </div>
             </div>

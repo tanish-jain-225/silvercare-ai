@@ -55,21 +55,22 @@ export function Signup() {
   }, [speak]);
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-2 sm:p-4">
+    <div className="min-h-screen w-full overflow-x-hidden flex items-center justify-center p-2 sm:p-4 theme-bg-primary theme-text-primary">
       <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-2 sm:px-4">
         <div className="text-center mb-4 sm:mb-6 md:mb-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1 sm:mb-2 break-words">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2 break-words">
             SilverCare AI
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600 break-words">
+          <p className="text-sm sm:text-base md:text-lg break-words">
             {t("signup")}
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-4 md:p-8 w-full">
+        <div className="rounded-2xl shadow-lg p-3 sm:p-4 md:p-8 w-full theme-bg-secondary">
           <form
             onSubmit={handleSubmit}
             className="space-y-4 sm:space-y-5 md:space-y-7"
+            autoComplete="off"
           >
             {/* Name Field */}
             <div className="relative flex items-center min-w-0">
@@ -87,6 +88,7 @@ export function Signup() {
                   onResult={handleVoiceInput("name")}
                   size="sm"
                   className="!w-9 sm:!w-10"
+                  type="button"
                 />
               </div>
             </div>
@@ -107,6 +109,7 @@ export function Signup() {
                   onResult={handleVoiceInput("email")}
                   size="sm"
                   className="!w-9 sm:!w-10"
+                  type="button"
                 />
               </div>
             </div>
@@ -125,6 +128,7 @@ export function Signup() {
                     onResult={handleVoiceInput("password")}
                     size="sm"
                     className="!w-9 sm:!w-10"
+                    type="button"
                   />
                 }
               />
@@ -132,7 +136,7 @@ export function Signup() {
 
             {/* Error Message */}
             {error && (
-              <div className="text-red-600 text-center bg-red-50 p-3 rounded-lg w-full break-words">
+              <div className="text-red-600 text-center bg-red-50 p-3 rounded-lg">
                 {error}
               </div>
             )}
@@ -141,22 +145,17 @@ export function Signup() {
             <Button
               type="submit"
               disabled={isLoading}
-              variant="secondary"
-              className="w-full mt-2"
-              size="xl"
+              className="w-full py-2 rounded-lg theme-bg-accent theme-text-on-accent hover:opacity-90"
             >
               {isLoading ? "Creating Account..." : t("signupButton")}
             </Button>
           </form>
 
           {/* Login Link */}
-          <div className="text-center mt-6 sm:mt-8">
-            <p className="text-gray-600 text-sm sm:text-base break-words">
+          <div className="text-center mt-4">
+            <p>
               {t("haveAccount")}{" "}
-              <Link
-                to="/login"
-                className="text-green-600 hover:text-green-700 font-semibold"
-              >
+              <Link to="/login" className="theme-text-link hover:underline">
                 {t("login")}
               </Link>
             </p>

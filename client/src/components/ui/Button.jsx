@@ -14,8 +14,8 @@ export function Button({
   ariaLabel,
   ...props
 }) {
-  const baseClasses =
-    "font-semibold rounded-xl sm:rounded-2xl transition-all duration-200 focus:outline-none focus-visible:ring-2 sm:focus-visible:ring-4 focus-visible:ring-offset-1 sm:focus-visible:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow-md";
+  const improvedBaseClasses =
+    "font-semibold rounded-xl sm:rounded-2xl transition-all duration-200 focus:outline-none focus-visible:ring-2 sm:focus-visible:ring-4 focus-visible:ring-offset-1 sm:focus-visible:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 sm:gap-2 shadow-md hover:shadow-lg";
 
   const variantClasses = {
     primary: "bg-blue-600 hover:bg-blue-700 text-white focus-visible:ring-blue-200",
@@ -42,7 +42,7 @@ export function Button({
       aria-label={ariaLabel}
       tabIndex={0}
       className={`
-        ${baseClasses}
+        ${improvedBaseClasses}
         ${variantClasses[variant]}
         ${sizeClasses[size]}
         ${fullWidth ? "w-full" : ""}
