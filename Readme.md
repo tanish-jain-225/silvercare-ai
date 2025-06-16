@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <b>Empowering Seniors with a Voice-First, Accessible AI Assistant</b><br>
-  <i>Chat, Reminders, Onboarding, and Accessibility—All in One Place</i>
+  <b>Empowering Seniors with a Voice-First, Accessible AI Assistant.</b><br>
+  <i>Chat, Reminders, Onboarding, and Accessibility—All in One Place.</i>
 </p>
 
 ---

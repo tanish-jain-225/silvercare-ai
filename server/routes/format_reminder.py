@@ -153,7 +153,7 @@ def format_reminder():
     content = response.choices[0].message.content
     print(f"LLM Response: {content}")
     
-    # Try to extract an array first - handle markdown code blocks
+    # Try to extract an array first - handle markdown code blocks.
     try:
         # Look for JSON array in markdown code block or regular text
         array_match = re.search(r'```(?:json)?\s*(\[[\s\S]*?\])\s*```|(\[[\s\S]*?\])', content)

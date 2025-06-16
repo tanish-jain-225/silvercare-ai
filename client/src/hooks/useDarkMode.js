@@ -1,9 +1,5 @@
 import { useTheme } from '../context/ThemeContext';
 
-/**
- * Custom hook for dark mode utilities and color mappings
- * Provides consistent theming across the application
- */
 export const useDarkMode = () => {
     const { isDarkMode, theme, isLoaded } = useTheme();
 
