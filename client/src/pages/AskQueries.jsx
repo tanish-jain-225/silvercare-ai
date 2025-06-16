@@ -7,6 +7,7 @@ import {
   PanelLeftOpen,
   Plus,
   MessageSquare,
+  PlusCircle,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -49,6 +50,7 @@ export function AskQueries() {
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [chatHistory, setChatHistory] = useState([]);
   const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth >= 1024);
+  const [isChatStarted, setIsChatStarted] = useState(false);
 
   // Save panel state to localStorage whenever it changes
   useEffect(() => {
@@ -117,7 +119,22 @@ export function AskQueries() {
     return keywords.some((kw) => lower.includes(kw));
   };
 
-  // Chat history panel handlers
+  // Add new function to handle starting a new chat
+  const handleStartNewChat = () => {
+    setIsChatStarted(true);
+    setMessages([
+      {
+        id: "1",
+        message: "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
+        isUser: false,
+        timestamp: new Date(),
+      },
+    ]);
+    setError(null);
+    setHasSpoken(false);
+  };
+
+  // Modify handleNewChat to reset chat started state
   const handleNewChat = async () => {
     if (!user?.id) return;
     const res = await fetch(`${route_endpoint}/chat/new`, {
@@ -140,9 +157,7 @@ export function AskQueries() {
       setError(null);
       setHasSpoken(false);
       setIsHistoryPanelOpen(false);
-      setError(null);
-      setHasSpoken(false);
-      setIsHistoryPanelOpen(false);
+      setIsChatStarted(true);
     }
   };
 
@@ -402,9 +417,8 @@ export function AskQueries() {
         <motion.div
           layout
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${
-            isLargeScreen ? "justify-center" : "justify-between"
-          }`}
+          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${isLargeScreen ? "justify-center" : "justify-between"
+            }`}
         >
           {/* Show Chats Button - Only visible when panel is hidden on large screens */}
           <AnimatePresence>
@@ -491,22 +505,22 @@ export function AskQueries() {
                 {/* Add New Chat Button */}
                 <button
                   onClick={handleNewChat}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500 hover:bg-primary-600 text-white transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-lg"
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-700 hover:bg-blue-900 text-white transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-1 focus:ring-white focus:ring-offset-1 shadow-lg"
                   aria-label="New Chat"
                 >
-                  <Plus size={16} />
+                  <Plus size={25} />
                 </button>
 
                 {/* Show/Hide Chat History Button */}
                 <button
                   onClick={handleToggleHistoryPanel}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-lg"
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-lg"
                   aria-label="Toggle chat history"
                 >
                   {isHistoryPanelOpen ? (
-                    <PanelLeftClose size={16} />
+                    <PanelLeftClose size={25} />
                   ) : (
-                    <PanelLeftOpen size={16} />
+                    <PanelLeftOpen size={25} />
                   )}
                 </button>
               </motion.div>
@@ -518,8 +532,26 @@ export function AskQueries() {
         <motion.div
           layout
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-          className="flex-1 flex flex-col bg-primary-50/80 dark:bg-dark-200/80 rounded-2xl shadow-lg border border-primary-100/30 dark:border-primary-200/40 overflow-hidden mx-4 sm:mx-6 lg:mx-8 mb-4 sm:mb-6"
+          className="flex-1 flex flex-col bg-primary-50/80 dark:bg-dark-200/80 rounded-2xl shadow-lg border border-primary-100/30 dark:border-primary-200/40 overflow-hidden mx-4 sm:mx-6 lg:mx-8 mb-4 sm:mb-6 relative"
         >
+          {/* Start New Chat Button - Centered when chat hasn't started */}
+          {!isChatStarted && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="absolute inset-0 flex items-center justify-center bg-primary-50/80 dark:bg-dark-200/80 backdrop-blur-sm"
+            >
+              <button
+                onClick={handleStartNewChat}
+                className="flex items-center gap-3 px-8 py-4 bg-primary-200 hover:bg-primary-300 dark:bg-primary-200 dark:hover:bg-blue-700 text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+              >
+                <PlusCircle size={28} className="animate-pulse" />
+                <span className="text-xl font-semibold">Start a New Chat</span>
+              </button>
+            </motion.div>
+          )}
+
           {/* Messages Area - Scrollable */}
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 custom-scrollbar">
             {messages.map((msg, index) => (
@@ -532,8 +564,8 @@ export function AskQueries() {
                 index={index}
                 className={
                   msg.isUser
-                    ? "bg-accent-yellow/20 text-primary-300 border border-primary-100/30 dark:bg-primary-900/40 dark:text-accent-yellow dark:border-primary-800/40"
-                    : "bg-primary-100/80 text-primary-400 border border-primary-100/30 dark:bg-primary-900/40 dark:text-primary-100 dark:border-primary-700/40"
+                    ? "bg-accent-yellow/20 text-primary-300 border border-primary-100/30 dark:bg-primary-900/40 dark:text-white dark:border-primary-800/40"
+                    : "bg-primary-100/80 text-primary-200 border border-primary-100/30 dark:bg-primary-900/40 dark:text-primary-100 dark:border-primary-700/40"
                 }
               />
             ))}
@@ -544,8 +576,8 @@ export function AskQueries() {
             {/* Error State */}
             {error && (
               <div className="flex justify-center animate-fade-in">
-                <div className="bg-accent-yellow/20 border border-primary-100/30 rounded-lg px-4 py-3 max-w-md dark:bg-blue-900/40 dark:text-accent-yellow dark:border-blue-700/40">
-                  <p className="text-primary-400 text-sm text-center">
+                <div className="bg-accent-yellow/20 border border-primary-100/30 rounded-lg px-4 py-3 max-w-md dark:bg-white dark:text-accent-yellow dark:border-blue-700/40">
+                  <p className="text-red-700 font-semibold text-sm text-center">
                     {error}
                   </p>
                 </div>
@@ -556,56 +588,65 @@ export function AskQueries() {
           </div>
 
           {/* Input Area - Fixed at Bottom */}
-          <div className="border-t border-primary-100/30 dark:border-blue-800/40 p-3 sm:p-4 lg:p-6 bg-white/95 dark:bg-dark-200/90 shadow-xl rounded-2xl mx-2 sm:mx-4 mb-2 flex items-center gap-3">
-            {/* Voice Button */}
-            <VoiceButton
-              onResult={handleVoiceInput}
-              size="lg"
-              className="!w-12 !h-12 rounded-full bg-primary-100/80 dark:bg-primary-200/80 shadow-md flex items-center justify-center"
-            />
-            {/* Text Input */}
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              className="flex-1 px-5 py-3 rounded-xl border-2 border-primary-100/30 dark:border-blue-800/40 bg-primary-50/80 dark:bg-dark-100/80 text-primary-300 dark:text-accent-yellow placeholder:text-primary-200 dark:placeholder:text-blue-200/60 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-blue-700 text-base shadow-sm transition-all duration-200"
-              placeholder={t("typeMessage") || "Type your message..."}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              disabled={isLoading}
-            />
-            {/* Clear Button */}
-            <button
-              onClick={handleClearChat}
-              disabled={isLoading}
-              className="w-12 h-12 rounded-full bg-accent-yellow hover:bg-primary-200 dark:bg-primary-200 dark:hover:bg-blue-700 text-primary-400 dark:text-accent-yellow border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-              aria-label="Clear Chat"
-            >
-              <Trash2 size={22} />
-            </button>
-            {/* Send/Stop Button */}
-            {isSpeaking ? (
-              <button
-                onClick={stop}
-                className="w-12 h-12 rounded-full bg-accent-yellow hover:bg-primary-200 dark:bg-primary-200 dark:hover:bg-blue-700 text-primary-400 dark:text-accent-yellow border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-105"
-                aria-label="Stop Speaking"
-              >
-                <Pause size={22} />
-              </button>
-            ) : (
-              <button
-                onClick={() => handleSendMessage()}
-                disabled={!inputMessage.trim() || isLoading}
-                className="w-12 h-12 rounded-full bg-accent-yellow hover:bg-primary-200 dark:bg-primary-200 dark:hover:bg-blue-700 text-primary-400 dark:text-accent-yellow border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                aria-label="Send Message"
-              >
-                <Send size={22} />
-              </button>
-            )}
+          <div className="border-t border-primary-100/30 dark:border-blue-800/40 p-3 sm:p-4 lg:p-6 bg-white/95 dark:bg-dark-200/90 shadow-xl rounded-2xl mx-2 sm:mx-4 mb-2">
+            <div className="flex items-center gap-3">
+              {/* Voice Button */}
+              <VoiceButton
+                onResult={handleVoiceInput}
+                size="lg"
+                className="!w-12 !h-12 rounded-full bg-primary-200 dark:bg-primary-200/80 shadow-md flex items-center justify-center dark:hover:bg-blue-700"
+                disabled={!isChatStarted}
+              />
+
+              {/* Text Input */}
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                className="flex-1 px-5 py-3 rounded-xl border-2 border-primary-100/30 dark:border-blue-800/40 bg-primary-50/80 dark:bg-dark-100/80 text-primary-300 dark:text-white placeholder:text-primary-200 dark:placeholder:text-blue-200/60 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-blue-700 text-base shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder={isChatStarted ? (t("typeMessage") || "Type your message...") : "Start a new chat to begin..."}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                disabled={!isChatStarted || isLoading}
+              />
+
+              {/* Action Buttons Container - Fixed on mobile */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Clear Button */}
+                <button
+                  onClick={handleClearChat}
+                  disabled={!isChatStarted || isLoading}
+                  className="w-12 h-12 rounded-full bg-primary-200 hover:bg-blue-700 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                  aria-label="Clear Chat"
+                >
+                  <Trash2 size={22} />
+                </button>
+
+                {/* Send/Stop Button */}
+                {isSpeaking ? (
+                  <button
+                    onClick={stop}
+                    className="w-12 h-12 rounded-full bg-primary-200 hover:bg-blue-700 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-105"
+                    aria-label="Stop Speaking"
+                  >
+                    <Pause size={22} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSendMessage()}
+                    disabled={!isChatStarted || !inputMessage.trim() || isLoading}
+                    className="w-12 h-12 rounded-full bg-primary-200 hover:bg-primary-300 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                    aria-label="Send Message"
+                  >
+                    <Send size={22} />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </motion.div>
       </motion.div>
