@@ -60,6 +60,9 @@ export function AskQueries() {
     );
   }, [isHistoryPanelOpen]);
 
+  const WELCOME_MESSAGE =
+    "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?";
+
   useEffect(() => {
     if (!user?.id) return;
     fetch(`${route_endpoint}/chat/list?userId=${user.id}`)
@@ -75,10 +78,6 @@ export function AskQueries() {
               messageCount: 0,
             }))
           );
-          // Optionally auto-select the first chat
-          if (data.chats.length && !selectedChatId) {
-            setSelectedChatId(data.chats[0].chatId);
-          }
         }
       });
   }, [user]);
@@ -120,19 +119,20 @@ export function AskQueries() {
   };
 
   // Add new function to handle starting a new chat
-  const handleStartNewChat = () => {
-    setIsChatStarted(true);
-    setMessages([
-      {
-        id: "1",
-        message: "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
-        isUser: false,
-        timestamp: new Date(),
-      },
-    ]);
-    setError(null);
-    setHasSpoken(false);
-  };
+  // const handleStartNewChat = () => {
+  //   setIsChatStarted(true);
+  //   setMessages([
+  //     {
+  //       id: "1",
+  //       message:
+  //         "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
+  //       isUser: false,
+  //       timestamp: new Date(),
+  //     },
+  //   ]);
+  //   setError(null);
+  //   setHasSpoken(false);
+  // };
 
   // Modify handleNewChat to reset chat started state
   const handleNewChat = async () => {
@@ -155,14 +155,16 @@ export function AskQueries() {
       setChatHistory((prev) => [newChat, ...prev]);
       setSelectedChatId(data.chatId);
       setError(null);
-      setHasSpoken(false);
       setIsHistoryPanelOpen(false);
+      setHasSpoken(false);
       setIsChatStarted(true);
     }
   };
 
   const handleSelectChat = (chatId) => {
     setSelectedChatId(chatId);
+    setIsChatStarted(true); // Start the chat when a chat is selected
+    setHasSpoken(false); // Optionally reset speech for new chat
     setIsHistoryPanelOpen(false);
   };
 
@@ -170,6 +172,7 @@ export function AskQueries() {
     setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
     if (selectedChatId === chatId) {
       setSelectedChatId(null);
+      setIsChatStarted(false);
     }
   };
 
@@ -204,6 +207,7 @@ export function AskQueries() {
       ]);
       setError(null);
       setHasSpoken(false);
+      setIsChatStarted(false);
       // Optionally remove chat from chatHistory and select another chat
       setChatHistory((prev) =>
         prev.filter((chat) => chat.id !== selectedChatId)
@@ -341,16 +345,18 @@ export function AskQueries() {
       if (loadedMessages.length === 0) {
         loadedMessages.push({
           id: "1",
-          message:
-            "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
+          message: WELCOME_MESSAGE,
           isUser: false,
           timestamp: new Date(),
         });
-      }
-      setMessages(loadedMessages);
-      if (!hasSpoken) {
-        speak(t("healthQuestions"));
-        setHasSpoken(true);
+        setMessages(loadedMessages);
+        // Speak the welcome message for a new chat
+        if (isChatStarted && !hasSpoken) {
+          speak(WELCOME_MESSAGE);
+          setHasSpoken(true);
+        }
+      } else {
+        setMessages(loadedMessages);
       }
     } catch (err) {
       console.error("Failed to load history:", err);
@@ -417,8 +423,9 @@ export function AskQueries() {
         <motion.div
           layout
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${isLargeScreen ? "justify-center" : "justify-between"
-            }`}
+          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${
+            isLargeScreen ? "justify-center" : "justify-between"
+          }`}
         >
           {/* Show Chats Button - Only visible when panel is hidden on large screens */}
           <AnimatePresence>
@@ -543,7 +550,7 @@ export function AskQueries() {
               className="absolute inset-0 flex items-center justify-center bg-primary-50/80 dark:bg-dark-200/80 backdrop-blur-sm"
             >
               <button
-                onClick={handleStartNewChat}
+                onClick={handleNewChat}
                 className="flex items-center gap-3 px-8 py-4 bg-primary-200 hover:bg-primary-300 dark:bg-primary-200 dark:hover:bg-blue-700 text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               >
                 <PlusCircle size={28} className="animate-pulse" />
@@ -554,27 +561,28 @@ export function AskQueries() {
 
           {/* Messages Area - Scrollable */}
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 custom-scrollbar">
-            {messages.map((msg, index) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg.message}
-                isUser={msg.isUser}
-                isError={msg.isError}
-                timestamp={msg.timestamp}
-                index={index}
-                className={
-                  msg.isUser
-                    ? "bg-accent-yellow/20 text-primary-300 border border-primary-100/30 dark:bg-primary-900/40 dark:text-white dark:border-primary-800/40"
-                    : "bg-primary-100/80 text-primary-200 border border-primary-100/30 dark:bg-primary-900/40 dark:text-primary-100 dark:border-primary-700/40"
-                }
-              />
-            ))}
+            {isChatStarted &&
+              messages.map((msg, index) => (
+                <MessageBubble
+                  key={msg.id}
+                  message={msg.message}
+                  isUser={msg.isUser}
+                  isError={msg.isError}
+                  timestamp={msg.timestamp}
+                  index={index}
+                  className={
+                    msg.isUser
+                      ? "bg-accent-yellow/20 text-primary-300 border border-primary-100/30 dark:bg-primary-900/40 dark:text-white dark:border-primary-800/40"
+                      : "bg-primary-100/80 text-primary-200 border border-primary-100/30 dark:bg-primary-900/40 dark:text-primary-100 dark:border-primary-700/40"
+                  }
+                />
+              ))}
 
             {/* Loading Indicator */}
-            {isLoading && <LoadingIndicator />}
+            {isChatStarted && isLoading && <LoadingIndicator />}
 
             {/* Error State */}
-            {error && (
+            {isChatStarted && error && (
               <div className="flex justify-center animate-fade-in">
                 <div className="bg-accent-yellow/20 border border-primary-100/30 rounded-lg px-4 py-3 max-w-md dark:bg-white dark:text-accent-yellow dark:border-blue-700/40">
                   <p className="text-red-700 font-semibold text-sm text-center">
@@ -587,13 +595,13 @@ export function AskQueries() {
             <div ref={endOfMessagesRef} />
           </div>
 
-          {/* Input Area - Fixed at Bottom */}
+          {/* Input Area - Fixed at Bottom, always visible but disabled if !isChatStarted */}
           <div className="border-t border-primary-100/30 dark:border-blue-800/40 p-3 sm:p-4 lg:p-6 bg-white/95 dark:bg-dark-200/90 shadow-xl rounded-2xl mx-2 sm:mx-4 mb-2">
             <div className="flex items-center gap-2">
               {/* Voice Button */}
               <VoiceButton
                 onResult={handleVoiceInput}
-                size="lg" // This may be overridden by your custom classes
+                size="lg"
                 className="!w-7 !h-9 md:!w-12 md:!h-12 rounded-2xl bg-primary-200 dark:bg-primary-200/80 shadow-md flex items-center justify-center dark:hover:bg-blue-700 [&>svg]:scale-75 md:[&>svg]:scale-100"
                 disabled={!isChatStarted}
               />
@@ -604,7 +612,11 @@ export function AskQueries() {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 className="flex-1 px-5 py-3 rounded-xl border-2 border-primary-100/30 dark:border-blue-800/40 bg-primary-50/80 dark:bg-dark-100/80 text-primary-300 dark:text-white placeholder:text-primary-200 dark:placeholder:text-blue-200/60 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-blue-700 text-base shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder={isChatStarted ? (t("typeMessage") || "Type your message...") : "Start a new chat to begin..."}
+                placeholder={
+                  isChatStarted
+                    ? t("typeMessage") || "Type your message..."
+                    : "Start a new chat to begin..."
+                }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -614,9 +626,9 @@ export function AskQueries() {
                 disabled={!isChatStarted || isLoading}
               />
 
-              {/* Action Buttons Container - Fixed on mobile */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-2 sm:gap-3">
-                {/* Clear Button - Hidden on mobile */}
+                {/* Clear Button */}
                 <button
                   onClick={handleClearChat}
                   disabled={!isChatStarted || isLoading}
@@ -638,7 +650,9 @@ export function AskQueries() {
                 ) : (
                   <button
                     onClick={() => handleSendMessage()}
-                    disabled={!isChatStarted || !inputMessage.trim() || isLoading}
+                    disabled={
+                      !isChatStarted || !inputMessage.trim() || isLoading
+                    }
                     className="!w-10 !h-10 md:!w-12 md:!h-12 rounded-2xl bg-primary-200 hover:bg-primary-300 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
                     aria-label="Send Message"
                   >

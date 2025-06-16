@@ -87,6 +87,7 @@ export function ChatHistoryPanel({
         shadow-lg z-30 transform transition-all duration-300 ease-in-out
         lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-80 lg:shadow-xl lg:z-50
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
+        flex flex-col
       `}
     >
       {/* Header */}
@@ -125,7 +126,7 @@ export function ChatHistoryPanel({
       </div>
 
       {/* Chat List */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
         <div className="p-2 space-y-1">
           <AnimatePresence>
             {chats.map((chat, index) => (
