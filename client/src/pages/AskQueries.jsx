@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Pause, Trash2, PanelLeftClose, PanelLeftOpen, Plus, MessageSquare } from "lucide-react";
+import {
+  Send,
+  Pause,
+  Trash2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  MessageSquare,
+} from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
@@ -30,7 +38,7 @@ export function AskQueries() {
 
   // Chat history panel state with localStorage persistence
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(() => {
-    const saved = localStorage.getItem('chatHistoryPanelOpen');
+    const saved = localStorage.getItem("chatHistoryPanelOpen");
     if (saved !== null) {
       return JSON.parse(saved);
     }
@@ -43,8 +51,34 @@ export function AskQueries() {
 
   // Save panel state to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('chatHistoryPanelOpen', JSON.stringify(isHistoryPanelOpen));
+    localStorage.setItem(
+      "chatHistoryPanelOpen",
+      JSON.stringify(isHistoryPanelOpen)
+    );
   }, [isHistoryPanelOpen]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`${route_endpoint}/chat/list?userId=${user.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.chats) {
+          setChatHistory(
+            data.chats.map((chat, idx) => ({
+              id: chat.chatId,
+              title: `Chat ${idx + 1}`,
+              preview: "",
+              timestamp: new Date(chat.updatedAt || chat.createdAt),
+              messageCount: 0,
+            }))
+          );
+          // Optionally auto-select the first chat
+          if (data.chats.length && !selectedChatId) {
+            setSelectedChatId(data.chats[0].chatId);
+          }
+        }
+      });
+  }, [user]);
 
   // Handle responsive behavior on window resize
   useEffect(() => {
@@ -65,8 +99,8 @@ export function AskQueries() {
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [isHistoryPanelOpen]);
 
   // Helper: Detect reminder keywords
@@ -83,35 +117,47 @@ export function AskQueries() {
   };
 
   // Chat history panel handlers
-  const handleNewChat = () => {
-    setSelectedChatId(null);
-    setMessages([
-      {
-        id: "1",
-        message:
-          "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
-        isUser: false,
+  const handleNewChat = async () => {
+    if (!user?.id) return;
+    const res = await fetch(`${route_endpoint}/chat/new`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id }),
+    });
+    const data = await res.json();
+    if (data.chatId) {
+      const chatNumber = chatHistory.length + 1;
+      const newChat = {
+        id: data.chatId,
+        title: `Chat ${chatNumber}`,
+        preview: "",
         timestamp: new Date(),
-      },
-    ]);
-    setError(null);
-    setHasSpoken(false);
-
-    // Close panel on all screen sizes (overlay mode)
-    setIsHistoryPanelOpen(false);
+        messageCount: 0,
+      };
+      setChatHistory((prev) => [newChat, ...prev]);
+      setSelectedChatId(data.chatId);
+      setMessages([
+        {
+          id: "1",
+          message:
+            "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
+      setError(null);
+      setHasSpoken(false);
+      setIsHistoryPanelOpen(false);
+    }
   };
 
   const handleSelectChat = (chatId) => {
     setSelectedChatId(chatId);
-    // Here you would typically load the specific chat messages
-    // For now, we'll just update the selected state
-
-    // Close panel on all screen sizes (overlay mode)
     setIsHistoryPanelOpen(false);
   };
 
   const handleDeleteChat = (chatId) => {
-    setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
+    setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
     if (selectedChatId === chatId) {
       setSelectedChatId(null);
     }
@@ -131,18 +177,12 @@ export function AskQueries() {
   // Clear chat functionality
   const handleClearChat = async () => {
     try {
-      // Clear messages from MongoDB
       const response = await fetch(`${route_endpoint}/chat/clear`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ userId: user.id, chatId: selectedChatId }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to clear chat history");
-      }
-
-      // Reset local state after successful API call
+      if (!response.ok) throw new Error("Failed to clear chat history");
       setMessages([
         {
           id: "1",
@@ -154,6 +194,11 @@ export function AskQueries() {
       ]);
       setError(null);
       setHasSpoken(false);
+      // Optionally remove chat from chatHistory and select another chat
+      setChatHistory((prev) =>
+        prev.filter((chat) => chat.id !== selectedChatId)
+      );
+      setSelectedChatId(null);
     } catch (error) {
       console.error("Error clearing chat:", error);
       setError("Failed to clear chat history. Please try again.");
@@ -179,10 +224,14 @@ export function AskQueries() {
     try {
       let response, data;
       if (isReminder(messageToSend)) {
-        response = await fetch(`${route_endpoint}/format-reminder`, {
+        response = await fetch(`${route_endpoint}/chat/message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ input: messageToSend, userId: user.id }),
+          body: JSON.stringify({
+            input: messageToSend,
+            userId: user.id,
+            chatId: selectedChatId,
+          }),
         });
         data = await response.json();
         const aiMessage = {
@@ -262,20 +311,18 @@ export function AskQueries() {
   };
 
   const fetchHistory = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !selectedChatId) return;
     try {
       const res = await fetch(
-        `${route_endpoint}/chat/history?userId=${user.id}`
+        `${route_endpoint}/chat/history?userId=${user.id}&chatId=${selectedChatId}`
       );
       const data = await res.json();
-
       const loadedMessages = data.history.map((msg, index) => ({
         id: `${Date.now()}-${index}`,
         message: msg.content,
         isUser: msg.role === "user",
         timestamp: msg.createdAt ? new Date(msg.createdAt) : new Date(),
       }));
-
       if (loadedMessages.length === 0) {
         loadedMessages.push({
           id: "1",
@@ -285,10 +332,7 @@ export function AskQueries() {
           timestamp: new Date(),
         });
       }
-
       setMessages(loadedMessages);
-
-      // Fix for speech glitch - only speak once on initial load
       if (!hasSpoken) {
         speak(t("healthQuestions"));
         setHasSpoken(true);
@@ -302,7 +346,7 @@ export function AskQueries() {
   useEffect(() => {
     fetchHistory();
     // eslint-disable-next-line
-  }, [user, speak, t]);
+  }, [user, selectedChatId, speak, t]);
 
   useEffect(() => {
     if (endOfMessagesRef.current) {
@@ -344,8 +388,8 @@ export function AskQueries() {
         transition={{
           layout: {
             duration: 0.3,
-            ease: "easeInOut"
-          }
+            ease: "easeInOut",
+          },
         }}
         className="flex-1 flex flex-col max-h-[90vh] w-full"
       >
@@ -353,7 +397,9 @@ export function AskQueries() {
         <motion.div
           layout
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${isLargeScreen ? 'justify-center' : 'justify-between'}`}
+          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${
+            isLargeScreen ? "justify-center" : "justify-between"
+          }`}
         >
           {/* Show Chats Button - Only visible when panel is hidden on large screens */}
           <AnimatePresence>
@@ -371,7 +417,6 @@ export function AskQueries() {
               </motion.button>
             )}
           </AnimatePresence>
-
 
           {/* Title and TrueFocus - Left aligned on small/medium, centered on large */}
           <motion.div
