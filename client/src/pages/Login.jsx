@@ -7,6 +7,7 @@ import { Input } from "../components/ui/Input";
 import { VoiceButton } from "../components/voice/VoiceButton";
 import { useApp } from "../context/AppContext";
 import { useVoice } from "../hooks/useVoice";
+import { ThemeToggle } from "../components/ui/ThemeToggle";
 import googleIcon from "../assets/google-icon.png";
 import { db } from "../firebase/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -55,18 +56,18 @@ export function Login() {
   }, [speak]);
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden theme-gradient-primary flex items-center justify-center p-2 sm:p-4">
+    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-blue-500 via-silver to-yellow-500 flex items-center justify-center p-2 sm:p-4">
       <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-2 sm:px-4">
         <div className="text-center mb-4 sm:mb-6 md:mb-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold theme-text-primary mb-1 sm:mb-2 break-words">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2 break-words">
             SilverCare AI
           </h1>
-          <p className="text-sm sm:text-base md:text-lg theme-text-secondary break-words">
+          <p className="text-sm sm:text-base md:text-lg text-white/80 break-words">
             {t("login")}
           </p>
         </div>
 
-        <div className="theme-card p-3 sm:p-4 md:p-8 w-full">
+        <div className="bg-white/20 dark:bg-black/30 backdrop-blur-lg rounded-2xl shadow-2xl p-3 sm:p-4 md:p-8 w-full">
           <form
             onSubmit={handleSubmit}
             className="space-y-4 sm:space-y-5 md:space-y-7"
@@ -132,10 +133,10 @@ export function Login() {
             {/* Divider */}
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t theme-border-secondary" />
+                <div className="w-full border-t border-white/50" />
               </div>
               <div className="relative flex justify-center text-xs sm:text-sm md:text-base">
-                <span className="px-2 theme-bg-primary theme-text-tertiary">
+                <span className="px-2 bg-gradient-to-br from-blue-500 via-silver to-yellow-500 text-white">
                   or
                 </span>
               </div>
@@ -185,11 +186,11 @@ export function Login() {
 
           {/* Signup Link */}
           <div className="text-center mt-6 sm:mt-8">
-            <p className="theme-text-secondary text-sm sm:text-base break-words">
+            <p className="text-white/80 text-sm sm:text-base break-words">
               {t("noAccount")}{" "}
               <Link
                 to="/signup"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold"
+                className="text-blue-300 hover:text-blue-400 font-semibold"
               >
                 {t("signup")}
               </Link>

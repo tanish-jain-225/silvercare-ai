@@ -284,7 +284,7 @@ export function BlogSection() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col my-20">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col mb-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-100/80 via-primary-200/80 to-accent-yellow/30 dark:from-dark-100/80 dark:via-dark-200/80 dark:to-accent-yellow/20 backdrop-blur-sm border-b border-primary-200/30 dark:border-dark-600/30 p-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">

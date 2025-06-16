@@ -55,18 +55,18 @@ export function Signup() {
   }, [speak]);
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden flex items-center justify-center p-2 sm:p-4 theme-bg-primary theme-text-primary">
+    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-blue-500 via-silver to-yellow-500 flex items-center justify-center p-2 sm:p-4">
       <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-2 sm:px-4">
         <div className="text-center mb-4 sm:mb-6 md:mb-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2 break-words">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2 break-words">
             SilverCare AI
           </h1>
-          <p className="text-sm sm:text-base md:text-lg break-words">
+          <p className="text-sm sm:text-base md:text-lg text-white/80 break-words">
             {t("signup")}
           </p>
         </div>
 
-        <div className="rounded-2xl shadow-lg p-3 sm:p-4 md:p-8 w-full theme-bg-secondary">
+        <div className="bg-white/20 dark:bg-black/30 backdrop-blur-lg rounded-2xl shadow-2xl p-3 sm:p-4 md:p-8 w-full">
           <form
             onSubmit={handleSubmit}
             className="space-y-4 sm:space-y-5 md:space-y-7"
@@ -136,7 +136,7 @@ export function Signup() {
 
             {/* Error Message */}
             {error && (
-              <div className="text-red-600 text-center bg-red-50 p-3 rounded-lg">
+              <div className="text-red-600 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-lg w-full break-words">
                 {error}
               </div>
             )}
@@ -145,17 +145,21 @@ export function Signup() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2 rounded-lg theme-bg-accent theme-text-on-accent hover:opacity-90"
+              className="w-full mt-2"
+              size="xl"
             >
               {isLoading ? "Creating Account..." : t("signupButton")}
             </Button>
           </form>
 
           {/* Login Link */}
-          <div className="text-center mt-4">
-            <p>
+          <div className="text-center mt-6 sm:mt-8">
+            <p className="text-white/80 text-sm sm:text-base break-words">
               {t("haveAccount")}{" "}
-              <Link to="/login" className="theme-text-link hover:underline">
+              <Link
+                to="/login"
+                className="text-blue-300 hover:text-blue-400 font-semibold"
+              >
                 {t("login")}
               </Link>
             </p>
