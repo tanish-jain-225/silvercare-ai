@@ -5,7 +5,7 @@ import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { useVoice } from "../hooks/useVoice";
 import { InterestSelectionModal } from "../components/InterestSelectionModal";
-import { BlogCard } from "../components/BlogCard";
+import { BlogCard, defaultBlogs } from "../components/BlogCard";
 
 // Define CSS for the fade-in animation
 const fadeInAnimation = document.createElement("style");
@@ -34,9 +34,9 @@ export function BlogSection() {
   const { t } = useTranslation();
   const { speak } = useVoice();
   // State management
-  const [articles, setArticles] = useState([]);
-  const [displayedArticles, setDisplayedArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState(defaultBlogs); // Use default blogs as initial articles
+  const [displayedArticles, setDisplayedArticles] = useState(defaultBlogs); // Display default blogs initially
+  const [loading, setLoading] = useState(false); // Set loading to false since blogs are hardcoded
   const [error, setError] = useState(null);
   const [userInterests, setUserInterests] = useState([]);
   const [showInterestModal, setShowInterestModal] = useState(false);
@@ -50,7 +50,8 @@ export function BlogSection() {
   const [userId] = useState(() => generateUserId());
 
   useEffect(() => {
-    initializeBlog();
+    // Always display default blogs initially
+    setDisplayedArticles(defaultBlogs);
   }, []);
 
   const initializeBlog = async () => {
@@ -128,26 +129,24 @@ export function BlogSection() {
       // Randomize articles
       const shuffledArticles = articlesWithIndex.sort(() => Math.random() - 0.5);
 
-      // Store all articles but don't display yet
+      // Store and display fetched articles
       setArticles(shuffledArticles);
+      setDisplayedArticles(shuffledArticles);
 
       // Set a minimum loading time (3 seconds)
       setTimeout(() => {
-        // After minimum loading time, start preloading images
         preloadArticleImages(shuffledArticles);
       }, 3000);
     } catch (error) {
       console.error("Error fetching news:", error);
-      setError("Failed to fetch news articles. Please try again.");
+      setError("Failed to fetch news articles. Displaying default blogs.");
 
-      // Provide fallback articles
-      const fallbackArticles = getFallbackArticles();
-      setArticles(fallbackArticles);
+      // Fallback to default blogs
+      setArticles(defaultBlogs);
+      setDisplayedArticles(defaultBlogs);
 
-      // Still show loading for consistency
       setTimeout(() => {
         setLoading(false);
-        setDisplayedArticles(fallbackArticles);
       }, 3000);
     }
   };
@@ -285,7 +284,7 @@ export function BlogSection() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col my-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-100/80 via-primary-200/80 to-accent-yellow/30 dark:from-dark-100/80 dark:via-dark-200/80 dark:to-accent-yellow/20 backdrop-blur-sm border-b border-primary-200/30 dark:border-dark-600/30 p-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -372,40 +371,7 @@ export function BlogSection() {
 
       {/* News Articles Grid */}
       <div className="container mx-auto px-4 py-8 flex-1">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-200 dark:border-primary-100 mb-4"></div>
-            <p className="text-primary-200 dark:text-primary-100">
-              Loading your personalized news...
-            </p>
-            {imagesLoaded > 0 && (
-              <div className="mt-4 text-sm text-primary-100 dark:text-primary-50">
-                <div className="w-56 bg-primary-100/20 dark:bg-dark-600/20 rounded-full h-2 mt-2">
-                  <div
-                    style={{ width: `${(imagesLoaded / 18) * 100}%` }}
-                    className="h-2 bg-primary-300 dark:bg-primary-200 rounded-full"
-                  ></div>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : error ? (
-          <div className="text-center p-8 bg-red-50/50 dark:bg-red-900/20 rounded-xl border border-red-200/50 dark:border-red-800/30">
-            <div className="text-red-500 dark:text-red-400 text-4xl mb-4">
-              ⚠
-            </div>
-            <h3 className="text-lg font-semibold text-red-600 dark:text-red-300 mb-2">
-              Oops! Something went wrong
-            </h3>
-            <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
-            <Button
-              onClick={handleRefreshNews}
-              className="bg-red-500 hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Try Again
-            </Button>
-          </div>
-        ) : displayedArticles.length === 0 ? (
+        {displayedArticles.length === 0 ? (
           <div className="text-center p-8 bg-yellow-50/50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200/50 dark:border-yellow-800/30">
             <div className="text-yellow-500 dark:text-yellow-400 text-4xl mb-4">
               📰
@@ -413,15 +379,6 @@ export function BlogSection() {
             <h3 className="text-lg font-semibold text-yellow-600 dark:text-yellow-300 mb-2">
               No articles found
             </h3>
-            <p className="text-yellow-500 dark:text-yellow-400 mb-4">
-              Try updating your interests or refreshing the page.
-            </p>
-            <Button
-              onClick={() => setShowInterestModal(true)}
-              className="bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-400 dark:hover:bg-yellow-500 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Update Interests
-            </Button>
           </div>
         ) : (
           <>
@@ -440,31 +397,16 @@ export function BlogSection() {
                   key={article.id}
                   className="opacity-0 animate-fade-in"
                   style={{
-                    animationDelay: `${(article.animationIndex % 18) * 150}ms`,
+                    animationDelay: `${(index % 18) * 150}ms`,
                     animationFillMode: "forwards",
                   }}
                 >
-                  <BlogCard article={article} onReadMore={handleShowPopup} />
+                  <BlogCard article={article} />
                 </div>
               ))}
             </div>
           </>
         )}
-      </div>
-
-      {/* Footer */}
-      <div className="bg-white/90 dark:bg-dark-50/90 py-4 text-center text-sm text-primary-200 dark:text-primary-100 border-t border-primary-100/20 dark:border-dark-600/20">
-        <p>
-          Powered by{" "}
-          <a
-            href="https://newsapi.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary-300 hover:text-primary-400 dark:text-primary-200 dark:hover:text-primary-100 hover:underline transition-colors"
-          >
-            NewsAPI.org
-          </a>
-        </p>
       </div>
 
       {/* Interest Selection Modal */}
