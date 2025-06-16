@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Pause, Trash2 } from "lucide-react";
+import { Send, Pause, Trash2, PanelLeftClose, PanelLeftOpen, Plus, MessageSquare } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
@@ -8,10 +8,11 @@ import { useVoice } from "../hooks/useVoice";
 import { Header } from "../components/layout/Header";
 import { MessageBubble } from "../components/chat/MessageBubble";
 import { LoadingIndicator } from "../components/chat/LoadingIndicator";
+import { ChatHistoryPanel } from "../components/chat/ChatHistoryPanel";
 import { useApp } from "../context/AppContext";
 import { route_endpoint } from "../utils/helper";
 import TrueFocus from "../components/ask-queries/TrueFocus";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function AskQueries() {
   const navigate = useNavigate();
@@ -27,6 +28,47 @@ export function AskQueries() {
   const [error, setError] = useState(null);
   const [hasSpoken, setHasSpoken] = useState(false); // Fix for speech glitch
 
+  // Chat history panel state with localStorage persistence
+  const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(() => {
+    const saved = localStorage.getItem('chatHistoryPanelOpen');
+    if (saved !== null) {
+      return JSON.parse(saved);
+    }
+    // Default: hidden on all screens (will be overridden by responsive behavior)
+    return false;
+  });
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth >= 1024);
+
+  // Save panel state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('chatHistoryPanelOpen', JSON.stringify(isHistoryPanelOpen));
+  }, [isHistoryPanelOpen]);
+
+  // Handle responsive behavior on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const largeScreen = window.innerWidth >= 1024;
+      const mediumScreen = window.innerWidth >= 768 && window.innerWidth < 1024;
+
+      setIsLargeScreen(largeScreen);
+
+      // On large screens, always start with panel hidden (overlay mode)
+      if (largeScreen) {
+        setIsHistoryPanelOpen(false);
+      }
+
+      // Auto-hide panel on medium screens if it was open
+      if (mediumScreen && isHistoryPanelOpen) {
+        setIsHistoryPanelOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isHistoryPanelOpen]);
+
   // Helper: Detect reminder keywords
   const isReminder = (text) => {
     const keywords = ["remind", "reminder"];
@@ -38,6 +80,52 @@ export function AskQueries() {
     const keywords = ["emergency", "sos"];
     const lower = text.toLowerCase();
     return keywords.some((kw) => lower.includes(kw));
+  };
+
+  // Chat history panel handlers
+  const handleNewChat = () => {
+    setSelectedChatId(null);
+    setMessages([
+      {
+        id: "1",
+        message:
+          "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
+        isUser: false,
+        timestamp: new Date(),
+      },
+    ]);
+    setError(null);
+    setHasSpoken(false);
+
+    // Close panel on all screen sizes (overlay mode)
+    setIsHistoryPanelOpen(false);
+  };
+
+  const handleSelectChat = (chatId) => {
+    setSelectedChatId(chatId);
+    // Here you would typically load the specific chat messages
+    // For now, we'll just update the selected state
+
+    // Close panel on all screen sizes (overlay mode)
+    setIsHistoryPanelOpen(false);
+  };
+
+  const handleDeleteChat = (chatId) => {
+    setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
+    if (selectedChatId === chatId) {
+      setSelectedChatId(null);
+    }
+  };
+
+  const handleToggleHistoryPanel = () => {
+    setIsHistoryPanelOpen(!isHistoryPanelOpen);
+  };
+
+  const handleOutsideClick = () => {
+    // Close panel when clicking outside on any screen size
+    if (isHistoryPanelOpen) {
+      setIsHistoryPanelOpen(false);
+    }
   };
 
   // Clear chat functionality
@@ -223,58 +311,165 @@ export function AskQueries() {
   }, [messages]);
 
   return (
-    <div className="h-[90vh] bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col">
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col max-w-7xl max-h-[90vh] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        {/* Page Title */}
-        <div className="mb-4 sm:mb-6 flex items-center justify-center gap-2 text-center">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-black dark:text-white font-['Poppins']">
-            Ask
-          </h1>
+    <div className="h-[90vh] bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex">
+      {/* Chat History Panel - Only visible on small/medium screens in layout */}
+      <div className="lg:hidden">
+        <ChatHistoryPanel
+          chatHistory={chatHistory}
+          onNewChat={handleNewChat}
+          onSelectChat={handleSelectChat}
+          onDeleteChat={handleDeleteChat}
+          onTogglePanel={handleToggleHistoryPanel}
+          selectedChatId={selectedChatId}
+          isOpen={isHistoryPanelOpen}
+        />
+      </div>
+
+      {/* Chat History Panel Overlay - Only visible on large screens */}
+      <div className="hidden lg:block">
+        <ChatHistoryPanel
+          chatHistory={chatHistory}
+          onNewChat={handleNewChat}
+          onSelectChat={handleSelectChat}
+          onDeleteChat={handleDeleteChat}
+          onTogglePanel={handleToggleHistoryPanel}
+          selectedChatId={selectedChatId}
+          isOpen={isHistoryPanelOpen}
+        />
+      </div>
+
+      {/* Main Content with Framer Motion Layout Animation */}
+      <motion.div
+        layout
+        transition={{
+          layout: {
+            duration: 0.3,
+            ease: "easeInOut"
+          }
+        }}
+        className="flex-1 flex flex-col max-h-[90vh] w-full"
+      >
+        {/* Page Title with Toggle Button */}
+        <motion.div
+          layout
+          transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
+          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${isLargeScreen ? 'justify-center' : 'justify-between'}`}
+        >
+          {/* Show Chats Button - Only visible when panel is hidden on large screens */}
+          <AnimatePresence>
+            {!isHistoryPanelOpen && isLargeScreen && (
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                onClick={handleToggleHistoryPanel}
+                className="absolute left-4 sm:left-6 lg:left-8 flex items-center justify-center w-12 h-12 lg:w-14 lg:h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg lg:rounded-xl transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg"
+                aria-label="Show chat history"
+              >
+                <MessageSquare size={20} className="lg:w-6 lg:h-6" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+
+          {/* Title and TrueFocus - Left aligned on small/medium, centered on large */}
           <motion.div
             layout
-            transition={{ layout: { duration: 0.4, ease: "easeInOut" } }}
-            className="inline-flex items-center justify-center"
+            transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
+            className="flex items-center gap-2"
           >
-            <TrueFocus
-              texts={[
-                "Health",
-                "Medicines",
-                "Sleep",
-                "Diet",
-                "Pain",
-                "Anxiety",
-              ]}
-              mainClassName="
-        text-2xl sm:text-3xl font-semibold 
-        text-white
-        px-2 sm:px-2 md:px-3 
-        py-0.5 sm:py-1 md:py-2 
-        bg-violet-500 
-        overflow-hidden 
-        justify-center 
-        rounded-lg 
-        font-['Poppins'] 
-        transition-all duration-500 ease-in-out
-      "
-              staggerFrom="last"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "-120%" }}
-              staggerDuration={0.025}
-              splitLevelClassName="overflow-hidden"
-              transition={{
-                type: "spring",
-                damping: 30,
-                stiffness: 400,
-              }}
-              rotationInterval={2000}
-            />
+            <motion.h1
+              layout
+              transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
+              className="text-2xl sm:text-3xl font-semibold text-black dark:text-white font-['Poppins']"
+            >
+              Ask
+            </motion.h1>
+            <motion.div
+              layout
+              transition={{ layout: { duration: 0.4, ease: "easeInOut" } }}
+              className="inline-flex items-center justify-center"
+            >
+              <TrueFocus
+                texts={[
+                  "Health",
+                  "Medicines",
+                  "Sleep",
+                  "Diet",
+                  "Pain",
+                  "Anxiety",
+                ]}
+                mainClassName="
+          text-2xl sm:text-3xl font-semibold 
+          text-white
+          px-2 sm:px-2 md:px-3 
+          py-0.5 sm:py-1 md:py-2 
+          bg-violet-500 
+          overflow-hidden 
+          justify-center 
+          rounded-lg 
+          font-['Poppins'] 
+          transition-all duration-500 ease-in-out
+        "
+                staggerFrom="last"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "-120%" }}
+                staggerDuration={0.025}
+                splitLevelClassName="overflow-hidden"
+                transition={{
+                  type: "spring",
+                  damping: 30,
+                  stiffness: 400,
+                }}
+                rotationInterval={2000}
+              />
+            </motion.div>
           </motion.div>
-        </div>
+
+          {/* Action Buttons - Only visible on small and medium devices, right aligned */}
+          <AnimatePresence>
+            {!isLargeScreen && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="flex items-center gap-2"
+              >
+                {/* Add New Chat Button */}
+                <button
+                  onClick={handleNewChat}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg"
+                  aria-label="New Chat"
+                >
+                  <Plus size={16} />
+                </button>
+
+                {/* Show/Hide Chat History Button */}
+                <button
+                  onClick={handleToggleHistoryPanel}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-lg"
+                  aria-label="Toggle chat history"
+                >
+                  {isHistoryPanelOpen ? (
+                    <PanelLeftClose size={16} />
+                  ) : (
+                    <PanelLeftOpen size={16} />
+                  )}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
         {/* Chat Container - Fixed Layout */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <motion.div
+          layout
+          transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
+          className="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mx-4 sm:mx-6 lg:mx-8 mb-4 sm:mb-6"
+        >
           {/* Messages Area - Scrollable */}
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 custom-scrollbar">
             {messages.map((msg, index) => (
@@ -360,8 +555,36 @@ export function AskQueries() {
               )}
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Large Screen Backdrop Overlay */}
+      <AnimatePresence>
+        {isHistoryPanelOpen && isLargeScreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/30 z-40 lg:block hidden"
+            onClick={handleOutsideClick}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isHistoryPanelOpen && !isLargeScreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+            onClick={handleOutsideClick}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Custom CSS for animations */}
       <style jsx>{`
@@ -403,6 +626,19 @@ export function AskQueries() {
 
         .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(75, 85, 99, 0.7);
+        }
+
+        /* Responsive breakpoints */
+        @media (max-width: 1023px) {
+          .chat-panel-overlay {
+            display: block;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .chat-panel-overlay {
+            display: none;
+          }
         }
       `}</style>
     </div>
