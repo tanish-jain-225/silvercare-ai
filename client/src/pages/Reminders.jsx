@@ -152,10 +152,10 @@ export function Reminders() {
       setSyncStatus("error");
     }
   };
-  const handleDeleteReminder = async (userId) => {
+  const handleDeleteReminder = async (reminderId) => {
     // Find the reminder to delete
     const reminderToDelete = uniqueReminders.find(
-      (reminder) => reminder.userId === userId
+      (reminder) => reminder.id === reminderId
     );
 
     if (!reminderToDelete) {
@@ -172,8 +172,8 @@ export function Reminders() {
           Accept: "application/json",
         },
         body: JSON.stringify({
-          id: reminderToDelete.id,
-          userId: userId,
+          id: reminderId,
+          userId: user.id,
         }),
       });
 
@@ -183,7 +183,7 @@ export function Reminders() {
 
       // Optimistically remove the reminder from UI
       setReminders((prev) =>
-        prev.filter((reminder) => reminder.id !== reminderToDelete.id)
+        prev.filter((reminder) => reminder.id !== reminderId)
       );
       speak("Reminder deleted successfully");
 
@@ -387,7 +387,7 @@ export function Reminders() {
         <div className="fixed top-0 left-0 w-full flex justify-center z-50 px-4">
           <button
             onClick={handleStopAlarm}
-            className="bg-accent-orange text-white font-semibold px-4 py-2 sm:px-6 sm:py-3 rounded-b-xl sm:rounded-b-2xl shadow-lg animate-bounce mt-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white text-sm sm:text-lg touch-manipulation"
+            className="bg-accent-orange text-white font-semibold px-4 py-2 sm:px-6 sm:py-3 rounded-b-xl sm:rounded-b-2xl shadow-lg animate-bounce mt-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white text-sm sm:text-lg touch-manipulation dark:bg-accent-orange/90"
             aria-label="Stop Alarm"
           >
             Stop Alarm
@@ -409,7 +409,7 @@ export function Reminders() {
                 icon={RefreshCw}
                 disabled={isLoading || syncStatus === "syncing"}
                 ariaLabel={t("refreshReminders", "Refresh reminders")}
-                className={`${syncStatus === "syncing" ? "animate-pulse" : ""}`}
+                className={`${syncStatus === "syncing" ? "animate-pulse" : ""} dark:hover:bg-dark-200`}
               >
                 <span className="hidden sm:inline ml-1">{t("refresh")}</span>
               </Button>
@@ -419,6 +419,7 @@ export function Reminders() {
                 size="sm"
                 icon={Plus}
                 ariaLabel={t("add")}
+                className="dark:bg-dark-300"
               >
                 <span className="ml-1">{t("addReminder")}</span>
               </Button>
@@ -485,12 +486,12 @@ export function Reminders() {
                     className="flex-1 sm:flex-none hover:bg-primary-100/10 dark:hover:bg-primary-100/5"
                   />
                   <Button
-                    onClick={() => handleDeleteReminder(user.id)}
+                    onClick={() => handleDeleteReminder(reminder.id)}
                     variant="danger"
                     size="sm"
                     icon={Trash2}
                     ariaLabel={t("deleteReminder", "Delete reminder")}
-                    className="flex-1 sm:flex-none"
+                    className="flex-1 sm:flex-none dark:bg-red-600"
                   />
                 </div>
               </Card>
@@ -515,7 +516,7 @@ export function Reminders() {
                     }
                     required
                     placeholder={t("reminderTitle", "Enter reminder title")}
-                    className="w-full"
+                    className="w-full dark:bg-dark-200"
                   />
 
                   <Input
@@ -526,7 +527,7 @@ export function Reminders() {
                       setNewReminder({ ...newReminder, date: e.target.value })
                     }
                     required
-                    className="w-full"
+                    className="w-full dark:bg-dark-200"
                   />
 
                   <Input
@@ -537,7 +538,7 @@ export function Reminders() {
                       setNewReminder({ ...newReminder, time: e.target.value })
                     }
                     required
-                    className="w-full"
+                    className="w-full dark:bg-dark-200"
                   />
                 </div>
 
@@ -547,7 +548,7 @@ export function Reminders() {
                     variant="outline"
                     size="md"
                     ariaLabel={t("cancel")}
-                    className="w-full sm:w-auto order-2 sm:order-1"
+                    className="w-full sm:w-auto order-2 sm:order-1 dark:hover:bg-dark-200"
                   >
                     {t("cancel")}
                   </Button>
@@ -556,7 +557,7 @@ export function Reminders() {
                     variant="primary"
                     size="md"
                     ariaLabel={t("add")}
-                    className="w-full sm:w-auto order-1 sm:order-2"
+                    className="w-full sm:w-auto order-1 sm:order-2 dark:bg-dark-300"
                     disabled={
                       !newReminder.title ||
                       !newReminder.time ||
