@@ -50,11 +50,10 @@ export function LanguageSelection() {
             <Card
               key={language.code}
               onClick={() => handleLanguageSelect(language.code)}
-              className={`cursor-pointer transition-all duration-200 ${
-                selectedLanguage === language.code
+              className={`cursor-pointer transition-all duration-200 ${selectedLanguage === language.code
                   ? 'ring-4 ring-blue-200 border-blue-500 bg-blue-50'
                   : 'hover:border-blue-300'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3 sm:space-x-4">
