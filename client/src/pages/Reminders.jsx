@@ -51,7 +51,10 @@ export function Reminders() {
     }
 
     try {
-      if (showLoadingState) setSyncStatus("syncing");
+      if (showLoadingState) {
+        setIsLoading(true);
+        setSyncStatus("syncing");
+      }
 
       console.log(`Fetching reminders for user: ${user.id}`);
       const response = await fetch(
@@ -67,21 +70,21 @@ export function Reminders() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch reminders");
+        throw new Error(`Failed to fetch reminders: ${response.statusText}`);
       }
 
       const data = await response.json();
       console.log("Reminders data received:", data);
 
       if (data.success && Array.isArray(data.reminders)) {
-        // Filter reminders by userId
-        const userReminders = data.reminders.filter(
-          (reminder) => reminder.userId === user.id
-        );
-        setReminders(userReminders);
+        // Sort reminders by created_at in descending order (newest first)
+        const sortedReminders = data.reminders.sort((a, b) => {
+          return new Date(b.created_at) - new Date(a.created_at);
+        });
+        setReminders(sortedReminders);
         setSyncStatus("success");
       } else {
-        throw new Error("Invalid reminders data");
+        throw new Error("Invalid reminders data format");
       }
     } catch (error) {
       console.error("Error fetching reminders:", error);
@@ -89,6 +92,7 @@ export function Reminders() {
       speak("Sorry, there was an issue syncing your reminders");
     } finally {
       if (showLoadingState) {
+        setIsLoading(false);
         setTimeout(() => setSyncStatus("idle"), 2000);
       }
     }
@@ -100,6 +104,7 @@ export function Reminders() {
       return;
     }
 
+    setIsLoading(true);
     const reminder = {
       id: Date.now().toString(),
       title: newReminder.title,
@@ -109,17 +114,6 @@ export function Reminders() {
       userId: user.id,
     };
 
-    // Optimistic update - add reminder to UI immediately
-    const optimisticReminder = {
-      ...reminder,
-      created_at: new Date().toISOString(),
-    };
-    setReminders((prev) => [...prev, optimisticReminder]);
-
-    setShowAddForm(false);
-    setNewReminder({ title: "", time: "", date: "" });
-    speak("Reminder added successfully");
-
     try {
       setSyncStatus("syncing");
       const response = await fetch(`${route_endpoint}/reminder-data`, {
@@ -128,41 +122,40 @@ export function Reminders() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          id: reminder.id,
-          title: reminder.title,
-          date: reminder.date,
-          time: reminder.time,
-          userId: user.id,
-        }),
+        body: JSON.stringify(reminder),
       });
 
       if (!response.ok) {
         throw new Error("Failed to save reminder to server");
       }
 
-      // Sync with backend to get the actual saved reminder
-      await fetchReminders(false); // Don't show loading state
-      setSyncStatus("success");
+      const data = await response.json();
+
+      if (data.success) {
+        // Fetch updated reminders after successful addition
+        await fetchReminders(false);
+        setShowAddForm(false);
+        setNewReminder({ title: "", time: "", date: "" });
+        speak("Reminder added successfully");
+        setSyncStatus("success");
+      } else {
+        throw new Error(data.error || "Failed to save reminder");
+      }
     } catch (error) {
       console.error("Error saving reminder:", error);
-      // Revert optimistic update on error
-      setReminders((prev) => prev.filter((r) => r.id !== reminder.id));
       speak("Failed to save reminder. Please try again.");
       setSyncStatus("error");
+    } finally {
+      setIsLoading(false);
     }
   };
   const handleDeleteReminder = async (reminderId) => {
-    // Find the reminder to delete
-    const reminderToDelete = uniqueReminders.find(
-      (reminder) => reminder.id === reminderId
-    );
-
-    if (!reminderToDelete) {
-      speak("No reminder found to delete");
+    if (!user?.id) {
+      speak("Please log in to delete reminders");
       return;
     }
 
+    setIsLoading(true);
     try {
       setSyncStatus("syncing");
       const response = await fetch(`${route_endpoint}/delete-reminder`, {
@@ -181,19 +174,22 @@ export function Reminders() {
         throw new Error("Failed to delete reminder from server");
       }
 
-      // Optimistically remove the reminder from UI
-      setReminders((prev) =>
-        prev.filter((reminder) => reminder.id !== reminderId)
-      );
-      speak("Reminder deleted successfully");
+      const data = await response.json();
 
-      // Sync with backend to refresh reminders
-      await fetchReminders(false); // Don't show loading state
-      setSyncStatus("success");
+      if (data.success) {
+        // Fetch updated reminders after successful deletion
+        await fetchReminders(false);
+        speak("Reminder deleted successfully");
+        setSyncStatus("success");
+      } else {
+        throw new Error(data.error || "Failed to delete reminder");
+      }
     } catch (error) {
       console.error("Error deleting reminder:", error);
       speak("Failed to delete reminder. Please try again.");
       setSyncStatus("error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -414,6 +410,7 @@ export function Reminders() {
                 ariaLabel={t("refreshReminders", "Refresh reminders")}
                 className={`${syncStatus === "syncing" ? "animate-pulse" : ""} 
                   px-6 py-3 
+                  dark:hover:text-white
                   hover:bg-primary-50 dark:hover:bg-dark-200 
                   border-2 border-primary-200/30 dark:border-dark-600/30
                   rounded-xl
