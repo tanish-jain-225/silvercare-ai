@@ -5,6 +5,7 @@ from together import Together
 from datetime import datetime, timedelta, timezone
 import os
 from dotenv import load_dotenv
+from bson import ObjectId
 
 # Load environment variables
 load_dotenv()
@@ -42,10 +43,31 @@ Instead of "Hypertension", say "high blood pressure"
 Instead of "Type 2 Diabetes", say "a kind of diabetes that often happens with age"
 Do not include links or suggest websites. Just speak directly and clearly."""
 
+@chat_bp.route('/chat/new', methods=['POST'])
+def create_new_chat():
+    try:
+        data = request.get_json()
+        user_id = data.get('userId')
+        now = datetime.now(timezone.utc).isoformat()
+
+        chat_doc = {
+            "userId": user_id,
+            "history": [],
+            "createdAt": now,
+            "updatedAt": now
+        }
+        result = collection.insert_one(chat_doc)
+        chat_id = str(result.inserted_id)  # Use MongoDB ObjectId as chatId
+        return jsonify({"chatId": chat_id})
+    except Exception as e:
+        print(f"Error creating new chat: {str(e)}")
+        return jsonify({"error": "Failed to create new chat", "details": str(e)}), 500
+
 @chat_bp.route('/chat/history', methods=['GET'])
 def get_chat_history():
     user_id = request.args.get("userId")
-    history_doc = collection.find_one({"userId": user_id})
+    chat_id = request.args.get("chatId")
+    history_doc = collection.find_one({"userId": user_id, "_id": ObjectId(chat_id)})
 
     if not history_doc or "history" not in history_doc:
         return jsonify({"history": []})
@@ -73,12 +95,13 @@ def send_message():
     data = request.get_json()
     user_message = data.get('input')
     user_id = data.get('userId')
+    chat_id = data.get('chatId')
 
-    if not user_message:
+    if not user_message or not chat_id:
         return jsonify({"error": "No message provided"}), 400
 
     # Fetch user chat history
-    history_doc = collection.find_one({"userId": user_id})
+    history_doc = collection.find_one({"userId": user_id, "_id": ObjectId(chat_id)})
     history = history_doc.get("history", []) if history_doc else []
 
     # Append current user message
@@ -129,12 +152,13 @@ def clear_chat_history():
     try:
         data = request.get_json()
         user_id = data.get('userId')
+        chat_id = data.get('chatId')
         
-        if not user_id:
+        if not user_id or not chat_id:
             return jsonify({"error": "User ID is required"}), 400
         
         # Delete the user's chat history from MongoDB
-        result = collection.delete_one({"userId": user_id})
+        result = collection.delete_one({"userId": user_id, "_id": ObjectId(chat_id)})
         
         if result.deleted_count > 0:
             return jsonify({
