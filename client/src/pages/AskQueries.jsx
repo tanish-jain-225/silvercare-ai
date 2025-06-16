@@ -100,13 +100,11 @@ export function AskQueries() {
     ? "w-1/4 border-r border-gray-300 dark:border-gray-700"
     : "w-full border-b border-gray-300 dark:border-gray-700";
 
-  const chatAreaClasses = isLargeScreen
-    ? "w-3/4"
-    : "w-full";
+  const chatAreaClasses = isLargeScreen ? "w-3/4" : "w-full";
 
   // Helper: Detect reminder keywords
   const isReminder = (text) => {
-    const keywords = ["remind", "reminder"];
+    const keywords = ["remind", "reminder", "alarm", "alert"];
     const lower = text.toLowerCase();
     return keywords.some((kw) => lower.includes(kw));
   };
@@ -237,6 +235,7 @@ export function AskQueries() {
     try {
       let response, data;
       if (isReminder(messageToSend)) {
+        console.log("Creating reminder with user ID:", user.id);
         response = await fetch(`${route_endpoint}/format-reminder`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -247,9 +246,15 @@ export function AskQueries() {
           }),
         });
         data = await response.json();
+        console.log("Reminder creation response:", data);
+
+        if (!data.success) {
+          throw new Error(data.error || "Failed to create reminder");
+        }
+
         const aiMessage = {
           id: (Date.now() + 1).toString(),
-          message: data.message || "Your reminder is set.",
+          message: data.message || "Your reminder has been set successfully.",
           isUser: false,
           timestamp: new Date(),
         };
@@ -313,7 +318,8 @@ export function AskQueries() {
       setError("Unable to connect to the server. Please try again.");
       const errorMessage = {
         id: (Date.now() + 2).toString(),
-        message: "Unable to connect to the server. Please try again.",
+        message:
+          error.message || "Unable to connect to the server. Please try again.",
         isUser: false,
         timestamp: new Date(),
         isError: true,

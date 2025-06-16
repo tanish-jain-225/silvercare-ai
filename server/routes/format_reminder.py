@@ -126,12 +126,14 @@ def format_reminder():
     print("POST /format-reminder endpoint called")
     print(f"Request data: {request.json}")
     
-    # Important - ensure we have a JSON body with 'input' field or Voice Input
+    # Important - ensure we have a JSON body with 'input' field and userId
     user_input = request.json.get('input', '')
     user_id = request.json.get('userId')
     # Ensure we have input to process
     if not user_input:
         return jsonify({"error": "No input provided. Please send JSON with 'input' field."}), 400
+    if not user_id:
+        return jsonify({"error": "No userId provided. Please send JSON with 'userId' field."}), 400
         
     # Instruct the LLM to format the input as a reminder with title, date, time
     response = client.chat.completions.create(
@@ -209,8 +211,27 @@ def get_reminders():
         cursor = reminders_collection.find({"userId": user_id})
         reminders_list = list(cursor)
         print(f"Found {len(reminders_list)} reminders for user {user_id}")
-        reminders = convert_to_json_friendly(reminders_list)
-        return jsonify({"success": True, "reminders": reminders, "count": len(reminders)})
+        
+        # Convert ObjectId to string and ensure all fields are properly formatted
+        formatted_reminders = []
+        for reminder in reminders_list:
+            formatted_reminder = {
+                "id": str(reminder.get("_id", reminder.get("id", ""))),
+                "title": reminder.get("title", ""),
+                "date": reminder.get("date", ""),
+                "time": reminder.get("time", ""),
+                "userId": reminder.get("userId", ""),
+                "created_at": reminder.get("created_at", datetime.now()).isoformat(),
+                "updated_at": reminder.get("updated_at", datetime.now()).isoformat()
+            }
+            formatted_reminders.append(formatted_reminder)
+        
+        print(f"Formatted reminders: {formatted_reminders}")
+        return jsonify({
+            "success": True, 
+            "reminders": formatted_reminders, 
+            "count": len(formatted_reminders)
+        })
     except Exception as e:
         print(f"Error in get_reminders: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -247,8 +268,13 @@ def save_reminder_data():
             results = []
             for reminder in reminder_data:
                 saved = save_to_mongodb(reminder)
-                results.append(saved)
-            response = jsonify({"success": True, "reminders": results, "count": len(results)})
+                if saved:
+                    results.append(saved)
+            response = jsonify({
+                "success": True, 
+                "reminders": results, 
+                "count": len(results)
+            })
         else:
             saved_reminder = save_to_mongodb(reminder_data)
             response = jsonify({"success": True, "reminder": saved_reminder})
@@ -256,7 +282,9 @@ def save_reminder_data():
         return response
     except Exception as e:
         print(f"Error in save_reminder_data: {str(e)}")
-        return jsonify({"error": f"Failed to save reminder data: {str(e)}"}), 500
+        return jsonify({
+            "error": f"Failed to save reminder data: {str(e)}"
+        }), 500
 
 @format_reminder_bp.route('/delete-reminder', methods=['POST'])
 def delete_reminder():

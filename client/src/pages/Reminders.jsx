@@ -98,8 +98,12 @@ export function Reminders() {
     }
   };
   const handleAddReminder = async () => {
-    if (!newReminder.title || !newReminder.time || !newReminder.date) return;
+    if (!newReminder.title || !newReminder.time || !newReminder.date) {
+      console.log("Missing required fields:", { newReminder });
+      return;
+    }
     if (!user?.id) {
+      console.log("No user ID available");
       speak("Please log in to add reminders");
       return;
     }
@@ -111,6 +115,8 @@ export function Reminders() {
       date: newReminder.date,
       userId: user.id,
     };
+
+    console.log("Adding new reminder:", reminder);
 
     try {
       setSyncStatus("syncing");
@@ -124,10 +130,12 @@ export function Reminders() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save reminder to server");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save reminder to server");
       }
 
       const data = await response.json();
+      console.log("Server response:", data);
 
       if (data.success) {
         // Fetch updated reminders after successful addition
@@ -339,6 +347,8 @@ export function Reminders() {
     if (user?.id) {
       console.log("User changed, fetching reminders for:", user.id);
       fetchReminders();
+    } else {
+      console.log("No user ID available, skipping reminder fetch");
     }
   }, [user?.id]);
 
@@ -370,7 +380,10 @@ export function Reminders() {
   // Initial load on component mount
   useEffect(() => {
     if (user?.id) {
+      console.log("Initial load, fetching reminders for:", user.id);
       fetchReminders();
+    } else {
+      console.log("No user ID available on initial load");
     }
   }, []);
 
