@@ -106,11 +106,9 @@ export function Reminders() {
 
     setIsLoading(true);
     const reminder = {
-      id: Date.now().toString(),
       title: newReminder.title,
       time: newReminder.time,
       date: newReminder.date,
-      isActive: true,
       userId: user.id,
     };
 
