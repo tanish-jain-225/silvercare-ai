@@ -113,56 +113,34 @@ export function BlogSection() {
       setAllImagesLoaded(false);
       setImagesLoaded(0);
 
-      // Get random news across multiple categories for variety
       const randomInterests = [...interests];
-      // Add some default categories for more variety if user selected few interests
-      ["technology", "business", "health", "entertainment"].forEach(
-        (interest) => {
-          if (!randomInterests.includes(interest)) {
-            randomInterests.push(interest);
-          }
+      ["technology", "business", "health", "entertainment"].forEach((interest) => {
+        if (!randomInterests.includes(interest)) {
+          randomInterests.push(interest);
         }
-      );
+      });
 
-      // Shuffle interests for randomness
       const shuffledInterests = randomInterests.sort(() => Math.random() - 0.5);
+      const allNewsArticles = await newsAPI.fetchNewsWithFallback(shuffledInterests);
 
-      // Fetch more articles than we need to ensure we have enough with images
-      const allNewsArticles = await newsAPI.fetchNewsWithFallback(
-        shuffledInterests
-      );
-
-      // Add index for animation delay and shuffle articles
       const articlesWithIndex = allNewsArticles
-        .filter((article) => article.urlToImage) // Only keep articles with images
+        .filter((article) => article.urlToImage)
         .map((article, index) => ({ ...article, animationIndex: index }));
 
-      // Randomize articles
-      const shuffledArticles = articlesWithIndex.sort(
-        () => Math.random() - 0.5
-      );
-
-      // Store all articles but don't display yet
+      const shuffledArticles = articlesWithIndex.sort(() => Math.random() - 0.5);
       setArticles(shuffledArticles);
 
-      // Set a minimum loading time (3 seconds)
       setTimeout(() => {
-        // After minimum loading time, start preloading images
         preloadArticleImages(shuffledArticles);
       }, 3000);
     } catch (error) {
       console.error("Error fetching news:", error);
-      setError("Failed to fetch news articles. Please try again.");
+      setError("Failed to fetch news articles. Displaying fallback articles.");
 
-      // Provide fallback articles
       const fallbackArticles = getFallbackArticles();
       setArticles(fallbackArticles);
-
-      // Still show loading for consistency
-      setTimeout(() => {
-        setLoading(false);
-        setDisplayedArticles(fallbackArticles);
-      }, 3000);
+      setDisplayedArticles(fallbackArticles);
+      setLoading(false);
     }
   };
 
