@@ -70,19 +70,19 @@ export const interestsAPI = {
 
 // News API
 export const newsAPI = {
+    // Ensure headers for protocol upgrade are included
+    headers: {
+        'User-Agent': 'VoiceBuddy/1.0',
+        'Upgrade': 'h2c', // HTTP/2 Cleartext
+    },
+
     // Fetch news for a specific category
     async fetchNewsByCategory(category) {
         const API_KEY = 'c7ebd7e038a8439386633b648d116c1e';
         const url = `https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=${API_KEY}`;
 
-        // Ensure headers for protocol upgrade are included
-        const headers = {
-            'User-Agent': 'VoiceBuddy/1.0',
-            'Upgrade': 'h2c', // HTTP/2 Cleartext
-        };
-
         try {
-            const response = await fetch(url, { headers });
+            const response = await fetch(url, { headers: this.headers });
 
             if (response.status === 426) {
                 console.error(`Protocol upgrade required for category: ${category}`);
