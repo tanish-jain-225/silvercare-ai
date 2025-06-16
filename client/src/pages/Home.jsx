@@ -94,6 +94,7 @@ export function Home() {
     },
   ];
 
+  // Ensure navigation to blog section works
   const handleFeatureClick = (path, title) => {
     speak(`Opening ${title}`);
     navigate(path);

@@ -1,5 +1,8 @@
 import { route_endpoint } from "./helper";
 
+// Add a delay function to throttle requests
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // User Interests API
 export const interestsAPI = {
     // Get user interests
@@ -69,11 +72,27 @@ export const interestsAPI = {
 export const newsAPI = {
     // Fetch news for a specific category
     async fetchNewsByCategory(category) {
-        const API_KEY = '26c468af4a634a9cb60cc69f457a1f41';
+        const API_KEY = 'c7ebd7e038a8439386633b648d116c1e';
         const url = `https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=${API_KEY}`;
+        const headers = {
+            'User-Agent': 'VoiceBuddy/1.0',
+            'Upgrade': 'h2c', // HTTP/2 Cleartext
+        };
 
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, { headers });
+
+            if (response.status === 426) {
+                console.error(`Protocol upgrade required for category: ${category}`);
+                return this.getFallbackArticles(); // Use fallback articles
+            }
+
+            if (response.status === 429) {
+                console.warn(`Rate limit exceeded for category: ${category}`);
+                await delay(1000); // Wait for 1 second before retrying
+                return this.fetchNewsByCategory(category); // Retry the request
+            }
+
             const data = await response.json();
 
             if (data.status === 'ok' && data.articles) {
@@ -97,16 +116,9 @@ export const newsAPI = {
         try {
             const promises = categories.map(category => this.fetchNewsByCategory(category));
             const results = await Promise.all(promises);
-
-            // Flatten and merge all articles
-            const allArticles = results.flat();
-
-            // Sort by published date (newest first)
-            return allArticles.sort((a, b) =>
-                new Date(b.publishedAt) - new Date(a.publishedAt)
-            );
+            return results.flat();
         } catch (error) {
-            console.error('Error fetching news for multiple categories:', error);
+            console.error("Error fetching news by categories:", error);
             return [];
         }
     },
@@ -114,31 +126,32 @@ export const newsAPI = {
     // Fetch news with fallback to everything endpoint
     async fetchNewsWithFallback(categories) {
         try {
-            // First try top-headlines for each category
             const articles = await this.fetchNewsByCategories(categories);
 
-            // If we don't have enough articles, try the everything endpoint
             if (articles.length < 6) {
-                const API_KEY = '26c468af4a634a9cb60cc69f457a1f41';
-                const query = categories.join(' OR ');
-                const date = new Date();
-                date.setDate(date.getDate() - 30);
-                const fromDate = date.toISOString().split('T')[0];
-
-                const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&from=${fromDate}&sortBy=popularity&apiKey=${API_KEY}`;
-
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.status === 'ok' && data.articles) {
-                    return data.articles.slice(0, 12); // Limit to 12 articles
-                }
+                console.warn("Falling back to local data due to insufficient articles.");
+                return this.getFallbackArticles();
             }
 
             return articles;
         } catch (error) {
-            console.error('Error fetching news with fallback:', error);
-            return [];
+            console.error("Error in fetchNewsWithFallback:", error);
+            return this.getFallbackArticles();
         }
+    },
+
+    // Add a method to provide fallback articles
+    getFallbackArticles() {
+        return [
+            {
+                title: "Fallback Article",
+                description: "This is a fallback article.",
+                url: "#",
+                urlToImage: "/public/voice-search.png",
+                source: { name: "Fallback Source" },
+                publishedAt: new Date().toISOString(),
+                category: "general",
+            },
+        ];
     }
-}; 
+};

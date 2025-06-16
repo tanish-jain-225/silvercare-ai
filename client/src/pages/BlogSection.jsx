@@ -247,100 +247,30 @@ export function BlogSection() {
     }
   };
 
+  // Ensure proper error handling and fallback mechanisms
   const handleRefreshNews = async () => {
     setRefreshing(true);
     try {
       await fetchNewsByInterests(userInterests);
     } catch (error) {
       console.error("Error refreshing news:", error);
+      setError("Failed to refresh news. Please try again.");
     } finally {
       setRefreshing(false);
     }
   };
   const getFallbackArticles = () => {
-    // Generate 18 random fallback articles with variety
-    const categories = [
-      "technology",
-      "business",
-      "health",
-      "sports",
-      "entertainment",
-      "science",
+    return [
+      {
+        title: "Fallback Article",
+        description: "This is a fallback article.",
+        url: "#",
+        urlToImage: "/public/voice-search.png",
+        source: { name: "Fallback Source" },
+        publishedAt: new Date().toISOString(),
+        category: "general",
+      },
     ];
-    const sources = [
-      { name: "TechCrunch" },
-      { name: "The Verge" },
-      { name: "Wired" },
-      { name: "Forbes" },
-      { name: "BBC" },
-      { name: "CNN" },
-      { name: "Bloomberg" },
-      { name: "Wall Street Journal" },
-      { name: "Time Magazine" },
-    ];
-    const images = [
-      "https://via.placeholder.com/800x400?text=AI+Technology",
-      "https://via.placeholder.com/800x400?text=Quantum+Computing",
-      "https://via.placeholder.com/800x400?text=AR+Wearables",
-      "https://via.placeholder.com/800x400?text=Health+Tech",
-      "https://via.placeholder.com/800x400?text=Business+News",
-      "https://via.placeholder.com/800x400?text=Sports+Update",
-    ];
-
-    const titles = [
-      "Latest Advances in AI Technology for 2025",
-      "New Quantum Computing Breakthrough Promises Faster Processing",
-      "The Future of Augmented Reality Wearables",
-      "Health Tech Innovations Transforming Patient Care",
-      "Global Markets React to New Economic Policies",
-      "Sports Teams Adopt AI for Performance Optimization",
-      "Entertainment Industry Transformed by Virtual Reality",
-      "Climate Science Breakthrough: New Carbon Capture Method",
-      "Business Leaders Predict Technology Trends for 2026",
-      "Biotech Startups Revolutionize Medicine with CRISPR",
-      "Renewable Energy Solutions Gaining Momentum Globally",
-      "Space Exploration: Private Companies Lead the Way",
-      "Cybersecurity Threats in Modern Computing",
-      "The Psychology of Social Media Use in 2025",
-      "Self-Driving Cars: Where We Stand Today",
-      "Nutrition Science Unveils New Diet Recommendations",
-      "Streaming Services Battle for Viewer Attention",
-      "IoT Devices Changing How We Live and Work",
-    ];
-
-    return Array(18)
-      .fill(null)
-      .map((_, index) => {
-        const randomCategory =
-          categories[Math.floor(Math.random() * categories.length)];
-        const randomSource =
-          sources[Math.floor(Math.random() * sources.length)];
-        const randomImage = images[Math.floor(Math.random() * images.length)];
-        const randomTitle = titles[index % titles.length]; // Ensure all titles are used
-
-        // Generate a random date within the last week
-        const date = new Date();
-        date.setDate(date.getDate() - Math.floor(Math.random() * 7));
-
-        return {
-          source: { id: null, name: randomSource.name },
-          author: [
-            "John Smith",
-            "Sarah Johnson",
-            "Michael Brown",
-            "Emma Wilson",
-            "David Chen",
-          ][Math.floor(Math.random() * 5)],
-          title: randomTitle,
-          description: `This is a sample article about ${randomCategory}. The content is generated as a fallback when the news API is unavailable.`,
-          url: `https://example.com/${randomCategory}/${index}`,
-          urlToImage: randomImage,
-          publishedAt: date.toISOString(),
-          content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris...`,
-          category: randomCategory,
-          animationIndex: index,
-        };
-      });
   };
 
   const getInterestDisplayNames = () => {

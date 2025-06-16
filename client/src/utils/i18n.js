@@ -45,6 +45,8 @@ const resources = {
       // Blog Section
       blog: "Blog",
       blogSection: "Blog Section",
+      refreshNews: "Refresh News",
+      noArticlesFound: "No articles found. Try updating your interests or refreshing the page.",
 
       planYourDay: "Entertain Your Day",
       typeOrSpeak: "Type your message or speak...",

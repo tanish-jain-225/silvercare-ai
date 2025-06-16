@@ -33,6 +33,7 @@ export function BlogCard({ article, className = "", onReadMore }) {
     category = "general",
   } = article;
 
+  // Ensure the onReadMore callback triggers the popup
   const popUpCard = () => {
     const articleDetails = {
       title,
@@ -44,7 +45,6 @@ export function BlogCard({ article, className = "", onReadMore }) {
       category,
     };
 
-    // Trigger the popup in BlogSection
     if (onReadMore) {
       onReadMore(articleDetails);
     }
