@@ -31,15 +31,15 @@ export function Home() {
       path: "/blog",
       color: "feature-card-blue",
       gradient:
-        "from-primary-100/20 to-primary-200/20 dark:from-primary-100/10 dark:to-primary-200/10",
+        "from-primary-100/40 to-primary-200/40 dark:from-primary-100/10 dark:to-primary-200/10",
       hoverGradient:
-        "group-hover:from-primary-100/30 group-hover:to-primary-200/30 dark:group-hover:from-primary-100/20 dark:group-hover:to-primary-200/20",
-      iconBg: "bg-primary-100/20 dark:bg-primary-100/10",
-      iconColor: "text-primary-200 dark:text-primary-100",
-      textHover:
-        "group-hover:text-primary-200 dark:group-hover:text-primary-100",
-      descHover:
-        "group-hover:text-primary-300 dark:group-hover:text-primary-200",
+        "group-hover:from-primary-100/60 group-hover:to-primary-200/60 dark:group-hover:from-primary-100/20 dark:group-hover:to-primary-200/20",
+      iconBg: "bg-primary-100/40 dark:bg-primary-100/10",
+      iconColor: "text-primary-300 dark:text-primary-100",
+      textHover: "dark:group-hover:text-primary-200",
+      descHover: "dark:group-hover:text-primary-100",
+      borderColor:
+        "group-hover:border-primary-200/40 dark:group-hover:border-primary-100/20",
     },
     {
       icon: Clock,
@@ -48,17 +48,15 @@ export function Home() {
       path: "/reminders",
       color: "feature-card-green",
       gradient:
-        "from-primary-200/30 to-primary-300/30 dark:from-primary-200/20 dark:to-primary-300/20",
+        "from-primary-200/40 to-primary-300/40 dark:from-primary-200/20 dark:to-primary-300/20",
       hoverGradient:
-        "group-hover:from-primary-200/40 group-hover:to-primary-300/40 dark:group-hover:from-primary-200/30 dark:group-hover:to-primary-300/30",
-      iconBg: "bg-primary-200/30 dark:bg-primary-200/20",
+        "group-hover:from-primary-200/60 group-hover:to-primary-300/60 dark:group-hover:from-primary-200/30 dark:group-hover:to-primary-300/30",
+      iconBg: "bg-primary-200/40 dark:bg-primary-200/20",
       iconColor: "text-primary-300 dark:text-primary-200",
-      textHover:
-        "group-hover:text-primary-200 dark:group-hover:text-primary-100",
-      descHover:
-        "group-hover:text-primary-300 dark:group-hover:text-primary-200",
+      textHover: " dark:group-hover:text-primary-200",
+      descHover: "dark:group-hover:text-primary-100",
       borderColor:
-        "group-hover:border-primary-300/30 dark:group-hover:border-primary-200/30",
+        "group-hover:border-primary-300/40 dark:group-hover:border-primary-200/30",
     },
     {
       icon: AlertTriangle,
@@ -67,15 +65,15 @@ export function Home() {
       path: "/emergency",
       color: "feature-card-orange",
       gradient:
-        "from-accent-orange/20 to-accent-orange/30 dark:from-accent-orange/10 dark:to-accent-orange/20",
+        "from-accent-orange/30 to-accent-orange/40 dark:from-accent-orange/10 dark:to-accent-orange/20",
       hoverGradient:
-        "group-hover:from-accent-orange/30 group-hover:to-accent-orange/40 dark:group-hover:from-accent-orange/20 dark:group-hover:to-accent-orange/30",
-      iconBg: "bg-accent-orange/20 dark:bg-accent-orange/10",
+        "group-hover:from-accent-orange/50 group-hover:to-accent-orange/60 dark:group-hover:from-accent-orange/20 dark:group-hover:to-accent-orange/30",
+      iconBg: "bg-accent-orange/30 dark:bg-accent-orange/10",
       iconColor: "text-accent-orange dark:text-accent-orange",
-      textHover:
-        "group-hover:text-accent-orange dark:group-hover:text-accent-orange",
-      descHover:
-        "group-hover:text-accent-orange/80 dark:group-hover:text-accent-orange/80",
+      textHover: "dark:group-hover:text-accent-orange",
+      descHover: "dark:group-hover:text-accent-orange/80",
+      borderColor:
+        "group-hover:border-accent-orange/40 dark:group-hover:border-accent-orange/20",
     },
     {
       icon: MessageSquare,
@@ -84,15 +82,15 @@ export function Home() {
       path: "/ask-queries",
       color: "feature-card-yellow",
       gradient:
-        "from-accent-yellow/20 to-accent-yellow/30 dark:from-accent-yellow/10 dark:to-accent-yellow/20",
+        "from-accent-yellow/30 to-accent-yellow/40 dark:from-accent-yellow/10 dark:to-accent-yellow/20",
       hoverGradient:
-        "group-hover:from-accent-yellow/30 group-hover:to-accent-yellow/40 dark:group-hover:from-accent-yellow/20 dark:group-hover:to-accent-yellow/30",
-      iconBg: "bg-accent-yellow/20 dark:bg-accent-yellow/10",
+        "group-hover:from-accent-yellow/50 group-hover:to-accent-yellow/60 dark:group-hover:from-accent-yellow/20 dark:group-hover:to-accent-yellow/30",
+      iconBg: "bg-accent-yellow/30 dark:bg-accent-yellow/10",
       iconColor: "text-accent-yellow dark:text-accent-yellow",
-      textHover:
-        "group-hover:text-accent-yellow dark:group-hover:text-accent-yellow",
-      descHover:
-        "group-hover:text-accent-yellow/80 dark:group-hover:text-accent-yellow/80",
+      textHover: "dark:group-hover:text-accent-yellow",
+      descHover: "dark:group-hover:text-accent-yellow/80",
+      borderColor:
+        "group-hover:border-accent-yellow/40 dark:group-hover:border-accent-yellow/20",
     },
   ];
 
@@ -195,7 +193,7 @@ export function Home() {
                 stiffness: 300,
                 damping: 20,
               }}
-              className={`theme-card group cursor-pointer p-8 rounded-2xl bg-gradient-to-br ${feature.gradient} ${feature.hoverGradient} backdrop-blur-sm border-0 focus-visible:ring-2 focus-visible:ring-opacity-60 focus-visible:ring-primary-200 dark:focus-visible:ring-primary-100 relative overflow-hidden`}
+              className={`theme-card group cursor-pointer p-8 rounded-2xl bg-gradient-to-br ${feature.gradient} ${feature.hoverGradient} backdrop-blur-sm border border-primary-100/20 dark:border-primary-100/10 focus-visible:ring-2 focus-visible:ring-opacity-60 focus-visible:ring-primary-200 dark:focus-visible:ring-primary-100 relative overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 ${feature.borderColor}`}
               tabIndex={0}
               aria-label={feature.title}
             >
@@ -210,11 +208,11 @@ export function Home() {
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  className={`inline-flex items-center justify-center w-20 h-20 rounded-3xl ${feature.iconBg} transition-all duration-300 group-hover:shadow-lg`}
+                  className={`inline-flex items-center justify-center w-20 h-20 rounded-3xl ${feature.iconBg} transition-all duration-300 group-hover:shadow-lg shadow-md group-hover:scale-110`}
                 >
                   <feature.icon
                     size={36}
-                    className={`${feature.iconColor} opacity-90 transition-all duration-300 group-hover:opacity-100`}
+                    className={`${feature.iconColor} opacity-90 transition-all duration-300 group-hover:opacity-100 group-hover:scale-110`}
                     aria-hidden="true"
                   />
                 </motion.div>

@@ -63,7 +63,7 @@ export function Profile() {
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-50 dark:to-dark-100/30 flex flex-col items-center justify-center pb-32">
       {/* Profile Card */}
-      <div className="w-full max-w-lg mx-auto mt-8 mb-6 p-6 rounded-3xl shadow-lg bg-white/90 dark:bg-dark-50/90 border border-primary-100/20 dark:border-dark-600/20 backdrop-blur-sm relative animate-fade-in">
+      <div className="w-full max-w-lg mx-auto mt-8 mb-6 p-6 rounded-3xl shadow-lg bg-gradient-to-r from-primary-100/80 via-primary-200/80 to-accent-yellow/30 dark:from-dark-100/80 dark:via-dark-200/80 dark:to-accent-yellow/20 backdrop-blur-sm border-b border-primary-200/30 dark:border-dark-600/30 relative animate-fade-in">
         <button
           type="button"
           onClick={() => navigate("/user-details")}
@@ -78,10 +78,10 @@ export function Profile() {
               <img
                 src={user.profileImage}
                 alt="Profile"
-                className="w-28 h-28 rounded-full object-cover border-4 border-primary-200 dark:border-primary-100 shadow-md bg-white dark:bg-dark-50"
+                className="w-28 h-28 rounded-full object-cover border-4 border-primary-300 dark:border-primary-200 shadow-md bg-white dark:bg-dark-50"
               />
             ) : (
-              <div className="w-28 h-28 rounded-full bg-primary-100 dark:bg-primary-100/20 flex items-center justify-center text-primary-300 dark:text-primary-100 text-5xl font-bold border-4 border-primary-200/30 dark:border-primary-100/20 shadow-md">
+              <div className="w-28 h-28 rounded-full bg-white/90 dark:bg-dark-50/90 flex items-center justify-center text-primary-500 dark:text-primary-300 text-5xl font-bold border-4 border-primary-300/50 dark:border-primary-200/50 shadow-md">
                 <User size={56} />
               </div>
             )}
@@ -90,25 +90,25 @@ export function Profile() {
           <h2 className="text-2xl font-bold text-primary-300 dark:text-primary-100 mt-2">
             {user.name}
           </h2>
-          <p className="text-primary-200 dark:text-primary-100/80 text-lg">
+          <p className="text-primary-300 dark:text-primary-200 text-lg">
             {user.email}
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-2">
             {user.age && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-100 dark:bg-primary-100/20 text-primary-300 dark:text-primary-100 rounded-full text-sm font-medium border border-primary-200/30 dark:border-primary-100/20">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/90 dark:bg-dark-50/90 text-primary-300 dark:text-primary-100 rounded-full text-sm font-medium border border-primary-300/30 dark:border-primary-200/30">
                 <span className="font-semibold">{user.age}</span>{" "}
                 {t("years", "years")}
               </span>
             )}
             {user.gender && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent-yellow/20 dark:bg-accent-yellow/10 text-primary-300 dark:text-primary-100 rounded-full text-sm font-medium border border-accent-yellow/30 dark:border-accent-yellow/20">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent-yellow/40 dark:bg-accent-yellow/20 text-primary-300 dark:text-primary-100 rounded-full text-sm font-medium border border-accent-yellow/50 dark:border-accent-yellow/30">
                 {user.gender}
               </span>
             )}
           </div>
           {user.address && (
-            <div className="mt-2 px-4 py-2 bg-primary-50 dark:bg-primary-100/10 rounded-xl border border-primary-200/20 dark:border-primary-100/10 text-primary-200 dark:text-primary-100/80 text-center text-sm max-w-xs shadow-sm">
-              <span className="font-medium text-primary-200 dark:text-primary-100/60">
+            <div className="mt-2 px-4 py-2 bg-white/90 dark:bg-dark-50/90 rounded-xl border border-primary-300/30 dark:border-primary-200/30 text-primary-200 dark:text-primary-100 text-center text-sm max-w-xs shadow-sm">
+              <span className="font-medium text-primary-300 dark:text-primary-200">
                 {t("address", "Address")}:{" "}
               </span>
               {user.address}

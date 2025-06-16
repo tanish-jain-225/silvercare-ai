@@ -25,7 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export function AskQueries() {
   const navigate = useNavigate();
   const { location } = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { speak, stop, isSpeaking } = useVoice();
   const endOfMessagesRef = useRef(null);
   const { user } = useApp();
@@ -35,6 +35,7 @@ export function AskQueries() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasSpoken, setHasSpoken] = useState(false); // Fix for speech glitch
+  const currentLanguage = i18n.language; // Returns 'en', 'hi', etc.
 
   // Chat history panel state with localStorage persistence
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(() => {
@@ -224,7 +225,7 @@ export function AskQueries() {
     try {
       let response, data;
       if (isReminder(messageToSend)) {
-        response = await fetch(`${route_endpoint}/chat/message`, {
+        response = await fetch(`${route_endpoint}/format-reminder`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -278,7 +279,12 @@ export function AskQueries() {
         response = await fetch(`${route_endpoint}/chat/message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ input: messageToSend, userId: user.id }),
+          body: JSON.stringify({
+            input: messageToSend,
+            userId: user.id,
+            chatId: selectedChatId,
+            language: currentLanguage,
+          }),
         });
         data = await response.json();
         const aiMessage = {

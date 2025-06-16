@@ -172,7 +172,10 @@ export function UserDetails() {
           setFormData((prev) => ({
             ...prev,
             emergencyContacts: [
-              { ...prev.emergencyContacts[0], number: transcript.replace(/\s+/g, "") },
+              {
+                ...prev.emergencyContacts[0],
+                number: transcript.replace(/\s+/g, ""),
+              },
               prev.emergencyContacts[1],
             ],
           }));
@@ -191,7 +194,10 @@ export function UserDetails() {
             ...prev,
             emergencyContacts: [
               prev.emergencyContacts[0],
-              { ...prev.emergencyContacts[1], number: transcript.replace(/\s+/g, "") },
+              {
+                ...prev.emergencyContacts[1],
+                number: transcript.replace(/\s+/g, ""),
+              },
             ],
           }));
           break;
@@ -308,22 +314,6 @@ export function UserDetails() {
     }));
   };
 
-  // Handle file upload
-  const handleFileUpload = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      medicalCertificates: e.target.files[0],
-    }));
-  };
-
-  // Add profileImage to formData
-  const handleProfileImageUpload = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      profileImage: e.target.files[0],
-    }));
-  };
-
   // Step navigation with validation
   const validateStep = () => {
     if (step === 1) {
@@ -338,21 +328,9 @@ export function UserDetails() {
     }
     if (step === 4) {
       if (formData.healthCondition.selected === "Other") {
-        return (
-          formData.healthCondition.custom &&
-          formData.currentMedicalStatus
-        );
+        return formData.healthCondition.custom && formData.currentMedicalStatus;
       }
-      return (
-        formData.healthCondition.selected &&
-        formData.currentMedicalStatus
-      );
-    }
-    if (step === 5) {
-      return !!formData.medicalCertificates;
-    }
-    if (step === 6) {
-      return !!formData.profileImage;
+      return formData.healthCondition.selected && formData.currentMedicalStatus;
     }
     return true;
   };
@@ -374,6 +352,58 @@ export function UserDetails() {
       if (step === 4) setSubStep(1); // Go back to last emergency contact
     }
   };
+
+  // Add state for image previews
+  const [previewUrls, setPreviewUrls] = useState({
+    medicalCertificate: null,
+    profileImage: null,
+  });
+
+  // Handle file upload with preview
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        medicalCertificates: file,
+      }));
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewUrls((prev) => ({
+        ...prev,
+        medicalCertificate: previewUrl,
+      }));
+    }
+  };
+
+  // Handle profile image upload with preview
+  const handleProfileImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        profileImage: file,
+      }));
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewUrls((prev) => ({
+        ...prev,
+        profileImage: previewUrl,
+      }));
+    }
+  };
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrls.medicalCertificate) {
+        URL.revokeObjectURL(previewUrls.medicalCertificate);
+      }
+      if (previewUrls.profileImage) {
+        URL.revokeObjectURL(previewUrls.profileImage);
+      }
+    };
+  }, [previewUrls]);
 
   // Form submission
   const handleSubmit = async (e) => {
@@ -630,8 +660,7 @@ export function UserDetails() {
                   </div>
                   <VoiceButton
                     listening={
-                      listening &&
-                      activeVoiceField === `contactName_${subStep}`
+                      listening && activeVoiceField === `contactName_${subStep}`
                     }
                     onClick={() => toggleVoiceInput(`contactName_${subStep}`)}
                     fieldName={`contact ${subStep + 1} name`}
@@ -660,9 +689,7 @@ export function UserDetails() {
                       listening &&
                       activeVoiceField === `contactNumber_${subStep}`
                     }
-                    onClick={() =>
-                      toggleVoiceInput(`contactNumber_${subStep}`)
-                    }
+                    onClick={() => toggleVoiceInput(`contactNumber_${subStep}`)}
                     fieldName={`contact ${subStep + 1} number`}
                   />
                 </div>
@@ -700,7 +727,9 @@ export function UserDetails() {
                       className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-300 shadow-sm bg-white/60"
                       required
                     >
-                      <option value="">{t("Select Your Health Condition")}</option>
+                      <option value="">
+                        {t("Select Your Health Condition")}
+                      </option>
                       {healthConditionOptions.map((option) => (
                         <option key={option} value={option}>
                           {t(option)}
@@ -710,7 +739,9 @@ export function UserDetails() {
                     </select>
                   </div>
                   <VoiceButton
-                    listening={listening && activeVoiceField === "healthCondition"}
+                    listening={
+                      listening && activeVoiceField === "healthCondition"
+                    }
                     onClick={() => toggleVoiceInput("healthCondition")}
                     fieldName="health condition"
                   />
@@ -736,7 +767,9 @@ export function UserDetails() {
                       />
                     </div>
                     <VoiceButton
-                      listening={listening && activeVoiceField === "specifyCondition"}
+                      listening={
+                        listening && activeVoiceField === "specifyCondition"
+                      }
                       onClick={() => toggleVoiceInput("specifyCondition")}
                       fieldName="specify condition"
                     />
@@ -760,7 +793,9 @@ export function UserDetails() {
                     </select>
                   </div>
                   <VoiceButton
-                    listening={listening && activeVoiceField === "currentMedicalStatus"}
+                    listening={
+                      listening && activeVoiceField === "currentMedicalStatus"
+                    }
                     onClick={() => toggleVoiceInput("currentMedicalStatus")}
                     fieldName="medical status"
                   />
@@ -789,7 +824,10 @@ export function UserDetails() {
               <div className="space-y-6 sm:space-y-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
                   <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
-                  {t("Medical Certificate Upload")}
+                  {t("Medical Certificate Upload")}{" "}
+                  <span className="text-sm text-gray-500">
+                    ({t("Optional")})
+                  </span>
                 </h2>
                 <label className="flex-1 cursor-pointer">
                   <div className="flex items-center justify-center gap-4 p-6 border-2 border-dashed border-blue-200 rounded-xl hover:border-blue-400 transition-all duration-300 bg-white/60 hover:bg-blue-50/50">
@@ -805,9 +843,20 @@ export function UserDetails() {
                     onChange={handleFileUpload}
                     className="hidden"
                     accept=".jpg,.jpeg,.png"
-                    required
                   />
                 </label>
+                {previewUrls.medicalCertificate && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-2">
+                      {t("Preview")}:
+                    </p>
+                    <img
+                      src={previewUrls.medicalCertificate}
+                      alt="Medical Certificate Preview"
+                      className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+                    />
+                  </div>
+                )}
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
                   <Button
                     type="button"
@@ -819,7 +868,6 @@ export function UserDetails() {
                   <Button
                     type="button"
                     onClick={nextStep}
-                    disabled={!validateStep()}
                     className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
                   >
                     {t("Next")}
@@ -832,7 +880,10 @@ export function UserDetails() {
               <div className="space-y-6 sm:space-y-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
                   <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
-                  {t("Profile Image Upload")}
+                  {t("Profile Image Upload")}{" "}
+                  <span className="text-sm text-gray-500">
+                    ({t("Optional")})
+                  </span>
                 </h2>
                 <label className="flex-1 cursor-pointer">
                   <div className="flex items-center justify-center gap-4 p-6 border-2 border-dashed border-blue-200 rounded-xl hover:border-blue-400 transition-all duration-300 bg-white/60 hover:bg-blue-50/50">
@@ -848,9 +899,20 @@ export function UserDetails() {
                     onChange={handleProfileImageUpload}
                     className="hidden"
                     accept=".jpg,.jpeg,.png"
-                    required
                   />
                 </label>
+                {previewUrls.profileImage && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-2">
+                      {t("Preview")}:
+                    </p>
+                    <img
+                      src={previewUrls.profileImage}
+                      alt="Profile Image Preview"
+                      className="w-32 h-32 object-cover rounded-full mx-auto shadow-md border-4 border-white"
+                    />
+                  </div>
+                )}
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
                   <Button
                     type="button"

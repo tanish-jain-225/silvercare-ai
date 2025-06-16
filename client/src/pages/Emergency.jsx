@@ -263,38 +263,23 @@ export default function Emergency() {
   const savedContacts = emergencyContacts.filter((c) => !c.isDefault);
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-red-50 to-orange-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200/50 w-full sticky top-0 z-10 flex items-center justify-start">
-        <div className="w-full max-w-2xl px-6 py-4">
-          <div className="flex items-center">
-            <button
-              onClick={() => navigate("/")}
-              className="p-2 rounded-full hover:bg-gray-100/50 transition-all duration-300 mr-2"
-            >
-              <ArrowLeft size={22} className="text-gray-600" />
-            </button>{" "}
-            <h1 className="text-xl font-bold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-orange-600">
-              Emergency Chat - VoiceBuddy AI
-            </h1>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col">
       {/* Content */}
       <div className="container mx-auto w-full max-w-2xl px-6 py-8 flex-1">
         {/* Emergency Button */}
         <div className="mb-8 relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl shadow-xl opacity-90 group-hover:opacity-100 transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-2xl"></div>
-          <Card className="flex items-center justify-center relative overflow-hidden border-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full"></div>
-            <div className="absolute -right-5 -bottom-5 w-20 h-20 bg-white/10 rounded-full"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-300 to-primary-400 dark:from-primary-100 dark:to-primary-200 rounded-2xl shadow-xl opacity-90 group-hover:opacity-100 transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-2xl"></div>
+          <Card className="flex items-center justify-center relative overflow-hidden border-0 bg-gradient-to-r from-primary-400 to-primary-500 dark:from-primary-200 dark:to-primary-300 text-white">
+            <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/10 dark:bg-white/5 rounded-full"></div>
+            <div className="absolute -right-5 -bottom-5 w-20 h-20 bg-white/10 dark:bg-white/5 rounded-full"></div>
             <div className="relative text-center py-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4 mx-auto">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-white/10 rounded-full mb-4 mx-auto">
                 <AlertTriangle size={32} className="text-white" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Need Immediate Help?</h2>
-              <p className="text-white/90 mb-6">
+              <h2 className="text-2xl font-bold mb-2 text-white">
+                Need Immediate Help?
+              </h2>
+              <p className="text-white/90 dark:text-white/80 mb-6">
                 Press the button below for emergency assistance
               </p>
               <Button
@@ -302,15 +287,15 @@ export default function Emergency() {
                 disabled={isEmergencyActive || locationLoading}
                 className={`relative z-10 ${
                   isEmergencyActive
-                    ? "bg-white/90 text-red-600"
-                    : "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700"
+                    ? "bg-white/90 text-primary-400 dark:bg-white/80 dark:text-primary-200"
+                    : "bg-gradient-to-r from-primary-500 to-primary-600 dark:from-primary-100 dark:to-primary-200 text-white hover:from-primary-600 hover:to-primary-700 dark:hover:from-primary-200 dark:hover:to-primary-300"
                 } text-lg font-bold px-8 py-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 w-full max-w-xs`}
                 size="xl"
               >
                 {isEmergencyActive ? (
                   <span className="flex items-center justify-center">
                     <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-red-600"
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-primary-400 dark:text-primary-200"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -363,43 +348,48 @@ export default function Emergency() {
           </Card>
         </div>
         {/* Location Info */}
-        <Card className="mb-8 p-6 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+        <Card className="mb-8 p-6 bg-white/90 dark:bg-dark-100/90 backdrop-blur-sm border border-primary-100/20 dark:border-primary-100/10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-start">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100/50 rounded-full mr-4">
-              <MapPin className="text-blue-600" size={24} />
+            <div className="flex items-center justify-center w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full mr-4">
+              <MapPin
+                className="text-primary-300 dark:text-primary-100"
+                size={24}
+              />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              <h3 className="text-lg font-semibold text-primary-300 dark:text-primary-100 mb-2">
                 Your Current Location
               </h3>
               {locationLoading ? (
-                <p className="text-gray-600">
-                  <span className="font-medium text-yellow-600">
+                <p className="text-primary-200 dark:text-primary-100/90">
+                  <span className="font-medium text-accent-yellow dark:text-accent-yellow/90">
                     Loading location...
                   </span>
                   Please allow location access for emergency services.
                 </p>
               ) : locationError ? (
-                <p className="text-gray-600">
-                  <span className="font-medium text-red-600">
+                <p className="text-primary-200 dark:text-primary-100/90">
+                  <span className="font-medium text-primary-400 dark:text-primary-200">
                     Location unavailable
                   </span>
                   Please enable location permissions for emergency services.
                 </p>
               ) : location ? (
-                <p className="text-gray-600">
+                <p className="text-primary-200 dark:text-primary-100/90">
                   Location sharing is{" "}
-                  <span className="font-medium text-green-600">active</span> for
-                  emergency services.
+                  <span className="font-medium text-primary-300 dark:text-primary-100">
+                    active
+                  </span>{" "}
+                  for emergency services.
                   <br />
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-primary-200/80 dark:text-primary-100/70">
                     Coordinates: {location.lat.toFixed(6)},{" "}
                     {location.lng.toFixed(6)}
                   </span>
                 </p>
               ) : (
-                <p className="text-gray-600">
-                  <span className="font-medium text-orange-600">
+                <p className="text-primary-200 dark:text-primary-100/90">
+                  <span className="font-medium text-primary-300 dark:text-primary-100">
                     Location not available
                   </span>
                   Using fallback coordinates for emergency services.
@@ -410,30 +400,36 @@ export default function Emergency() {
           <div className="pt-3">
             <LocationComponent />
           </div>
-        </Card>{" "}
+        </Card>
         {/* Emergency Chat Section */}
         <div className="mb-20">
           {/* Section Header */}
           <div className="flex items-center mb-6">
-            <div className="flex items-center justify-center w-12 h-12 bg-red-50 rounded-lg mr-4">
-              <Send className="text-red-600" size={24} />
+            <div className="flex items-center justify-center w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-lg mr-4">
+              <Send
+                className="text-primary-300 dark:text-primary-100"
+                size={24}
+              />
             </div>
-            <h3 className="text-2xl font-semibold text-gray-900">
+            <h3 className="text-2xl font-semibold text-primary-300 dark:text-primary-100">
               Emergency Chat
             </h3>
           </div>
 
           {/* Send to Any Number Section */}
-          <Card className="mb-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl">
+          <Card className="mb-6 p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 rounded-2xl backdrop-blur-sm">
             <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                <Send className="text-green-600" size={24} />
+              <div className="w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full flex items-center justify-center mr-4">
+                <Send
+                  className="text-primary-300 dark:text-primary-100"
+                  size={24}
+                />
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 text-lg">
+                <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
                   Send to Any Number
                 </h4>
-                <p className="text-gray-600 text-sm">
+                <p className="text-primary-200 dark:text-primary-100/90 text-sm">
                   Send emergency message to any WhatsApp number
                 </p>
               </div>
@@ -445,7 +441,7 @@ export default function Emergency() {
                 placeholder="Enter phone number (e.g., +919876543210)"
                 value={newContactPhone}
                 onChange={(e) => setNewContactPhone(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
               />
 
               <div className="flex items-center gap-2">
@@ -453,8 +449,8 @@ export default function Emergency() {
                   onClick={() => handleSpeechToText("any-number")}
                   className={`p-3 rounded-full transition-all duration-200 ${
                     isListening["any-number"]
-                      ? "bg-red-600 text-white animate-pulse"
-                      : "bg-red-50 text-red-600 hover:bg-red-100"
+                      ? "bg-primary-400 text-white animate-pulse"
+                      : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
                   }`}
                   title={
                     isListening["any-number"]
@@ -478,13 +474,13 @@ export default function Emergency() {
                     }))
                   }
                   placeholder="Type emergency message or use microphone..."
-                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  className="flex-1 p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 resize-none bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
                   rows={2}
                 />
               </div>
 
               {isListening["any-number"] && (
-                <p className="text-red-600 text-sm animate-pulse">
+                <p className="text-primary-300 dark:text-primary-100 text-sm animate-pulse">
                   Listening for your voice...
                 </p>
               )}
@@ -523,7 +519,7 @@ export default function Emergency() {
                 disabled={
                   !newContactPhone.trim() || !messages["any-number"]?.trim()
                 }
-                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
               >
                 <Send size={20} />
                 Send via WhatsApp
@@ -537,7 +533,7 @@ export default function Emergency() {
             <div>
               <button
                 onClick={() => setShowAddContactForm(!showAddContactForm)}
-                className="mb-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                className="mb-4 w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
               >
                 <Users size={20} />
                 {showAddContactForm
@@ -545,8 +541,8 @@ export default function Emergency() {
                   : "Add New Contact"}
               </button>
               {showAddContactForm && (
-                <Card className="mb-4 p-6 bg-white border border-gray-200 rounded-2xl">
-                  <h4 className="font-semibold text-gray-900 text-lg mb-4">
+                <Card className="mb-4 p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 rounded-2xl backdrop-blur-sm">
+                  <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg mb-4">
                     Add New Emergency Contact
                   </h4>
                   <div className="space-y-4">
@@ -555,28 +551,28 @@ export default function Emergency() {
                       placeholder="Contact Name"
                       value={newContactName}
                       onChange={(e) => setNewContactName(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
                     />
                     <input
                       type="tel"
                       placeholder="Contact Phone Number"
                       value={newContactPhone}
                       onChange={(e) => setNewContactPhone(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
                     />
                     <button
                       onClick={handleAddContact}
-                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+                      className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
                     >
                       Save Contact
                     </button>
                   </div>
                 </Card>
               )}
-            </div>{" "}
+            </div>
             {/* Default Contacts Section */}
             <div>
-              <h4 className="text-xl font-semibold text-gray-900 mb-6">
+              <h4 className="text-xl font-semibold text-primary-300 dark:text-primary-100 mb-6">
                 Default Contacts
               </h4>
               <div className="space-y-4">
@@ -584,24 +580,24 @@ export default function Emergency() {
                   defaultContacts.map((contact) => (
                     <Card
                       key={contact.id}
-                      className="p-6 bg-blue-50/50 border border-blue-200 hover:border-blue-300 transition-all duration-200 rounded-2xl"
+                      className="p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 hover:border-primary-200/30 dark:hover:border-primary-100/20 transition-all duration-200 rounded-2xl backdrop-blur-sm"
                     >
                       {/* Contact Info Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-bold text-lg">
+                          <div className="w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full flex items-center justify-center">
+                            <span className="text-primary-300 dark:text-primary-100 font-bold text-lg">
                               {contact.name.charAt(0)}
                             </span>
                           </div>
                           <div>
-                            <h4 className="font-semibold text-gray-900 text-lg">
+                            <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
                               {contact.name}
                             </h4>
-                            <p className="text-gray-600 text-sm">
+                            <p className="text-primary-200 dark:text-primary-100/90 text-sm">
                               {contact.phone}
                             </p>
-                            <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                            <span className="inline-block px-2 py-1 text-xs bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 rounded-full">
                               Default Contact
                             </span>
                           </div>
@@ -612,8 +608,8 @@ export default function Emergency() {
                           onClick={() => handleSpeechToText(contact.id)}
                           className={`p-3 rounded-full transition-all duration-200 ${
                             isListening[contact.id]
-                              ? "bg-red-600 text-white animate-pulse"
-                              : "bg-red-50 text-red-600 hover:bg-red-100"
+                              ? "bg-primary-400 text-white animate-pulse"
+                              : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
                           }`}
                           title={
                             isListening[contact.id]
@@ -640,11 +636,11 @@ export default function Emergency() {
                             }))
                           }
                           placeholder="Type emergency message or use microphone..."
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                          className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 resize-none bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
                           rows={3}
                         />
                         {isListening[contact.id] && (
-                          <p className="text-red-600 text-sm mt-2 animate-pulse">
+                          <p className="text-primary-300 dark:text-primary-100 text-sm mt-2 animate-pulse">
                             Listening for your voice...
                           </p>
                         )}
@@ -654,7 +650,7 @@ export default function Emergency() {
                       <button
                         onClick={() => handleSendWhatsApp(contact)}
                         disabled={!messages[contact.id]?.trim()}
-                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                        className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
                       >
                         <Send size={20} />
                         Send via WhatsApp
@@ -662,7 +658,7 @@ export default function Emergency() {
                     </Card>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-8">
+                  <p className="text-primary-200 dark:text-primary-100/90 text-center py-8">
                     No default contacts available.
                   </p>
                 )}
@@ -670,7 +666,7 @@ export default function Emergency() {
             </div>
             {/* Saved Contacts Section */}
             <div>
-              <h4 className="text-xl font-semibold text-gray-900 mb-6">
+              <h4 className="text-xl font-semibold text-primary-300 dark:text-primary-100 mb-6">
                 Saved Contacts
               </h4>
               <div className="space-y-4">
@@ -678,21 +674,21 @@ export default function Emergency() {
                   savedContacts.map((contact) => (
                     <Card
                       key={contact.id}
-                      className="p-6 bg-white border border-gray-200 hover:border-red-200 transition-all duration-200 rounded-2xl"
+                      className="p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 hover:border-primary-200/30 dark:hover:border-primary-100/20 transition-all duration-200 rounded-2xl backdrop-blur-sm"
                     >
                       {/* Contact Info Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                            <span className="text-red-600 font-bold text-lg">
+                          <div className="w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full flex items-center justify-center">
+                            <span className="text-primary-300 dark:text-primary-100 font-bold text-lg">
                               {contact.name.charAt(0)}
                             </span>
                           </div>
                           <div>
-                            <h4 className="font-semibold text-gray-900 text-lg">
+                            <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
                               {contact.name}
                             </h4>
-                            <p className="text-gray-600 text-sm">
+                            <p className="text-primary-200 dark:text-primary-100/90 text-sm">
                               {contact.phone}
                             </p>
                           </div>
@@ -704,8 +700,8 @@ export default function Emergency() {
                             onClick={() => handleSpeechToText(contact.id)}
                             className={`p-3 rounded-full transition-all duration-200 ${
                               isListening[contact.id]
-                                ? "bg-red-600 text-white animate-pulse"
-                                : "bg-red-50 text-red-600 hover:bg-red-100"
+                                ? "bg-primary-400 text-white animate-pulse"
+                                : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
                             }`}
                             title={
                               isListening[contact.id]
@@ -722,7 +718,7 @@ export default function Emergency() {
                           {/* Delete Contact Button */}
                           <button
                             onClick={() => handleDeleteContact(contact.id)}
-                            className="p-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all duration-200"
+                            className="p-3 rounded-full bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20 transition-all duration-200"
                             title="Delete Contact"
                           >
                             <Trash2 size={22} />
@@ -741,11 +737,11 @@ export default function Emergency() {
                             }))
                           }
                           placeholder="Type emergency message or use microphone..."
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                          className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 resize-none bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
                           rows={3}
                         />
                         {isListening[contact.id] && (
-                          <p className="text-red-600 text-sm mt-2 animate-pulse">
+                          <p className="text-primary-300 dark:text-primary-100 text-sm mt-2 animate-pulse">
                             Listening for your voice...
                           </p>
                         )}
@@ -755,7 +751,7 @@ export default function Emergency() {
                       <button
                         onClick={() => handleSendWhatsApp(contact)}
                         disabled={!messages[contact.id]?.trim()}
-                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                        className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
                       >
                         <Send size={20} />
                         Send via WhatsApp
@@ -763,7 +759,7 @@ export default function Emergency() {
                     </Card>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-8">
+                  <p className="text-primary-200 dark:text-primary-100/90 text-center py-8">
                     No saved contacts added.
                   </p>
                 )}
