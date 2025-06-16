@@ -243,76 +243,42 @@ export function BlogSection() {
     return [
       {
         id: 1,
-        title: "Fallback Article",
-        description: "This is a fallback article.",
-        url: "#",
-        urlToImage: "/public/voice-search.png",
-        source: { name: "Fallback Source" },
-        publishedAt: new Date().toISOString(),
-        category: "general",
-      },
-      {
-        id: 2,
-        source: {
-          id: null,
-          name: "The Boston Globe",
-        },
-        author: null,
-        title:
-          "Person contagious with measles visited Boston public spaces - The Boston Globe",
+        title: "Person contagious with measles visited Boston public spaces",
         description:
           "A traveler contagious with measles visited multiple public places in Boston from June 7-8, health officials said.",
         url: "https://www.bostonglobe.com/2025/06/14/metro/contagious-measles-visits-boston/",
         urlToImage:
           "https://www.bostonglobe.com/pf/resources/images/logo-bg.jpg?d=557",
+        source: { name: "The Boston Globe" },
         publishedAt: "2025-06-14T22:03:27Z",
-        content:
-          "A traveler contagious with measles visited multiple public places in Boston from June 7-8, health officials said. \r\nThe Boston Public Health Commission and the Massachusetts Department of Public Heal… [+953 chars]",
         category: "general",
-        animationIndex: 52,
       },
       {
-        id: 3,
-        source: {
-          id: null,
-          name: "Financial Times",
-        },
-        author: "Jamie Smyth, Tom Wilson",
-        title:
-          "Why Saudi Arabia raised oil output before Israel’s attack on Iran - Financial Times",
+        id: 2,
+        title: "Why Saudi Arabia raised oil output before Israel’s attack on Iran",
         description:
-          "The US was pushing Riyadh for more crude but cartel politics were a more likely reason for the increase",
+          "The US was pushing Riyadh for more crude but cartel politics were a more likely reason for the increase.",
         url: "https://www.ft.com/content/eb36f6d0-40d2-4b9a-9f41-831af9eaa881",
         urlToImage:
           "https://www.ft.com/__origami/service/image/v2/images/raw/https%3A%2F%2Fd1e00ek4ebabms.cloudfront.net%2Fproduction%2Fa079565c-c40e-44f1-a623-49c3a672cae3.jpg?source=next-barrier-page",
+        source: { name: "Financial Times" },
         publishedAt: "2025-06-15T04:00:32Z",
-        content:
-          "White House Watch newsletter\r\nSign up for your free, indispensable guide to what Trumps second term means for Washington, business and the world.",
         category: "business",
-        animationIndex: 20,
       },
       {
-        id: 4,
-        source: {
-          id: null,
-          name: "SlashGear",
-        },
-        author: "Dauglas Denga",
-        title:
-          "This Powerful Airplane Engine Has Been Around For Over 70 Years & Is Still Used Today - SlashGear",
+        id: 3,
+        title: "This Powerful Airplane Engine Has Been Around For Over 70 Years",
         description:
           "The Lycoming O-320 engine, a four-cylinder, horizontally opposed, air-cooled engine, is so reliable that they are still in use today despite being 70 years old.",
         url: "https://www.slashgear.com/1882869/airplane-piston-engine-70-years-old-how-much-power/",
         urlToImage:
           "https://www.slashgear.com/img/gallery/this-powerful-airplane-engine-has-been-around-for-over-70-years-is-still-used-today/l-intro-1749577917.jpg",
+        source: { name: "SlashGear" },
         publishedAt: "2025-06-14T16:00:00Z",
-        content:
-          "The Lycoming O-320 has several features that make it stand out among its peers. One aspect is its magneto ignition system, which features a self-contained engine-driven alternating current generator … [+1168 chars]",
         category: "technology",
-        animationIndex: 3,
       },
       {
-        id: 5,
+        id: 4,
         source: {
           id: null,
           name: "PsyPost",
@@ -332,7 +298,7 @@ export function BlogSection() {
         animationIndex: 60,
       },
       {
-        id: 6,
+        id: 5,
         source: {
           id: null,
           name: "Deadline",
@@ -352,7 +318,7 @@ export function BlogSection() {
         animationIndex: 72,
       },
       {
-        id: 7,
+        id: 6,
         source: {
           id: null,
           name: "MacRumors",
@@ -372,7 +338,7 @@ export function BlogSection() {
         animationIndex: 0,
       },
       {
-        id: 8,
+        id: 7,
         source: {
           id: null,
           name: "BBC News",
@@ -391,7 +357,7 @@ export function BlogSection() {
         animationIndex: 75,
       },
       {
-        id: 9,
+        id: 8,
         source: {
           id: "bloomberg",
           name: "Bloomberg",
@@ -411,7 +377,7 @@ export function BlogSection() {
         animationIndex: 37,
       },
       {
-        id: 10,
+        id: 9,
         source: {
           id: null,
           name: "Wccftech",
@@ -431,7 +397,7 @@ export function BlogSection() {
         animationIndex: 16,
       },
       {
-        id: 11,
+        id: 10,
         source: {
           id: null,
           name: "EventHubs",
@@ -451,7 +417,7 @@ export function BlogSection() {
         animationIndex: 1,
       },
       {
-        id: 12,
+        id: 11,
         source: {
           id: "the-washington-post",
           name: "The Washington Post",
@@ -472,7 +438,7 @@ export function BlogSection() {
         animationIndex: 83,
       },
       {
-        id: 13,
+        id: 12,
         source: {
           id: null,
           name: "NOLA.com",
@@ -492,7 +458,7 @@ export function BlogSection() {
         animationIndex: 17,
       },
       {
-        id: 14,
+        id: 13,
         source: {
           id: null,
           name: "Space.com",
@@ -512,7 +478,7 @@ export function BlogSection() {
         animationIndex: 4,
       },
       {
-        id: 15,
+        id: 14,
         source: {
           id: null,
           name: "9to5Mac",
@@ -532,7 +498,7 @@ export function BlogSection() {
         animationIndex: 7,
       },
       {
-        id: 16,
+        id: 15,
         source: {
           id: "the-times-of-india",
           name: "The Times of India",
@@ -551,7 +517,7 @@ export function BlogSection() {
         animationIndex: 54,
       },
       {
-        id: 17,
+        id: 16,
         source: {
           id: null,
           name: "NBCSports.com",
