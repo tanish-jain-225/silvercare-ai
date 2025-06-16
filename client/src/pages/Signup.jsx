@@ -54,6 +54,10 @@ export function Signup() {
     speak("Welcome! Let's create your SilverCare AI account.");
   }, [speak]);
 
+  React.useEffect(() => {
+    document.documentElement.classList.remove("dark");
+  }, []);
+
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-blue-500 via-silver to-yellow-500 flex items-center justify-center p-2 sm:p-4">
       <div className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-2 sm:px-4">
