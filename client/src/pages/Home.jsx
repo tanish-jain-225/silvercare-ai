@@ -7,13 +7,14 @@ import {
   MessageSquare,
   Bell,
   Heart,
+  ChevronRight,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Card } from "../components/ui/Card";
 import { useApp } from "../context/AppContext";
 import { useVoice } from "../hooks/useVoice";
 import PropTypes from "prop-types";
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 import SplitText from "../components/homepage/SplitText";
 
 export function Home() {
@@ -28,28 +29,70 @@ export function Home() {
       title: t("blog"),
       description: "Entertain your day",
       path: "/blog",
-      color: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400",
+      color: "feature-card-blue",
+      gradient:
+        "from-primary-100/20 to-primary-200/20 dark:from-primary-100/10 dark:to-primary-200/10",
+      hoverGradient:
+        "group-hover:from-primary-100/30 group-hover:to-primary-200/30 dark:group-hover:from-primary-100/20 dark:group-hover:to-primary-200/20",
+      iconBg: "bg-primary-100/20 dark:bg-primary-100/10",
+      iconColor: "text-primary-200 dark:text-primary-100",
+      textHover:
+        "group-hover:text-primary-200 dark:group-hover:text-primary-100",
+      descHover:
+        "group-hover:text-primary-300 dark:group-hover:text-primary-200",
     },
     {
       icon: Clock,
       title: t("reminders"),
       description: "Set and manage your reminders",
       path: "/reminders",
-      color: "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400",
+      color: "feature-card-green",
+      gradient:
+        "from-primary-200/30 to-primary-300/30 dark:from-primary-200/20 dark:to-primary-300/20",
+      hoverGradient:
+        "group-hover:from-primary-200/40 group-hover:to-primary-300/40 dark:group-hover:from-primary-200/30 dark:group-hover:to-primary-300/30",
+      iconBg: "bg-primary-200/30 dark:bg-primary-200/20",
+      iconColor: "text-primary-300 dark:text-primary-200",
+      textHover:
+        "group-hover:text-primary-200 dark:group-hover:text-primary-100",
+      descHover:
+        "group-hover:text-primary-300 dark:group-hover:text-primary-200",
+      borderColor:
+        "group-hover:border-primary-300/30 dark:group-hover:border-primary-200/30",
     },
     {
       icon: AlertTriangle,
       title: t("emergency"),
       description: "Quick access to emergency help",
       path: "/emergency",
-      color: "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400",
+      color: "feature-card-orange",
+      gradient:
+        "from-accent-orange/20 to-accent-orange/30 dark:from-accent-orange/10 dark:to-accent-orange/20",
+      hoverGradient:
+        "group-hover:from-accent-orange/30 group-hover:to-accent-orange/40 dark:group-hover:from-accent-orange/20 dark:group-hover:to-accent-orange/30",
+      iconBg: "bg-accent-orange/20 dark:bg-accent-orange/10",
+      iconColor: "text-accent-orange dark:text-accent-orange",
+      textHover:
+        "group-hover:text-accent-orange dark:group-hover:text-accent-orange",
+      descHover:
+        "group-hover:text-accent-orange/80 dark:group-hover:text-accent-orange/80",
     },
     {
       icon: MessageSquare,
       title: t("askQueries"),
       description: "Ask health and life questions",
       path: "/ask-queries",
-      color: "bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400",
+      color: "feature-card-yellow",
+      gradient:
+        "from-accent-yellow/20 to-accent-yellow/30 dark:from-accent-yellow/10 dark:to-accent-yellow/20",
+      hoverGradient:
+        "group-hover:from-accent-yellow/30 group-hover:to-accent-yellow/40 dark:group-hover:from-accent-yellow/20 dark:group-hover:to-accent-yellow/30",
+      iconBg: "bg-accent-yellow/20 dark:bg-accent-yellow/10",
+      iconColor: "text-accent-yellow dark:text-accent-yellow",
+      textHover:
+        "group-hover:text-accent-yellow dark:group-hover:text-accent-yellow",
+      descHover:
+        "group-hover:text-accent-yellow/80 dark:group-hover:text-accent-yellow/80",
     },
   ];
 
@@ -67,15 +110,21 @@ export function Home() {
   return (
     <main className="min-h-screen w-full overflow-x-hidden theme-gradient-primary flex flex-col items-center justify-center">
       {/* Welcome Banner */}
-      <section className="w-[80%] theme-gradient-secondary theme-border border rounded-xl shadow-sm mx-10 my-6 overflow-hidden">
-        <div className="container mx-auto px-4 py-8 md:py-12 max-w-9xl">
-          <div className="flex flex-col items-start space-y-4 md:space-y-6">
+      <section className="w-[90%] theme-gradient-secondary theme-border border rounded-2xl shadow-lg mx-10 my-6 overflow-hidden relative">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-100/30 dark:bg-primary-100/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary-200/30 dark:bg-primary-200/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="container mx-auto px-6 py-12 md:py-16 max-w-9xl relative">
+          <div className="flex flex-col items-start space-y-6 md:space-y-8">
             {/* Animated greeting */}
             <div className="relative">
-              <div className="absolute -left-4 top-0 h-full w-1 bg-indigo-500 dark:bg-indigo-400 rounded-full"></div>
+              <div className="absolute -left-4 top-0 h-full w-1.5 bg-gradient-to-b from-primary-200 to-primary-300 dark:from-primary-100 dark:to-primary-200 rounded-full"></div>
               <SplitText
                 text={`Welcome back, ${user.name}!`}
-                className="text-3xl md:text-5xl font-extrabold theme-text-primary text-left pl-6"
+                className="text-3xl md:text-6xl font-extrabold theme-text-primary text-left pl-6"
                 delay={100}
                 duration={2}
                 ease="power3.out"
@@ -92,19 +141,19 @@ export function Home() {
               transition={{ delay: 0.3, duration: 0.8 }}
               className="pl-6"
             >
-              <p className="text-lg md:text-xl theme-text-secondary font-medium leading-relaxed">
-                {t('howCanIHelp', 'How can I assist you today?')}
+              <p className="text-xl md:text-2xl theme-text-secondary font-medium leading-relaxed">
+                {t("howCanIHelp", "How can I assist you today?")}
               </p>
 
               {/* Decorative elements */}
-              <div className="flex items-center mt-4 space-x-3">
-                <div className="h-2 w-8 bg-indigo-400 dark:bg-indigo-500 rounded-full"></div>
-                <div className="h-2 w-16 bg-indigo-300 dark:bg-indigo-600 rounded-full"></div>
-                <div className="h-2 w-8 bg-indigo-200 dark:bg-indigo-700 rounded-full"></div>
+              <div className="flex items-center mt-6 space-x-4">
+                <div className="h-2.5 w-12 bg-primary-200 dark:bg-primary-100 rounded-full"></div>
+                <div className="h-2.5 w-24 bg-primary-100 dark:bg-primary-200 rounded-full"></div>
+                <div className="h-2.5 w-12 bg-primary-50 dark:bg-primary-300 rounded-full"></div>
               </div>
             </motion.div>
 
-            {/* CTA Button (optional) */}
+            {/* CTA Button */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -116,18 +165,21 @@ export function Home() {
               whileTap={{ scale: 0.95 }}
               className="pl-6 pt-2"
             >
-              <button className="px-6 py-2.5 theme-button-primary font-medium rounded-lg shadow-sm transition-all duration-300 transform" onClick={() => navigate("/ask-queries")}>
-                Get Started
+              <button
+                className="px-8 py-3 theme-button-primary font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform flex items-center space-x-2 group"
+                onClick={() => navigate("/ask-queries")}
+              >
+                <span>Get Started</span>
+                <ChevronRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
               </button>
             </motion.div>
-
           </div>
         </div>
       </section>
 
       {/* Content */}
       <div className="w-[90%] px-3 mb-20 sm:px-6 lg:px-8 py-8 mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature) => (
             <motion.div
               key={feature.path}
@@ -136,43 +188,78 @@ export function Home() {
               animate={{ opacity: 1, y: 0 }}
               whileHover={{
                 scale: 1.05,
-                boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.08)",
+                boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.12)",
               }}
               transition={{
                 type: "spring",
                 stiffness: 300,
                 damping: 20,
               }}
-              className="theme-card group cursor-pointer p-8 rounded-xl bg-white dark:bg-gray-900 focus-visible:ring-2 focus-visible:ring-opacity-60 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+              className={`theme-card group cursor-pointer p-8 rounded-2xl bg-gradient-to-br ${feature.gradient} ${feature.hoverGradient} backdrop-blur-sm border-0 focus-visible:ring-2 focus-visible:ring-opacity-60 focus-visible:ring-primary-200 dark:focus-visible:ring-primary-100 relative overflow-hidden`}
               tabIndex={0}
               aria-label={feature.title}
             >
-              <div className="text-center flex flex-col justify-center items-center h-full space-y-5">
-                <div
-                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${feature.color} bg-opacity-10 dark:bg-opacity-20 transition-colors duration-300 group-hover:bg-opacity-20 dark:group-hover:bg-opacity-30`}
+              {/* Decorative background elements */}
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/5 dark:bg-white/10 rounded-full blur-3xl transform group-hover:scale-150 transition-transform duration-500"></div>
+                <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-white/5 dark:bg-white/10 rounded-full blur-3xl transform group-hover:scale-150 transition-transform duration-500"></div>
+              </div>
+
+              <div className="text-center flex flex-col justify-center items-center h-full space-y-6 relative z-10">
+                {/* Icon Container */}
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  className={`inline-flex items-center justify-center w-20 h-20 rounded-3xl ${feature.iconBg} transition-all duration-300 group-hover:shadow-lg`}
                 >
                   <feature.icon
-                    size={32}
-                    className={`${feature.color
-                      .split(" ")
-                      .slice(-2)
-                      .join(" ")} opacity-90 transition-opacity duration-300 group-hover:opacity-100`}
+                    size={36}
+                    className={`${feature.iconColor} opacity-90 transition-all duration-300 group-hover:opacity-100`}
                     aria-hidden="true"
                   />
+                </motion.div>
+
+                {/* Title and Description */}
+                <div className="space-y-3">
+                  <h3
+                    className={`text-2xl font-bold theme-text-primary transition-colors duration-300 ${feature.textHover}`}
+                  >
+                    {feature.title}
+                  </h3>
+                  <p
+                    className={`theme-text-tertiary text-base leading-relaxed transition-colors duration-300 ${feature.descHover}`}
+                  >
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold theme-text-primary transition-colors duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                  {feature.title}
-                </h3>
-                <p className="theme-text-tertiary text-[0.95rem] leading-relaxed transition-colors duration-300 group-hover:text-gray-700 dark:group-hover:text-gray-300">
-                  {feature.description}
-                </p>
+
+                {/* Interactive Arrow */}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mt-4"
+                >
+                  <div
+                    className={`inline-flex items-center space-x-2 ${feature.textHover} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                  >
+                    <span className="text-sm font-medium">Explore</span>
+                    <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </motion.div>
               </div>
+
+              {/* Hover Border Effect */}
+              <div
+                className={`absolute inset-0 rounded-2xl border-2 border-transparent ${
+                  feature.borderColor ||
+                  "group-hover:border-primary-200/20 dark:group-hover:border-primary-100/20"
+                } transition-colors duration-300 pointer-events-none`}
+              ></div>
             </motion.div>
           ))}
         </div>
       </div>
-
-
     </main>
   );
 }

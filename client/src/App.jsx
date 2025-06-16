@@ -53,9 +53,7 @@ function AppRoutes() {
   ];
 
   // Define routes where only bottom navigation should be hidden
-  const hideBottomNavRoutes = [
-    "/ask-queries",
-  ];
+  const hideBottomNavRoutes = ["/ask-queries"];
 
   // Check if current path matches any of the hideLayoutRoutes
   const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);

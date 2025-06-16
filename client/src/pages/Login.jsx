@@ -70,6 +70,7 @@ export function Login() {
           <form
             onSubmit={handleSubmit}
             className="space-y-4 sm:space-y-5 md:space-y-7"
+            autoComplete="off"
           >
             {/* Email Field */}
             <div className="relative flex items-center min-w-0">
@@ -87,6 +88,7 @@ export function Login() {
                   onResult={handleVoiceInput("email")}
                   size="sm"
                   className="!w-9 sm:!w-10"
+                  type="button"
                 />
               </div>
             </div>
@@ -133,7 +135,9 @@ export function Login() {
                 <div className="w-full border-t theme-border-secondary" />
               </div>
               <div className="relative flex justify-center text-xs sm:text-sm md:text-base">
-                <span className="px-2 theme-bg-primary theme-text-tertiary">or</span>
+                <span className="px-2 theme-bg-primary theme-text-tertiary">
+                  or
+                </span>
               </div>
             </div>
 
@@ -149,11 +153,15 @@ export function Login() {
                 setError("");
                 try {
                   const success = await loginWithGoogle();
-                  const user = JSON.parse(localStorage.getItem("silvercare_user"));
+                  const user = JSON.parse(
+                    localStorage.getItem("silvercare_user")
+                  );
                   let hasDetails = false;
                   if (user && user.id) {
                     const userDoc = await getDoc(doc(db, "users", user.id));
-                    hasDetails = userDoc.exists() && Object.keys(userDoc.data() || {}).length > 0;
+                    hasDetails =
+                      userDoc.exists() &&
+                      Object.keys(userDoc.data() || {}).length > 0;
                   }
                   if (success && user && !hasDetails) {
                     navigate("/user-details");

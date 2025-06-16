@@ -1,82 +1,88 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'class',
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        // Light mode colors
+        // Primary colors
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          50: "#e6f4f9", // Lightest shade of light blue
+          100: "#8ecae6", // Light blue
+          200: "#219ebc", // Medium blue
+          300: "#023047", // Dark blue
+          400: "#ffb703", // Yellow
+          500: "#fb8500", // Orange
+          600: "#e67e00", // Darker orange
+          700: "#d17700", // Even darker orange
+          800: "#bc6b00", // Very dark orange
+          900: "#a35f00", // Darkest orange
         },
-        // Dark mode colors - complementary opposites
+        // Dark mode colors
         dark: {
-          50: '#1a1a1a',
-          100: '#262626',
-          200: '#404040',
-          300: '#525252',
-          400: '#737373',
-          500: '#a3a3a3',
-          600: '#d4d4d4',
-          700: '#e5e5e5',
-          800: '#f5f5f5',
-          900: '#fafafa',
+          50: "#023047", // Dark blue as base
+          100: "#1a3d4f",
+          200: "#2d4a5c",
+          300: "#405769",
+          400: "#536476",
+          500: "#667183",
+          600: "#8ecae6", // Light blue for accents
+          700: "#219ebc", // Medium blue for highlights
+          800: "#ffb703", // Yellow for emphasis
+          900: "#fb8500", // Orange for strong emphasis
         },
         // Background colors
         background: {
-          light: '#ffffff',
-          dark: '#0f0f0f',
+          light: "#ffffff",
+          dark: "#023047", // Dark blue as dark mode background
         },
         // Surface colors
         surface: {
-          light: '#ffffff',
-          dark: '#1a1a1a',
+          light: "#ffffff",
+          dark: "#1a3d4f", // Slightly lighter than background
         },
         // Text colors
         text: {
           light: {
-            primary: '#1f2937',
-            secondary: '#6b7280',
-            tertiary: '#9ca3af',
+            primary: "#023047", // Dark blue
+            secondary: "#219ebc", // Medium blue
+            tertiary: "#8ecae6", // Light blue
           },
           dark: {
-            primary: '#f9fafb',
-            secondary: '#d1d5db',
-            tertiary: '#9ca3af',
+            primary: "#ffffff", // White
+            secondary: "#8ecae6", // Light blue
+            tertiary: "#219ebc", // Medium blue
           },
+        },
+        // Accent colors
+        accent: {
+          yellow: "#ffb703",
+          orange: "#fb8500",
         },
       },
       animation: {
-        'theme-toggle': 'theme-toggle 0.3s ease-in-out',
-        'slide-in': 'slide-in 0.2s ease-out',
-        'fade-in': 'fade-in 0.2s ease-out',
+        "theme-toggle": "theme-toggle 0.3s ease-in-out",
+        "slide-in": "slide-in 0.2s ease-out",
+        "fade-in": "fade-in 0.2s ease-out",
       },
       keyframes: {
-        'theme-toggle': {
-          '0%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(0.9)' },
-          '100%': { transform: 'scale(1)' },
+        "theme-toggle": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(0.9)" },
+          "100%": { transform: "scale(1)" },
         },
-        'slide-in': {
-          '0%': { transform: 'translateX(-100%)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
+        "slide-in": {
+          "0%": { transform: "translateX(-100%)", opacity: "0" },
+          "100%": { transform: "translateX(0)", opacity: "1" },
         },
-        'fade-in': {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
         },
       },
       transitionProperty: {
-        'colors': 'color, background-color, border-color, text-decoration-color, fill, stroke',
+        colors:
+          "color, background-color, border-color, text-decoration-color, fill, stroke",
       },
     },
   },
