@@ -74,6 +74,8 @@ export const newsAPI = {
     async fetchNewsByCategory(category) {
         const API_KEY = 'c7ebd7e038a8439386633b648d116c1e';
         const url = `https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=${API_KEY}`;
+
+        // Ensure headers for protocol upgrade are included
         const headers = {
             'User-Agent': 'VoiceBuddy/1.0',
             'Upgrade': 'h2c', // HTTP/2 Cleartext

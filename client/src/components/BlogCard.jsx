@@ -79,8 +79,9 @@ export function BlogCard({ article, className = "", onReadMore }) {
       {/* Image Container */}
       <div className="relative overflow-hidden h-48">
         {urlToImage ? (
+          // Handle broken image URLs gracefully
           <img
-            src={urlToImage}
+            src={urlToImage || "/public/voice-search.png"} // Use fallback image if URL is missing
             alt={title}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             onError={(e) => {
