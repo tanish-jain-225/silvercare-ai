@@ -25,16 +25,12 @@ import { Header } from "./components/layout/Header";
 import { BottomNavigation } from "./components/layout/BottomNavigation";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./utils/i18n";
+import LoadingScreen from './components/LoadingScreen';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useApp();
-  // While auth state is loading, don't render anything (or show a loader)
-  if (loading)
-    return (
-      <div className="flex-1 flex items-center justify-center theme-bg-primary theme-text-primary">
-        Loading...
-      </div>
-    );
+  // While auth state is loading, show the loading screen
+  if (loading) return <LoadingScreen />;
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
@@ -69,13 +65,7 @@ function AppRoutes() {
   return (
     <RootLayout>
       {!shouldHideLayout && <Header />}
-      <Suspense
-        fallback={
-          <div className="flex-1 flex items-center justify-center theme-bg-primary theme-text-primary">
-            Loading...
-          </div>
-        }
-      >
+      <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/language-selection" element={<LanguageSelection />} />

@@ -64,6 +64,12 @@ export default {
         "theme-toggle": "theme-toggle 0.3s ease-in-out",
         "slide-in": "slide-in 0.2s ease-out",
         "fade-in": "fade-in 0.2s ease-out",
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in': 'fadeIn 0.8s ease-out forwards',
+        'fade-in-delay': 'fadeIn 0.8s ease-out 0.3s forwards',
+        'loading-bar': 'loadingBar 2s ease-in-out infinite',
+        'gradient-shift': 'gradientShift 8s ease infinite',
+        'float': 'float 6s ease-in-out infinite',
       },
       keyframes: {
         "theme-toggle": {
@@ -79,10 +85,31 @@ export default {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
         },
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        loadingBar: {
+          '0%': { transform: 'translateX(-100%)' },
+          '50%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        gradientShift: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
       },
       transitionProperty: {
         colors:
           "color, background-color, border-color, text-decoration-color, fill, stroke",
+      },
+      fontFamily: {
+        'poppins': ['Poppins', 'sans-serif'],
       },
     },
   },
