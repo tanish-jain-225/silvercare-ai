@@ -31,15 +31,15 @@ export function Home() {
       path: "/blog",
       color: "feature-card-blue",
       gradient:
-        "from-primary-100/40 to-primary-200/40 dark:from-primary-100/10 dark:to-primary-200/10",
+        "from-purple-100/60 to-purple-200/60 dark:from-primary-100/10 dark:to-primary-200/10",
       hoverGradient:
-        "group-hover:from-primary-100/60 group-hover:to-primary-200/60 dark:group-hover:from-primary-100/20 dark:group-hover:to-primary-200/20",
-      iconBg: "bg-primary-100/40 dark:bg-primary-100/10",
+        "group-hover:from-purple-200/80 group-hover:to-purple-300/80 dark:group-hover:from-primary-100/20 dark:group-hover:to-primary-200/20",
+      iconBg: "bg-purple-100/60 dark:bg-primary-100/10",
       iconColor: "text-primary-300 dark:text-primary-100",
       textHover: "dark:group-hover:text-primary-200",
       descHover: "dark:group-hover:text-primary-100",
       borderColor:
-        "group-hover:border-primary-200/40 dark:group-hover:border-primary-100/20",
+        "group-hover:border-purple-200/40 dark:group-hover:border-primary-100/20",
     },
     {
       icon: Clock,
@@ -48,15 +48,15 @@ export function Home() {
       path: "/reminders",
       color: "feature-card-green",
       gradient:
-        "from-primary-200/40 to-primary-300/40 dark:from-primary-200/20 dark:to-primary-300/20",
+        "from-blue-100/60 to-blue-200/60 dark:from-primary-200/20 dark:to-primary-300/20",
       hoverGradient:
-        "group-hover:from-primary-200/60 group-hover:to-primary-300/60 dark:group-hover:from-primary-200/30 dark:group-hover:to-primary-300/30",
-      iconBg: "bg-primary-200/40 dark:bg-primary-200/20",
+        "group-hover:from-blue-200/80 group-hover:to-blue-300/80 dark:group-hover:from-primary-200/30 dark:group-hover:to-primary-300/30",
+      iconBg: "bg-blue-100/60 dark:bg-primary-200/20",
       iconColor: "text-primary-300 dark:text-primary-200",
       textHover: " dark:group-hover:text-primary-200",
       descHover: "dark:group-hover:text-primary-100",
       borderColor:
-        "group-hover:border-primary-300/40 dark:group-hover:border-primary-200/30",
+        "group-hover:border-blue-200/40 dark:group-hover:border-primary-200/30",
     },
     {
       icon: AlertTriangle,
@@ -119,15 +119,25 @@ export function Home() {
         <div className="container mx-auto px-6 py-12 md:py-16 max-w-9xl relative">
           <div className="flex flex-col items-start space-y-6 md:space-y-8">
             {/* Animated greeting */}
-            <div className="relative">
+            <div className="relative pl-6">
               <div className="absolute -left-4 top-0 h-full w-1.5 bg-gradient-to-b from-primary-200 to-primary-300 dark:from-primary-100 dark:to-primary-200 rounded-full"></div>
               <SplitText
-                text={`Welcome back, ${user.name}!`}
-                className="text-3xl md:text-6xl font-extrabold theme-text-primary text-left pl-6"
+                text={`Welcome back,`}
+                className="text-3xl md:text-6xl font-extrabold theme-text-primary text-left"
                 delay={100}
                 duration={2}
                 ease="power3.out"
-                splitType="chars"
+                splitType="words"
+                from={{ opacity: 0, y: 40 }}
+                to={{ opacity: 1, y: 0 }}
+              />
+              <SplitText
+                text={<span className="whitespace-nowrap">{user.name}!</span>}
+                className="text-3xl md:text-6xl font-extrabold theme-text-primary text-left"
+                delay={400}
+                duration={2}
+                ease="power3.out"
+                splitType="words"
                 from={{ opacity: 0, y: 40 }}
                 to={{ opacity: 1, y: 0 }}
               />
