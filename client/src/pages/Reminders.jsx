@@ -51,12 +51,11 @@ export function Reminders() {
     }
 
     try {
-      if (showLoadingState) setIsLoading(true);
-      setSyncStatus("syncing");
+      if (showLoadingState) setSyncStatus("syncing");
 
       console.log(`Fetching reminders for user: ${user.id}`);
       const response = await fetch(
-        `${route_endpoint}/reminders?userId=${user.id}&timestamp=${Date.now()}`, // Cache busting
+        `${route_endpoint}/reminders?userId=${user.id}&timestamp=${Date.now()}`,
         {
           method: "GET",
           headers: {
@@ -68,30 +67,30 @@ export function Reminders() {
       );
 
       if (!response.ok) {
-        console.error(`Server responded with status: ${response.status}`);
-        throw new Error(`Failed to fetch reminders: ${response.statusText}`);
+        throw new Error("Failed to fetch reminders");
       }
 
       const data = await response.json();
       console.log("Reminders data received:", data);
 
       if (data.success && Array.isArray(data.reminders)) {
-        setReminders(data.reminders);
+        // Filter reminders by userId
+        const userReminders = data.reminders.filter(
+          (reminder) => reminder.userId === user.id
+        );
+        setReminders(userReminders);
         setSyncStatus("success");
-        console.log(`Successfully loaded ${data.reminders.length} reminders`);
       } else {
-        setReminders([]);
-        setSyncStatus("success");
-        console.log("No reminders found or invalid response format");
+        throw new Error("Invalid reminders data");
       }
     } catch (error) {
       console.error("Error fetching reminders:", error);
       setSyncStatus("error");
-      speak("Sorry, there was an issue syncing your reminders"); // Don't clear existing reminders on fetch error to maintain offline capability
+      speak("Sorry, there was an issue syncing your reminders");
     } finally {
-      if (showLoadingState) setIsLoading(false);
-      // Auto-reset sync status after a delay
-      setTimeout(() => setSyncStatus("idle"), 2000);
+      if (showLoadingState) {
+        setTimeout(() => setSyncStatus("idle"), 2000);
+      }
     }
   };
   const handleAddReminder = async () => {
@@ -153,36 +152,46 @@ export function Reminders() {
       setSyncStatus("error");
     }
   };
-  const handleDeleteReminder = async (createdAt) => {
-    // Find the reminder to delete for optimistic update
-    const reminderToDelete = reminders.find((r) => r.created_at === createdAt);
-    if (!reminderToDelete) return;
+  const handleDeleteReminder = async (userId) => {
+    // Find the reminder to delete
+    const reminderToDelete = uniqueReminders.find(
+      (reminder) => reminder.userId === userId
+    );
 
-    // Optimistic update - remove from UI immediately
-    setReminders((prev) => prev.filter((r) => r.created_at !== createdAt));
-    speak("Reminder deleted");
+    if (!reminderToDelete) {
+      speak("No reminder found to delete");
+      return;
+    }
 
     try {
       setSyncStatus("syncing");
-      const response = await fetch(
-        `${route_endpoint}/reminders/${encodeURIComponent(createdAt)}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const response = await fetch(`${route_endpoint}/delete-reminder`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          id: reminderToDelete.id,
+          userId: userId,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to delete reminder from server");
       }
 
-      // Successful deletion
+      // Optimistically remove the reminder from UI
+      setReminders((prev) =>
+        prev.filter((reminder) => reminder.id !== reminderToDelete.id)
+      );
+      speak("Reminder deleted successfully");
+
+      // Sync with backend to refresh reminders
+      await fetchReminders(false); // Don't show loading state
       setSyncStatus("success");
-      console.log("Reminder successfully deleted from server");
     } catch (error) {
       console.error("Error deleting reminder:", error);
-      // Revert optimistic update on error
-      setReminders((prev) => [...prev, reminderToDelete]);
       speak("Failed to delete reminder. Please try again.");
       setSyncStatus("error");
     }
@@ -476,7 +485,7 @@ export function Reminders() {
                     className="flex-1 sm:flex-none hover:bg-primary-100/10 dark:hover:bg-primary-100/5"
                   />
                   <Button
-                    onClick={() => handleDeleteReminder(reminder.created_at)}
+                    onClick={() => handleDeleteReminder(user.id)}
                     variant="danger"
                     size="sm"
                     icon={Trash2}
