@@ -6,3 +6,5 @@ together>=1.0.0
 twilio==8.10.0
 python-dateutil==2.8.2
 requests==2.31.0
+textblob
+nltk

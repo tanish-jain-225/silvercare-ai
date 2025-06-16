@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 import os
 from dotenv import load_dotenv
 from bson import ObjectId
+from textblob import TextBlob
 
 # Load environment variables
 load_dotenv()
@@ -125,6 +126,17 @@ def send_message():
 
     if not user_message or not chat_id:
         return jsonify({"error": "No message provided"}), 400
+    
+     # --- Sentiment Analysis ---
+    blob = TextBlob(user_message)
+    polarity = blob.sentiment.polarity  # -1 (negative) to 1 (positive)
+    print(polarity)
+    if polarity > 0.1:
+        emotion = "positive"
+    elif polarity < -0.1:
+        emotion = "negative"
+    else:
+        emotion = "neutral"
 
     # Fetch user chat history
     history_doc = collection.find_one({"userId": user_id, "_id": ObjectId(chat_id)})
@@ -138,8 +150,18 @@ def send_message():
     }
     history.append(user_msg)
 
+    # --- Modify system prompt based on emotion ---
+    emotion_instruction = ""
+    if emotion == "negative":
+        emotion_instruction = "The user seems upset or worried. Please reply with extra empathy and reassurance."
+    elif emotion == "positive":
+        emotion_instruction = "The user seems happy or positive. You can reply in an encouraging and friendly tone."
+    # For neutral, no extra instruction
+
+    system_prompt = SYSTEM_PROMPT + f"Answer in {language} language. {emotion_instruction}"
+
     # Build full prompt for the LLM (include dynamic system prompt at the top)
-    messages = [{"role": "system", "content": SYSTEM_PROMPT + f"Answer in {language} language"}] + [
+    messages = [{"role": "system", "content": system_prompt}] + [
         {"role": msg["role"], "content": msg["content"]} for msg in history
     ]
 
