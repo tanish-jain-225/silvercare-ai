@@ -22,13 +22,16 @@ SilverCare AI is a full-stack, voice-first AI assistant designed specifically fo
 ## 🖼️ Screenshots
 
 <p align="center">
-  <img src="screenshots/onboarding.png" alt="Step-by-step Onboarding" width="300" style="margin:10px;" />
-  <img src="screenshots/chat.png" alt="Voice-First Chat" width="300" style="margin:10px;" />
-  <img src="screenshots/reminders.png" alt="Reminders Page" width="300" style="margin:10px;" />
-  <img src="screenshots/accessibility.png" alt="Accessibility Features" width="300" style="margin:10px;" />
+  <img src="client/public/screenshots/home-page.png" alt="Home Page - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
+  <img src="client/public/screenshots/onboarding-page.png" alt="Onboarding - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
+  <img src="client/public/screenshots/voice-assistant-page.png" alt="Voice Assistant - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
+  <img src="client/public/screenshots/reminders-page.png" alt="Reminders - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
+  <img src="client/public/screenshots/blog-page.png" alt="Blog - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
+  <img src="client/public/screenshots/profile-page.png" alt="Profile - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
+  <img src="client/public/screenshots/emergency-page.png" alt="Emergency - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
 </p>
 
-> **Tip:** Place your screenshots in the `screenshots/` folder at the project root. Update the image paths above as needed.
+> **Note:** All screenshots above showcase the mobile-first, accessible design of SilverCare AI. For best results, view on a mobile device or resize your browser window.
 
 ---
 
