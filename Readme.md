@@ -23,7 +23,6 @@ SilverCare AI is a full-stack, voice-first AI assistant designed specifically fo
 
 <p align="center">
   <img src="client/public/screenshots/home-page.png" alt="Home Page - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
-  <img src="client/public/screenshots/onboarding-page.png" alt="Onboarding - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
   <img src="client/public/screenshots/voice-assistant-page.png" alt="Voice Assistant - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
   <img src="client/public/screenshots/reminders-page.png" alt="Reminders - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
   <img src="client/public/screenshots/blog-page.png" alt="Blog - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
