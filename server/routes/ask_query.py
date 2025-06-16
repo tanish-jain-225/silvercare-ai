@@ -43,6 +43,31 @@ Instead of "Hypertension", say "high blood pressure"
 Instead of "Type 2 Diabetes", say "a kind of diabetes that often happens with age"
 Do not include links or suggest websites. Just speak directly and clearly."""
 
+@chat_bp.route('/chat/list', methods=['GET'])
+def get_chat_list():
+    user_id = request.args.get("userId")
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+
+    try:
+        chats = list(collection.find(
+            {"userId": user_id},
+            {"_id": 1, "createdAt": 1, "updatedAt": 1}
+        ))
+        # Convert ObjectId to string for JSON serialization
+        chat_list = [
+            {
+                "chatId": str(chat["_id"]),
+                "createdAt": chat.get("createdAt"),
+                "updatedAt": chat.get("updatedAt"),
+            }
+            for chat in chats
+        ]
+        return jsonify({"chats": chat_list}), 200
+    except Exception as e:
+        print(f"Error fetching chat list: {str(e)}")
+        return jsonify({"error": "Failed to fetch chat list", "details": str(e)}), 500
+    
 @chat_bp.route('/chat/new', methods=['POST'])
 def create_new_chat():
     try:
