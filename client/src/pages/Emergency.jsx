@@ -288,11 +288,14 @@ export default function Emergency() {
                   <Button
                     onClick={handleEmergencyCall}
                     disabled={isEmergencyActive || locationLoading}
-                    className={`relative z-10 ${
-                      isEmergencyActive
-                        ? "bg-white/90 text-primary-400 dark:bg-white/80 dark:text-primary-200"
-                        : "bg-gradient-to-r from-primary-500 to-primary-600 dark:from-primary-100 dark:to-primary-200 text-white hover:from-primary-600 hover:to-primary-700 dark:hover:from-primary-200 dark:hover:to-primary-300"
-                    } text-lg font-bold px-8 py-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 w-full max-w-xs`}
+                    className={`relative z-10
+                      ${
+                        isEmergencyActive
+                          ? "bg-white/90 text-primary-400 dark:bg-white/80 dark:text-primary-200"
+                          : // Red button in light mode, keep gradient in dark mode
+                            "bg-red-600 hover:bg-red-700 text-white dark:bg-gradient-to-r dark:from-primary-500 dark:to-primary-600 dark:text-white dark:hover:from-primary-600 dark:hover:to-primary-700"
+                      }
+                      text-lg font-bold px-8 py-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 w-full max-w-xs`}
                     size="xl"
                   >
                     {isEmergencyActive ? (
@@ -361,7 +364,7 @@ export default function Emergency() {
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-primary-100 dark:text-primary-100 mb-2">
+                  <h3 className="text-lg font-semibold text-primary-300 dark:text-primary-100 mb-2">
                     Your Current Location
                   </h3>
                   {locationLoading ? (
@@ -417,7 +420,7 @@ export default function Emergency() {
                   size={24}
                 />
               </div>
-              <h3 className="text-2xl font-semibold text-primary-100 dark:text-primary-100">
+              <h3 className="text-2xl font-semibold text-primary-300 dark:text-primary-100">
                 Emergency Chat
               </h3>
             </div>
@@ -432,7 +435,7 @@ export default function Emergency() {
                   />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-primary-100 dark:text-primary-100 text-lg">
+                  <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
                     Send to Any Number
                   </h4>
                   <p className="text-primary-200 dark:text-primary-100/90 text-sm">
@@ -546,7 +549,7 @@ export default function Emergency() {
               </button>
               {showAddContactForm && (
                 <Card className="mb-4 p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 rounded-2xl backdrop-blur-sm">
-                  <h4 className="font-semibold text-primary-100 dark:text-primary-100 text-lg mb-4">
+                  <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg mb-4">
                     Add New Emergency Contact
                   </h4>
                   <div className="space-y-4">
@@ -579,7 +582,7 @@ export default function Emergency() {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {/* Default Contacts Section */}
               <div>
-                <h4 className="text-xl font-semibold text-primary-100 dark:text-primary-100 mb-6">
+                <h4 className="text-xl font-semibold text-primary-300 dark:text-primary-100 mb-6">
                   Default Contacts
                 </h4>
                 <div className="space-y-4">
@@ -598,7 +601,7 @@ export default function Emergency() {
                               </span>
                             </div>
                             <div>
-                              <h4 className="font-semibold text-primary-100 dark:text-primary-100 text-lg">
+                              <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
                                 {contact.name}
                               </h4>
                               <p className="text-primary-200 dark:text-primary-100/90 text-sm">
@@ -674,7 +677,7 @@ export default function Emergency() {
 
               {/* Saved Contacts Section */}
               <div>
-                <h4 className="text-xl font-semibold text-primary-100 dark:text-primary-100 mb-6">
+                <h4 className="text-xl font-semibold text-primary-300 dark:text-primary-100 mb-6">
                   Saved Contacts
                 </h4>
                 <div className="space-y-4">
@@ -693,7 +696,7 @@ export default function Emergency() {
                               </span>
                             </div>
                             <div>
-                              <h4 className="font-semibold text-primary-100 dark:text-primary-100 text-lg">
+                              <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
                                 {contact.name}
                               </h4>
                               <p className="text-primary-200 dark:text-primary-100/90 text-sm">
