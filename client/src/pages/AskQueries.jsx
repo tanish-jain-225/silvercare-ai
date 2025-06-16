@@ -137,7 +137,6 @@ export function AskQueries() {
       };
       setChatHistory((prev) => [newChat, ...prev]);
       setSelectedChatId(data.chatId);
-      setSelectedChatId(data.chatId);
       setError(null);
       setHasSpoken(false);
       setIsHistoryPanelOpen(false);
@@ -343,6 +342,11 @@ export function AskQueries() {
       setError("Failed to load chat history. Please refresh the page.");
     }
   };
+
+  useEffect(() => {
+    // Stop any ongoing speech when switching chats
+    stop();
+  }, [selectedChatId]);
 
   useEffect(() => {
     fetchHistory();
