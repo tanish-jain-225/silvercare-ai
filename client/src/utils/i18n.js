@@ -134,8 +134,6 @@ const resources = {
       privacyPolicy: "Privacy Policy",
       termsOfService: "Terms of Service",
       logoutConfirmation: "Are you sure you want to logout?",
-<<<<<<< HEAD
-=======
 
       // Additional Words and Phrases
       welcomeBack: "Welcome back!",
@@ -189,7 +187,6 @@ const resources = {
       updateInstalled: "Update installed successfully",
       restartApp: "Restart App",
       appRestarted: "App restarted successfully",
->>>>>>> dc033348634ac42d82f3cae4775ee448000bebf9
     }
   },
   es: {
@@ -320,8 +317,6 @@ const resources = {
       privacyPolicy: "Política de privacidad",
       termsOfService: "Términos de servicio",
       logoutConfirmation: "¿Estás seguro de que deseas cerrar sesión?",
-<<<<<<< HEAD
-=======
 
       // Additional Words and Phrases
       welcomeBack: "¡Bienvenido de nuevo!",
@@ -375,7 +370,6 @@ const resources = {
       updateInstalled: "Actualización instalada con éxito",
       restartApp: "Reiniciar aplicación",
       appRestarted: "Aplicación reiniciada con éxito"
->>>>>>> dc033348634ac42d82f3cae4775ee448000bebf9
     }
   },
   fr: {
@@ -506,8 +500,6 @@ const resources = {
       privacyPolicy: "Politique de confidentialité",
       termsOfService: "Conditions d'utilisation",
       logoutConfirmation: "Êtes-vous sûr de vouloir vous déconnecter?",
-<<<<<<< HEAD
-=======
 
       // Additional Words and Phrases
       welcomeBack: "Bienvenue à nouveau!",
@@ -561,7 +553,6 @@ const resources = {
       updateInstalled: "Mise à jour installée avec succès",
       restartApp: "Redémarrer l'application",
       appRestarted: "Application redémarrée avec succès"
->>>>>>> dc033348634ac42d82f3cae4775ee448000bebf9
     }
   },
   hi: {
@@ -692,8 +683,6 @@ const resources = {
       privacyPolicy: "गोपनीयता नीति",
       termsOfService: "सेवा की शर्तें",
       logoutConfirmation: "क्या आप वाकई लॉगआउट करना चाहते हैं?",
-<<<<<<< HEAD
-=======
 
       // Additional Words and Phrases
       welcomeBack: "स्वागत है वापस!",
@@ -747,7 +736,6 @@ const resources = {
       updateInstalled: "अपडेट सफलतापूर्वक स्थापित किया गया",
       restartApp: "ऐप पुनरारंभ करें",
       appRestarted: "ऐप सफलतापूर्वक पुनरारंभ किया गया"
->>>>>>> dc033348634ac42d82f3cae4775ee448000bebf9
     }
   },
   mr: {
@@ -878,8 +866,6 @@ const resources = {
       privacyPolicy: "गोपनीयता धोरण",
       termsOfService: "सेवेच्या अटी",
       logoutConfirmation: "तुम्हाला खात्री आहे की तुम्ही लॉगआउट करू इच्छिता?",
-<<<<<<< HEAD
-=======
 
       // Additional Words and Phrases
       welcomeBack: "स्वागत आहे वापस!",
@@ -933,7 +919,6 @@ const resources = {
       updateInstalled: "अपडेट सफलतापूर्वक स्थापित किया गया",
       restartApp: "ऐप पुनरारंभ करें",
       appRestarted: "ऐप सफलतापूर्वक पुनरारंभ किया गया"
->>>>>>> dc033348634ac42d82f3cae4775ee448000bebf9
     }
   },
   bn: {
@@ -1064,8 +1049,6 @@ const resources = {
       privacyPolicy: "গোপনীয়তা নীতি",
       termsOfService: "পরিষেবার শর্তাবলী",
       logoutConfirmation: "আপনি কি নিশ্চিত যে আপনি লগআউট করতে চান?",
-<<<<<<< HEAD
-=======
 
       // Additional Words and Phrases
       welcomeBack: "স্বাগত আছে আবার!",
@@ -1119,7 +1102,6 @@ const resources = {
       updateInstalled: "আপডেট সফলভাবে ইনস্টল হয়েছে",
       restartApp: "অ্যাপটি পুনরায় চালু করুন",
       appRestarted: "অ্যাপটি সফলভাবে পুনরায় চালু হয়েছে"
->>>>>>> dc033348634ac42d82f3cae4775ee448000bebf9
     }
   }
 };
