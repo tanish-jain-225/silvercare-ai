@@ -9,7 +9,7 @@ load_dotenv()
 interests_bp = Blueprint('interests', __name__)
 
 # MongoDB connection
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
+MONGO_URI = os.getenv('MONGO_URI')
 client = MongoClient(MONGO_URI)
 db = client["assistant_db"]  # Using assistant_db as the database name
 interests_collection = db["interests"]  # Using interests as the collection name

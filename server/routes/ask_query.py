@@ -11,9 +11,6 @@ load_dotenv()
 
 # MongoDB connection
 mongo_url = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
-if not mongo_url:
-    print("WARNING: No MONGO_URI/MONGO_URL set; defaulting to localhost:27017")
-    mongo_url = "mongodb://localhost:27017"
 mongo_client = MongoClient(mongo_url)
 
 # Database and collection setup
