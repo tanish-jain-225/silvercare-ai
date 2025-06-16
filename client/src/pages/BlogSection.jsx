@@ -56,22 +56,23 @@ export function BlogSection() {
     try {
       setLoading(true);
 
-      // Check if this is the first visit
       const firstVisit = !hasCompletedInterestSelection();
       setIsFirstVisit(firstVisit);
 
       if (firstVisit) {
-        // Show interest selection modal for first-time users
         setShowInterestModal(true);
         setLoading(false);
         return;
       }
 
-      // Load user interests and fetch news
       await loadUserInterestsAndNews();
     } catch (error) {
       console.error("Error initializing blog:", error);
-      setError("Failed to load personalized news. Please try again.");
+      setError("Failed to load personalized news. Displaying fallback articles.");
+
+      const fallbackArticles = getFallbackArticles();
+      setArticles(fallbackArticles);
+      setDisplayedArticles(fallbackArticles);
       setLoading(false);
     }
   };
