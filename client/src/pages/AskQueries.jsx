@@ -137,15 +137,10 @@ export function AskQueries() {
       };
       setChatHistory((prev) => [newChat, ...prev]);
       setSelectedChatId(data.chatId);
-      setMessages([
-        {
-          id: "1",
-          message:
-            "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
-          isUser: false,
-          timestamp: new Date(),
-        },
-      ]);
+      setSelectedChatId(data.chatId);
+      setError(null);
+      setHasSpoken(false);
+      setIsHistoryPanelOpen(false);
       setError(null);
       setHasSpoken(false);
       setIsHistoryPanelOpen(false);

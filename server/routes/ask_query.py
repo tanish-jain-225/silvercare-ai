@@ -183,12 +183,18 @@ def send_message():
     # Save updated history (excluding system prompt)
     if history_doc:
         collection.update_one(
-            {"userId": user_id},
-            {"$set": {"history": history}},
+            {"userId": user_id, "_id": ObjectId(chat_id)},
+            {"$set": {"history": history, "updatedAt": datetime.now(timezone.utc).isoformat()}},
             upsert=True
         )
     else:
-        collection.insert_one({"userId": user_id, "history": history})
+        collection.insert_one({
+            "userId": user_id,
+            "_id": ObjectId(chat_id),
+            "history": history,
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+            "updatedAt": datetime.now(timezone.utc).isoformat()
+        })
 
     return jsonify({
         "success": True,
