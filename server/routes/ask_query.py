@@ -121,6 +121,7 @@ def send_message():
     user_message = data.get('input')
     user_id = data.get('userId')
     chat_id = data.get('chatId')
+    language = data.get('language')
 
     if not user_message or not chat_id:
         return jsonify({"error": "No message provided"}), 400
@@ -138,7 +139,7 @@ def send_message():
     history.append(user_msg)
 
     # Build full prompt for the LLM (include dynamic system prompt at the top)
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}] + [
+    messages = [{"role": "system", "content": SYSTEM_PROMPT + f"Answer in {language} language"}] + [
         {"role": msg["role"], "content": msg["content"]} for msg in history
     ]
 
