@@ -237,6 +237,7 @@ export function AskQueries() {
     try {
       let response, data;
       if (isReminder(messageToSend)) {
+        console.log("Creating reminder with user ID:", user.id);
         response = await fetch(`${route_endpoint}/format-reminder`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -247,9 +248,15 @@ export function AskQueries() {
           }),
         });
         data = await response.json();
+        console.log("Reminder creation response:", data);
+
+        if (!data.success) {
+          throw new Error(data.error || "Failed to create reminder");
+        }
+
         const aiMessage = {
           id: (Date.now() + 1).toString(),
-          message: data.message || "Your reminder is set.",
+          message: data.message || "Your reminder has been set successfully.",
           isUser: false,
           timestamp: new Date(),
         };
@@ -313,7 +320,7 @@ export function AskQueries() {
       setError("Unable to connect to the server. Please try again.");
       const errorMessage = {
         id: (Date.now() + 2).toString(),
-        message: "Unable to connect to the server. Please try again.",
+        message: error.message || "Unable to connect to the server. Please try again.",
         isUser: false,
         timestamp: new Date(),
         isError: true,
@@ -422,9 +429,8 @@ export function AskQueries() {
         <motion.div
           layout
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${
-            isLargeScreen ? "justify-center" : "justify-between"
-          }`}
+          className={`mb-4 sm:mb-6 flex items-center relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 ${isLargeScreen ? "justify-center" : "justify-between"
+            }`}
         >
           {/* Show Chats Button - Only visible when panel is hidden on large screens */}
           <AnimatePresence>

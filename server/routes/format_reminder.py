@@ -98,11 +98,15 @@ def format_reminder():
     print("POST /format-reminder endpoint called")
     print(f"Request data: {request.json}")
     
-    # Important - ensure we have a JSON body with 'input' field or Voice Input
+    # Important - ensure we have a JSON body with 'input' field and userId
     user_input = request.json.get('input', '')
-    # Ensure we have input to process
+    user_id = request.json.get('userId')
+    
+    # Ensure we have input and userId to process
     if not user_input:
         return jsonify({"error": "No input provided. Please send JSON with 'input' field."}), 400
+    if not user_id:
+        return jsonify({"error": "No userId provided. Please send JSON with 'userId' field."}), 400
         
     # Instruct the LLM to format the input as a reminder with title, date, time
     response = client.chat.completions.create(
@@ -131,6 +135,9 @@ def format_reminder():
             array_text = next(group for group in array_match.groups() if group is not None)
             reminders_array = pyjson.loads(array_text)
             if isinstance(reminders_array, list) and len(reminders_array) > 0:
+                # Add userId to each reminder
+                for reminder in reminders_array:
+                    reminder['userId'] = user_id
                 return process_reminders(reminders_array)
     except Exception as e:
         print(f"Error extracting array: {str(e)}")
@@ -156,11 +163,24 @@ def format_reminder():
             if not time:
                 return jsonify({"error": "Missing time in parsed reminder"}), 400
                 
-            post_data = {"id": id, "title": title, "date": date, "time": time}
-              # Save to MongoDB and get JSON-safe version
-            saved_reminder = save_to_mongodb(post_data)
+            post_data = {
+                "id": id,
+                "title": title,
+                "date": date,
+                "time": time,
+                "userId": user_id
+            }
             
-            return jsonify({"success": True, "reminder": saved_reminder})
+            # Save to MongoDB and get JSON-safe version
+            saved_reminder = save_to_mongodb(post_data)
+            if not saved_reminder:
+                return jsonify({"error": "Failed to save reminder"}), 500
+                
+            return jsonify({
+                "success": True,
+                "reminder": saved_reminder,
+                "message": f"Reminder '{title}' has been set for {date} at {time}"
+            })
         except Exception as e:
             return jsonify({"error": "Failed to parse or post JSON", "details": str(e), "raw": content}), 400
     return jsonify({"error": "No JSON found in LLM response", "raw": content}), 400
