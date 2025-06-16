@@ -188,7 +188,7 @@ export function Home() {
 
       {/* Content */}
       <div className="w-[90%] px-3 mb-20 sm:px-6 lg:px-8 py-8 mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature) => (
             <motion.div
               key={feature.path}
@@ -204,7 +204,7 @@ export function Home() {
                 stiffness: 300,
                 damping: 20,
               }}
-              className={`theme-card group cursor-pointer p-8 rounded-2xl bg-gradient-to-br ${feature.gradient} ${feature.hoverGradient} backdrop-blur-sm border border-primary-100/20 dark:border-primary-100/10 focus-visible:ring-2 focus-visible:ring-opacity-60 focus-visible:ring-primary-200 dark:focus-visible:ring-primary-100 relative overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 ${feature.borderColor}`}
+              className={`theme-card group cursor-pointer p-4 sm:p-6 rounded-2xl bg-gradient-to-br ${feature.gradient} ${feature.hoverGradient} backdrop-blur-sm border border-primary-100/20 dark:border-primary-100/10 focus-visible:ring-2 focus-visible:ring-opacity-60 focus-visible:ring-primary-200 dark:focus-visible:ring-primary-100 relative overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 ${feature.borderColor}`}
               tabIndex={0}
               aria-label={feature.title}
             >
@@ -214,29 +214,29 @@ export function Home() {
                 <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-white/5 dark:bg-white/10 rounded-full blur-3xl transform group-hover:scale-150 transition-transform duration-500"></div>
               </div>
 
-              <div className="text-center flex flex-col justify-center items-center h-full space-y-6 relative z-10">
+              <div className="text-center flex flex-col justify-center items-center h-full space-y-2 sm:space-y-6 relative z-10">
                 {/* Icon Container */}
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  className={`inline-flex items-center justify-center w-20 h-20 rounded-3xl ${feature.iconBg} transition-all duration-300 group-hover:shadow-lg shadow-md group-hover:scale-110`}
+                  className={`inline-flex items-center justify-center w-12 h-12 sm:w-20 sm:h-20 rounded-3xl ${feature.iconBg} transition-all duration-300 group-hover:shadow-lg shadow-md group-hover:scale-110`}
                 >
                   <feature.icon
-                    size={36}
-                    className={`${feature.iconColor} opacity-90 transition-all duration-300 group-hover:opacity-100 group-hover:scale-110`}
+                    size={28}
+                    className={`${feature.iconColor} opacity-90 transition-all duration-300 group-hover:opacity-100 group-hover:scale-110 sm:size-36`}
                     aria-hidden="true"
                   />
                 </motion.div>
 
                 {/* Title and Description */}
-                <div className="space-y-3">
+                <div className="space-y-1 sm:space-y-3">
                   <h3
-                    className={`text-2xl font-bold theme-text-primary transition-colors duration-300 ${feature.textHover}`}
+                    className={`text-lg sm:text-2xl font-bold theme-text-primary transition-colors duration-300 ${feature.textHover}`}
                   >
                     {feature.title}
                   </h3>
                   <p
-                    className={`theme-text-tertiary text-base leading-relaxed transition-colors duration-300 ${feature.descHover}`}
+                    className={`text-sm sm:text-base theme-text-tertiary leading-relaxed transition-colors duration-300 ${feature.descHover}`}
                   >
                     {feature.description}
                   </p>
