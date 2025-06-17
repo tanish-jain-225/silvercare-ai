@@ -171,13 +171,6 @@ We welcome contributions! To get started:
 
 ---
 
-## 📞 Contact
-
-- **GitHub Issues**: [SilverCare AI Issues](https://github.com/yourusername/silvercare-ai/issues)
-- **Email**: support@silvercare.com
-
----
-
 ## 🏆 Why SilverCare AI?
 
 SilverCare AI is more than a hackathon project—it's a mission to empower seniors with technology that truly understands and supports them. Our focus on accessibility, usability, and real-world impact sets us apart. We believe every senior deserves a digital companion that is friendly, reliable, and empowering.
