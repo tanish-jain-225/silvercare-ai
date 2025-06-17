@@ -115,22 +115,6 @@ export function AskQueries() {
     return keywords.some((kw) => lower.includes(kw));
   };
 
-  // Add new function to handle starting a new chat
-  // const handleStartNewChat = () => {
-  //   setIsChatStarted(true);
-  //   setMessages([
-  //     {
-  //       id: "1",
-  //       message:
-  //         "Hello! I'm your health assistant. I can help answer questions about health, wellness, and daily living. What would you like to know?",
-  //       isUser: false,
-  //       timestamp: new Date(),
-  //     },
-  //   ]);
-  //   setError(null);
-  //   setHasSpoken(false);
-  // };
-
   // Modify handleNewChat to reset chat started state
   const handleNewChat = async () => {
     if (!user?.id) return;
