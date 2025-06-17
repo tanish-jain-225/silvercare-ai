@@ -159,11 +159,10 @@ export function Header() {
                   {LANGUAGES.map((lang) => (
                     <li key={lang.code}>
                       <button
-                        className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
-                          i18n.language === lang.code
-                            ? "text-primary-200 dark:text-primary-100 font-bold bg-primary-100/10 dark:bg-primary-100/5"
-                            : "text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5"
-                        }`}
+                        className={`block w-full text-left px-4 py-2 text-sm transition-colors ${i18n.language === lang.code
+                          ? "text-primary-200 dark:text-primary-100 font-bold bg-primary-100/10 dark:bg-primary-100/5"
+                          : "text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5"
+                          }`}
                         onClick={() => handleLanguageChange(lang.code)}
                         role="option"
                         aria-selected={i18n.language === lang.code}
@@ -279,7 +278,7 @@ export function Header() {
             </li>
             <li>
               <button
-                className="block w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-2 px-2 text-sm font-medium rounded-lg"
+                className="block w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-2 px-2 font-medium rounded-lg"
                 onClick={() => {
                   setIsMenuOpen(false);
                   navigate("/profile");
@@ -290,7 +289,7 @@ export function Header() {
             </li>
             <li>
               <button
-                className="block w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-2 px-2 text-sm font-medium rounded-lg"
+                className="block w-full text-left text-primary-300 dark:text-primary-100 hover:bg-primary-100/5 dark:hover:bg-primary-100/5 py-2 px-2 font-medium rounded-lg"
                 onClick={handleLogout}
               >
                 Logout
