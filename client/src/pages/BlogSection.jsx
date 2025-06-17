@@ -82,9 +82,9 @@ export function BlogSection() {
 
   return (
     <div className="container mx-auto px-4 py-10 mb-36">
-      <div className="flex items-center justify-between py-2">
+      <div className="flex flex-wrap items-center justify-between py-2 gap-2">
         <h1 className="text-2xl font-bold">Latest News</h1>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           <select
             value={selectedCategory}
             onChange={(e) => handleCategoryChange(e.target.value)}

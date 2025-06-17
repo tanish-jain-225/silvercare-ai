@@ -50,8 +50,13 @@ export async function fetchNewsArticles(query = '', limit = 0) {
  * @returns {Promise<Object[]>} - A promise that resolves to an array of news articles in the specified category.
  */
 export async function fetchNewsByCategory(category) {
+  if (!category) {
+    throw new Error("Category is required to fetch news articles.");
+  }
+
   try {
     const url = `${API_URL}&categories=${encodeURIComponent(category)}&language=en`;
+    console.log("Fetching news with URL:", url); // Debugging log
 
     const response = await fetch(url, {
       method: 'GET',
@@ -78,7 +83,7 @@ export async function fetchNewsByCategory(category) {
       category: article.category,
     }));
   } catch (error) {
-    console.error('Error fetching news articles by category:', error);
+    console.error("Error fetching news articles by category:", error);
     throw error;
   }
 }
