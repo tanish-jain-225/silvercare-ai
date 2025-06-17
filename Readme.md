@@ -187,3 +187,4 @@ SilverCare AI is more than a hackathon project—it's a mission to empower senio
 <p align="center">
   <b>Making Technology Human—For Everyone.</b>
 </p>
+
