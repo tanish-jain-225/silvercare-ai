@@ -25,7 +25,8 @@ SilverCare AI is a full-stack, voice-first AI assistant designed specifically fo
   <img src="client/public/screenshots/home-page.png" alt="Home Page - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
   <img src="client/public/screenshots/voice-assistant-page.png" alt="Voice Assistant - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
   <img src="client/public/screenshots/reminders-page.png" alt="Reminders - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
-  <img src="client/public/screenshots/blog-page.png" alt="Blog - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
+  <img src="client/public/screenshots/blog-page-1.jpg" alt="Blog - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
+  <img src="client/public/screenshots/blog-page-2.jpg" alt="Blog - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
   <img src="client/public/screenshots/profile-page.png" alt="Profile - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
   <img src="client/public/screenshots/emergency-page.png" alt="Emergency - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
 </p>
