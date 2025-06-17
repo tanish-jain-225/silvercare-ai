@@ -64,7 +64,7 @@ Seniors face unique challenges with technology:
 - **Tailwind CSS**: Utility-first, accessible, and responsive styling.
 - **React Context & Hooks**: State management and custom logic.
 - **Speech Recognition & Synthesis APIs**: Voice input/output everywhere.
-
+ 
 ### Backend
 
 - **Python (Flask)**: Lightweight, robust REST API for chat, reminders, and onboarding.

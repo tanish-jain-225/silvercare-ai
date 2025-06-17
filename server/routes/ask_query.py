@@ -9,7 +9,7 @@ from bson import ObjectId
 from textblob import TextBlob
 
 # Load environment variables
-load_dotenv()
+load_dotenv() 
 
 # MongoDB connection
 mongo_url = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
