@@ -57,32 +57,45 @@ export function Signup() {
 
   React.useEffect(() => {
     document.documentElement.classList.remove("dark");
+    document.documentElement.classList.add("light");
   }, []);
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-blue-500 via-silver to-yellow-500 flex items-center justify-center p-2 sm:p-4">
+    <div
+      className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-blue-200 via-gray-200 to-yellow-100
+ flex items-center justify-center p-2 sm:p-4 font-sans"
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
         className="container mx-auto w-full max-w-md md:max-w-lg lg:max-w-xl px-2 sm:px-4"
       >
-        <div className="text-center mb-4 sm:mb-6 md:mb-8">
-          <motion.h1
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6 }}
-            className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-silver to-yellow-300 mb-1 sm:mb-2 break-words"
-          >
-            SilverCare AI
-          </motion.h1>
+        <div className="text-center mb-4">
+          <div className="flex items-center gap-2 md:flex-row justify-center flex-col">
+            <div className="logo">
+              <img
+                src="/voice-search.png"
+                alt="SilverCare AI Logo"
+                className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto"
+              />
+            </div>
+            <motion.h1
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="text-4xl md:text-5xl font-extrabold text-gray-700 bg-clip-text md:mb-2 leading-tight"
+            >
+              SilverCare AI
+            </motion.h1>
+          </div>
           <motion.p
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7 }}
-            className="text-lg sm:text-xl md:text-2xl font-medium text-white/90 tracking-wide break-words"
+            className="text-lg sm:text-xl md:text-2xl font-bold text-gray-600 tracking-wide leading-relaxed"
           >
-            {t("signup")}
+            {t("Sign Up")}
           </motion.p>
         </div>
 
@@ -90,11 +103,11 @@ export function Signup() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="bg-white/20 dark:bg-black/30 backdrop-blur-lg rounded-2xl shadow-2xl p-3 sm:p-4 md:p-8 w-full"
+          className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 w-full"
         >
           <form
             onSubmit={handleSubmit}
-            className="space-y-4 sm:space-y-5 md:space-y-7"
+            className="space-y-5 sm:space-y-6 md:space-y-8"
             autoComplete="off"
           >
             {/* Name Field */}
@@ -106,7 +119,7 @@ export function Signup() {
                 onChange={(e) => setName(e.target.value)}
                 icon={User}
                 required
-                className="pr-14 sm:pr-16 md:pr-20 min-w-0"
+                className="pr-14 sm:pr-16 md:pr-20 min-w-0 text-base sm:text-lg md:text-xl"
               />
               <div className="absolute inset-y-0 right-4 top-4 flex items-center pointer-events-auto">
                 <VoiceButton
@@ -127,7 +140,7 @@ export function Signup() {
                 onChange={(e) => setEmail(e.target.value)}
                 icon={Mail}
                 required
-                className="pr-14 sm:pr-16 md:pr-20 min-w-0"
+                className="pr-14 sm:pr-16 md:pr-20 min-w-0 text-base sm:text-lg md:text-xl"
               />
               <div className="absolute inset-y-0 right-4 top-4 flex items-center pointer-events-auto">
                 <VoiceButton
@@ -148,6 +161,7 @@ export function Signup() {
                 onChange={(e) => setPassword(e.target.value)}
                 icon={Lock}
                 required
+                className="text-base sm:text-lg md:text-xl"
                 voiceButton={
                   <VoiceButton
                     onResult={handleVoiceInput("password")}
@@ -165,7 +179,7 @@ export function Signup() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
-                className="text-red-600 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-lg w-full break-words"
+                className="text-red-600 text-center bg-red-50 p-3 rounded-lg w-full text-sm sm:text-base md:text-lg leading-relaxed"
               >
                 {error}
               </motion.div>
@@ -175,7 +189,7 @@ export function Signup() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2"
+              className="w-full mt-2 text-lg sm:text-xl md:text-2xl font-semibold"
               size="xl"
             >
               {isLoading ? "Creating Account..." : t("signupButton")}
@@ -183,12 +197,12 @@ export function Signup() {
           </form>
 
           {/* Login Link */}
-          <div className="text-center mt-6 sm:mt-8">
-            <p className="text-white/80 text-sm sm:text-base break-words">
+          <div className="text-center mt-4">
+            <p className="text-gray-700 font-semibold text-sm sm:text-base md:text-lg leading-relaxed">
               {t("haveAccount")}{" "}
               <Link
                 to="/login"
-                className="text-blue-300 hover:text-blue-400 font-semibold"
+                className="text-blue-500 hover:text-blue-800 font-semibold"
               >
                 {t("login")}
               </Link>

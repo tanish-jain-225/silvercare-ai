@@ -180,7 +180,6 @@ body.dark-theme {
 }
 
 /* Ensure all form elements inherit theme */
-input,
 textarea,
 select {
     @apply theme-input;

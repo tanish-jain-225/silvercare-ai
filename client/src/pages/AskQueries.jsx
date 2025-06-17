@@ -586,12 +586,12 @@ export function AskQueries() {
 
           {/* Input Area - Fixed at Bottom, always visible but disabled if !isChatStarted */}
           <div className="border-t border-primary-100/30 dark:border-blue-800/40 p-3 sm:p-4 lg:p-6 bg-white/95 dark:bg-dark-200/90 shadow-xl rounded-2xl mx-2 sm:mx-4 mb-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap lg:flex-nowrap">
               {/* Voice Button */}
               <VoiceButton
                 onResult={handleVoiceInput}
                 size="lg"
-                className="!w-7 !h-9 md:!w-12 md:!h-12 rounded-2xl bg-primary-200 dark:bg-primary-200/80 shadow-md flex items-center justify-center dark:hover:bg-blue-700 [&>svg]:scale-75 md:[&>svg]:scale-100"
+                className="!w-10 !h-10 sm:!w-12 sm:!h-12 rounded-full bg-primary-200 dark:bg-primary-200/80 shadow-md flex items-center justify-center dark:hover:bg-blue-700 [&>svg]:scale-75 sm:[&>svg]:scale-100"
                 disabled={!isChatStarted}
               />
 
@@ -600,7 +600,7 @@ export function AskQueries() {
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                className="flex-1 px-5 py-3 rounded-xl border-2 border-primary-100/30 dark:border-blue-800/40 bg-primary-50/80 dark:bg-dark-100/80 text-primary-300 dark:text-white placeholder:text-primary-200 dark:placeholder:text-blue-200/60 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-blue-700 text-base shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 min-w-0 px-4 py-3 sm:px-5 sm:py-4 rounded-xl border-2 border-primary-100/30 dark:border-blue-800/40 bg-primary-50/80 dark:bg-dark-100/80 text-primary-300 dark:text-white placeholder:text-primary-200 dark:placeholder:text-blue-200/60 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-blue-700 text-sm sm:text-base shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder={
                   isChatStarted
                     ? t("typeMessage") || "Type your message..."
@@ -615,40 +615,27 @@ export function AskQueries() {
                 disabled={!isChatStarted || isLoading}
               />
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 sm:gap-3">
-                {/* Clear Button */}
+              {/* Send/Stop Button */}
+              {isSpeaking ? (
                 <button
-                  onClick={handleClearChat}
-                  disabled={!isChatStarted || isLoading}
-                  className="hidden sm:flex w-12 h-12 rounded-2xl bg-primary-200 hover:bg-blue-700 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                  aria-label="Clear Chat"
+                  onClick={stop}
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary-200 hover:bg-blue-700 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-105"
+                  aria-label="Stop Speaking"
                 >
-                  <Trash2 size={22} />
+                  <Pause size={20} sm:size={22} />
                 </button>
-
-                {/* Send/Stop Button */}
-                {isSpeaking ? (
-                  <button
-                    onClick={stop}
-                    className="w-12 h-12 rounded-2xl bg-primary-200 hover:bg-blue-700 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-105"
-                    aria-label="Stop Speaking"
-                  >
-                    <Pause size={22} />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleSendMessage()}
-                    disabled={
-                      !isChatStarted || !inputMessage.trim() || isLoading
-                    }
-                    className="!w-10 !h-10 md:!w-12 md:!h-12 rounded-2xl bg-primary-200 hover:bg-primary-300 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                    aria-label="Send Message"
-                  >
-                    <Send size={22} />
-                  </button>
-                )}
-              </div>
+              ) : (
+                <button
+                  onClick={() => handleSendMessage()}
+                  disabled={
+                    !isChatStarted || !inputMessage.trim() || isLoading
+                  }
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary-200 hover:bg-primary-300 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                  aria-label="Send Message"
+                >
+                  <Send size={20} sm:size={22} />
+                </button>
+              )}
             </div>
           </div>
         </motion.div>
