@@ -9,6 +9,25 @@ export function BlogSection() {
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
 
+  const fallbackArticles = [
+    {
+      id: 1,
+      title: "Fallback Article 1",
+      description: "This is a dummy description for fallback article 1.",
+      url: "#",
+      urlToImage: "/logo.png",
+      publishedAt: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      title: "Fallback Article 2",
+      description: "This is a dummy description for fallback article 2.",
+      url: "#",
+      urlToImage: "/logo.png",
+      publishedAt: new Date().toISOString(),
+    },
+  ];
+
   const fetchArticles = async () => {
     try {
       setLoading(true);
@@ -29,12 +48,29 @@ export function BlogSection() {
     }
   };
 
-  const handleCategoryChange = (category) => {
+  const handleCategoryChange = async (category) => {
     setSelectedCategory(category);
     if (category) {
-      fetchArticles();
+      try {
+        setLoading(true);
+        const articles = await fetchNewsByCategory(category);
+
+        const filteredArticles = articles.filter(
+          (article) => article.urlToImage && article.description
+        );
+        const sortedArticles = filteredArticles.sort(
+          (a, b) => new Date(b.publishedAt) - new Date(a.publishedAt)
+        );
+        setArticles(sortedArticles.length > 0 ? sortedArticles : fallbackArticles);
+      } catch (error) {
+        console.error("Error fetching articles:", error);
+        setError("Failed to load news articles. Please try again later.");
+        setArticles(fallbackArticles); // Use fallback articles on error
+      } finally {
+        setLoading(false);
+      }
     } else {
-      setArticles([]); // Clear articles if no category is selected
+      setArticles([]);
     }
   };
 
@@ -45,8 +81,8 @@ export function BlogSection() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-4">
+    <div className="container mx-auto px-4 py-10 mb-36">
+      <div className="flex items-center justify-between py-2">
         <h1 className="text-2xl font-bold">Latest News</h1>
         <div className="flex items-center space-x-4">
           <select

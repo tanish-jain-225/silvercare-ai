@@ -1,6 +1,6 @@
-const API_KEY = '72f6f4c9af0a4429bc2f52821eb6ff10'; // Replace with your actual API key
+const API_KEY = '92f616ec564142dc9203200369a98934'; // Replace with your actual API key
 
-const API_URL = 'https://api.worldnewsapi.com/search-news?api-key=72f6f4c9af0a4429bc2f52821eb6ff10';
+const API_URL = `https://api.worldnewsapi.com/search-news?api-key=${API_KEY}`;
 
 /**
  * Fetch news articles from the World News API.
@@ -11,7 +11,7 @@ const API_URL = 'https://api.worldnewsapi.com/search-news?api-key=72f6f4c9af0a44
  */
 export async function fetchNewsArticles(query = '', limit = 0) {
   try {
-    const url = `${API_URL}&categories=${encodeURIComponent(query)}&language=en&number=8`; // Set limit to 8
+    const url = `${API_URL}&categories=${encodeURIComponent(query)}&language=en&number=10`; // Set limit to 10
 
     const response = await fetch(url, {
       method: 'GET',
