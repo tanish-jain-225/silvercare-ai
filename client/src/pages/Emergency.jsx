@@ -263,7 +263,7 @@ export default function Emergency() {
   const savedContacts = emergencyContacts.filter((c) => !c.isDefault);
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col">
+    <div className="min-h-screen mb-20 w-full overflow-x-hidden bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col">
       {/* Content */}
       <div className="container mx-auto w-full max-w-7xl px-6 py-8 flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
