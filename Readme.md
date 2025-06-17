@@ -110,8 +110,8 @@ Seniors face unique challenges with technology:
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/yourusername/silvercare-ai.git
-   cd silvercare-ai
+   git clone https://github.com/tanish-jain-225/SilverCare-AI.git
+   cd SilverCare-AI
    ```
 
 2. **Install Client Dependencies**
@@ -159,6 +159,14 @@ Seniors face unique challenges with technology:
 - **Smart Home Integration**: Voice control for IoT devices.
 - **Health Monitoring**: Track vitals and provide insights.
 - **Community & Social**: Connect seniors for social engagement.
+
+---
+
+## 👨‍💻 Contributors
+
+| [![](https://github.com/parthnarkar.png?size=100)](https://github.com/parthnarkar) | [![](https://github.com/tanish-jain-225.png?size=100)](https://github.com/tanish-jain-225) | [![](https://github.com/pankaj0695.png?size=100)](https://github.com/pankaj0695) | [![](https://github.com/Chief-Ayush.png?size=100)](https://github.com/Chief-Ayush) |
+|:--:|:--:|:--:|:--:|
+| [**Parth Narkar**](https://github.com/parthnarkar) | [**Tanish Sanghvi**](https://github.com/tanish-jain-225) | [**Pankaj Gupta**](https://github.com/pankaj0695) | [**Ayush Attarde**](https://github.com/Chief-Ayush) |
 
 ---
 
