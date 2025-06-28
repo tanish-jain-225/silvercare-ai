@@ -11,6 +11,9 @@ import {
   Sparkles,
   Shield,
   Activity,
+  Upload,
+  Camera,
+  FileText,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -52,6 +55,7 @@ export function UserDetails() {
   const [activeVoiceField, setActiveVoiceField] = useState(null);
   const [step, setStep] = useState(1); // Step state
   const [subStep, setSubStep] = useState(0); // For emergency contacts
+  const [isPreFilled, setIsPreFilled] = useState(false); // Track if form is pre-filled with existing data
 
   // Show loading state if user data is not yet available
   if (loading || !user) {
@@ -86,6 +90,8 @@ export function UserDetails() {
     ],
     healthCondition: { selected: "", custom: "" },
     currentMedicalStatus: "",
+    medicalReport: null,
+    profilePicture: null,
   });
 
   // Options for dropdowns
@@ -113,10 +119,18 @@ export function UserDetails() {
     "Address",
     "Emergency Contact",
     "Health & Status",
+    "Medical Report",
+    "Profile Picture",
   ];
 
   useEffect(() => {
     if (user) {
+      console.log('Initializing form with user data:', user);
+      
+      // Check if user has existing profile data
+      const hasExistingData = user.age || user.gender || user.address || user.healthCondition || user.currentMedicalStatus;
+      setIsPreFilled(hasExistingData);
+      
       setFormData({
         name: user.name || "",
         age: user.age || "",
@@ -130,6 +144,8 @@ export function UserDetails() {
           custom: "",
         },
         currentMedicalStatus: user.currentMedicalStatus || "",
+        medicalReport: user.medicalReport || null,
+        profilePicture: user.profilePicture || null,
       });
     }
   }, [user]);
@@ -233,6 +249,12 @@ export function UserDetails() {
       case 4:
         title = "Enter Health & Status";
         break;
+      case 5:
+        title = "Upload Medical Report";
+        break;
+      case 6:
+        title = "Upload Profile Picture";
+        break;
       default:
         break;
     }
@@ -305,6 +327,153 @@ export function UserDetails() {
     }));
   };
 
+  // Smart compression function - only used when files are too large
+  const compressImage = (file, maxWidth = 800, quality = 0.7, maxSizeKB = 300) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        
+        // Draw image
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Try different quality levels until we get under maxSizeKB
+        const tryCompress = (currentQuality) => {
+          canvas.toBlob((blob) => {
+            if (blob.size <= maxSizeKB * 1024 || currentQuality <= 0.1) {
+              resolve(blob);
+            } else {
+              // Reduce quality and try again
+              tryCompress(currentQuality - 0.1);
+            }
+          }, 'image/jpeg', currentQuality);
+        };
+        
+        tryCompress(quality);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  // Handle file uploads with smart compression (only compress when needed)
+  const handleFileUpload = async (field, file) => {
+    if (!file) return;
+    
+    // Validate file types
+    if (field === "medicalReport") {
+      const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
+      if (!allowedTypes.includes(file.type)) {
+        setError("Please upload a PDF or image file for medical report.");
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setError("Medical report file size should be less than 10MB.");
+        return;
+      }
+    } else if (field === "profilePicture") {
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+      if (!allowedTypes.includes(file.type)) {
+        setError("Please upload a JPEG or PNG image for profile picture.");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setError("Profile picture file size should be less than 5MB.");
+        return;
+      }
+    }
+
+    // Helper function to check if base64 size is acceptable for Firestore
+    const checkFileSize = (file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64Data = e.target.result;
+          const estimatedSize = base64Data.length;
+          const sizeInKB = estimatedSize / 1024;
+          
+          // Check if file is within Firestore limits (400KB for safe storage)
+          const isAcceptableSize = estimatedSize <= 400000; // 400KB limit for direct upload
+          resolve({ isAcceptableSize, base64Data, estimatedSize, sizeInKB });
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+
+    try {
+      // First, check if the original file can be uploaded as-is
+      const originalFileCheck = await checkFileSize(file);
+      
+      let processedFile = file;
+      let compressionApplied = false;
+      let finalBase64Data = originalFileCheck.base64Data;
+      
+      // Only compress if the original file is too large for Firestore
+      if (!originalFileCheck.isAcceptableSize) {
+        console.log(`File too large (${originalFileCheck.sizeInKB.toFixed(0)}KB), applying compression...`);
+        
+        if (file.type.startsWith('image/')) {
+          if (field === "profilePicture") {
+            processedFile = await compressImage(file, 400, 0.6, 250); // Max 250KB for profile pictures
+          } else if (field === "medicalReport") {
+            processedFile = await compressImage(file, 800, 0.7, 300); // Max 300KB for medical reports
+          }
+          compressionApplied = true;
+          
+          // Check compressed file size
+          const compressedCheck = await checkFileSize(processedFile);
+          finalBase64Data = compressedCheck.base64Data;
+          
+          if (!compressedCheck.isAcceptableSize) {
+            setError(`File still too large after compression (${compressedCheck.sizeInKB.toFixed(0)}KB). Please use a smaller file or lower resolution image.`);
+            return;
+          }
+        } else if (file.type === 'application/pdf') {
+          // For PDFs, check if they're small enough after base64 encoding
+          if (originalFileCheck.estimatedSize > 400000) { // 400KB limit for PDFs
+            setError("PDF file is too large. Please compress it to under 300KB or convert to image format.");
+            return;
+          }
+        }
+      } else {
+        console.log(`File size acceptable (${originalFileCheck.sizeInKB.toFixed(0)}KB), uploading as-is.`);
+      }
+
+      const fileData = {
+        name: file.name,
+        originalSize: file.size,
+        compressedSize: processedFile.size || file.size,
+        type: file.type,
+        data: finalBase64Data,
+        lastModified: file.lastModified,
+        uploadedAt: new Date().toISOString(),
+        compressed: compressionApplied,
+        compressionRatio: compressionApplied ? ((file.size - (processedFile.size || file.size)) / file.size * 100).toFixed(1) : 0
+      };
+      
+      setFormData((prev) => ({ ...prev, [field]: fileData }));
+      setError(""); // Clear any existing errors
+      
+      // Show success message with compression info
+      if (compressionApplied) {
+        const savedKB = ((file.size - (processedFile.size || file.size)) / 1024).toFixed(0);
+        console.log(`File compressed: Saved ${savedKB}KB (${fileData.compressionRatio}% reduction)`);
+      } else {
+        console.log(`File uploaded without compression: ${(file.size / 1024).toFixed(0)}KB`);
+      }
+      
+    } catch (error) {
+      console.error("Error processing file:", error);
+      setError("Failed to process file. Please try again with a smaller file.");
+    }
+  };
+
   // Step navigation with validation
   const validateStep = () => {
     if (step === 1) {
@@ -323,6 +492,14 @@ export function UserDetails() {
         return formData.healthCondition.custom.trim() && formData.currentMedicalStatus.trim();
       }
       return formData.healthCondition.selected && formData.currentMedicalStatus.trim();
+    }
+    if (step === 5) {
+      // Medical report is optional, so always return true
+      return true;
+    }
+    if (step === 6) {
+      // Profile picture is optional, so always return true
+      return true;
     }
     return true;
   };
@@ -347,7 +524,7 @@ export function UserDetails() {
     }
   };
 
-  // Form submission with proper Firebase sync before navigation
+  // Form submission - store everything directly in Firestore
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -364,7 +541,7 @@ export function UserDetails() {
 
       console.log('Current user before update:', user);
 
-      // Prepare cleaned data
+      // Prepare cleaned data - all files stored directly in Firestore
       const cleanedFormData = {
         name: formData.name.trim(),
         age: formData.age ? parseInt(formData.age, 10) || 0 : 0,
@@ -380,18 +557,64 @@ export function UserDetails() {
           ? formData.healthCondition.custom.trim()
           : formData.healthCondition.selected,
         currentMedicalStatus: formData.currentMedicalStatus.trim(),
+        medicalReport: formData.medicalReport && typeof formData.medicalReport === 'object' && formData.medicalReport.data 
+          ? formData.medicalReport 
+          : null,
+        profilePicture: formData.profilePicture && typeof formData.profilePicture === 'object' && formData.profilePicture.data 
+          ? formData.profilePicture 
+          : null,
       };
 
-      console.log('Submitting user data:', cleanedFormData);
+      // Calculate total document size to ensure it's under Firestore limits
+      const estimatedSize = JSON.stringify(cleanedFormData).length;
+      console.log('Total document size:', (estimatedSize / 1024).toFixed(0), 'KB');
+      
+      if (estimatedSize > 800000) { // 800KB safety limit (Firestore max is 1MB)
+        setError("Profile data is too large even after compression. Please use smaller files or remove some data.");
+        return;
+      }
+
+      console.log('Submitting user data to Firestore:', {
+        ...cleanedFormData,
+        medicalReport: cleanedFormData.medicalReport ? {
+          name: cleanedFormData.medicalReport.name,
+          size: cleanedFormData.medicalReport.compressedSize,
+          compressed: cleanedFormData.medicalReport.compressed
+        } : null,
+        profilePicture: cleanedFormData.profilePicture ? {
+          name: cleanedFormData.profilePicture.name,
+          size: cleanedFormData.profilePicture.compressedSize,
+          compressed: cleanedFormData.profilePicture.compressed
+        } : null
+      });
 
       // Wait for Firebase update to complete before proceeding
       await updateUser(cleanedFormData);
       
-      // Only proceed after successful update
-      speak("Your medical information has been saved successfully.");
+      // Verify the data was updated in context
+      console.log('Data update completed successfully');
       
-      // Navigate to profile page to show updated data
-      navigate("/profile");
+      // Success message with smart compression info
+      let successMessage = "Your medical information has been saved successfully.";
+      const files = [cleanedFormData.medicalReport, cleanedFormData.profilePicture].filter(Boolean);
+      const compressedFiles = files.filter(f => f.compressed);
+      const uncompressedFiles = files.filter(f => !f.compressed);
+      
+      if (compressedFiles.length > 0 && uncompressedFiles.length > 0) {
+        successMessage += " Some files were compressed for optimal storage while others were uploaded as-is.";
+      } else if (compressedFiles.length > 0) {
+        successMessage += " Files were automatically compressed for optimal storage.";
+      } else if (uncompressedFiles.length > 0) {
+        successMessage += " Files were uploaded in their original quality.";
+      }
+      
+      speak(successMessage + " Redirecting to your profile.");
+      
+      // Small delay to ensure context update propagates
+      setTimeout(() => {
+        // Navigate to profile page to show updated data
+        navigate("/profile");
+      }, 500);
       
     } catch (error) {
       console.error("Error saving user data:", error);
@@ -410,6 +633,8 @@ export function UserDetails() {
       } else if (error.message.includes("unauthenticated")) {
         setError("Authentication expired. Please log in again.");
         setTimeout(() => navigate("/login"), 2000);
+      } else if (error.message.includes("exceeds the maximum allowed size")) {
+        setError("Files are too large even after compression. Please upload smaller files with lower resolution.");
       } else {
         setError(`Failed to save information: ${error.message}`);
       }
@@ -480,7 +705,7 @@ export function UserDetails() {
                 {idx + 1}
               </div>
               <span
-                className={`text-[10px] sm:text-xs mt-1 font-medium ${
+                className={`text-[10px] sm:text-xs mt-1 font-medium text-center ${
                   step === idx + 1 ? "text-indigo-700" : "text-gray-400"
                 }`}
               >
@@ -798,11 +1023,160 @@ export function UserDetails() {
                     Back
                   </Button>
                   <Button
-                    type="submit"
-                    disabled={isLoading || !validateStep()}
+                    type="button"
+                    onClick={nextStep}
+                    disabled={!validateStep()}
                     className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
                   >
-                    {isLoading ? "Saving your information..." : "Submit"}
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Medical Report Upload */}
+            {step === 5 && (
+              <div className="space-y-6 sm:space-y-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
+                  Medical Report (Optional)
+                </h2>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-white/60 hover:border-blue-400 transition-colors duration-300">
+                  <input
+                    type="file"
+                    id="medicalReport"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileUpload("medicalReport", e.target.files[0])}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="medicalReport"
+                    className="cursor-pointer flex flex-col items-center gap-3"
+                  >
+                    <Upload className="w-12 h-12 text-blue-500" />
+                    <div>
+                      <p className="text-lg font-semibold text-gray-700 mb-1">
+                        Upload Medical Report
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        PDF, JPEG, PNG files (Max 10MB) - Auto-compressed if needed
+                      </p>
+                    </div>
+                    {formData.medicalReport && formData.medicalReport.data && (
+                      <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                        <p className="text-green-700 font-medium">
+                          ✓ {formData.medicalReport.name}
+                        </p>
+                        <p className="text-green-600 text-sm">
+                          Size: {(formData.medicalReport.compressedSize / 1024 / 1024).toFixed(2)} MB
+                          {formData.medicalReport.compressed ? (
+                            <span className="ml-2 text-green-700 font-medium">
+                              (Auto-compressed {formData.medicalReport.compressionRatio}% - Saved {((formData.medicalReport.originalSize - formData.medicalReport.compressedSize) / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          ) : (
+                            <span className="ml-2 text-blue-700 font-medium">
+                              (Uploaded without compression)
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+                <div className="flex justify-between gap-2 mt-4 sm:mt-6">
+                  <Button
+                    type="button"
+                    onClick={prevStep}
+                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Profile Picture Upload */}
+            {step === 6 && (
+              <div className="space-y-6 sm:space-y-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
+                  <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
+                  Profile Picture (Optional)
+                </h2>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-white/60 hover:border-blue-400 transition-colors duration-300">
+                  <input
+                    type="file"
+                    id="profilePicture"
+                    accept=".jpg,.jpeg,.png"
+                    onChange={(e) => handleFileUpload("profilePicture", e.target.files[0])}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="profilePicture"
+                    className="cursor-pointer flex flex-col items-center gap-3"
+                  >
+                    {formData.profilePicture && formData.profilePicture.data ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <img
+                          src={formData.profilePicture.data}
+                          alt="Profile Preview"
+                          className="w-24 h-24 rounded-full object-cover border-4 border-blue-200"
+                        />
+                        <div className="text-center">
+                          <p className="text-lg font-semibold text-gray-700 mb-1">
+                            Change Profile Picture
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            JPEG, PNG files (Max 5MB)
+                          </p>
+                          {formData.profilePicture.compressed ? (
+                            <p className="text-green-600 text-xs mt-1">
+                              Auto-compressed {formData.profilePicture.compressionRatio}% 
+                              (Size: {(formData.profilePicture.compressedSize / 1024).toFixed(0)}KB)
+                            </p>
+                          ) : (
+                            <p className="text-blue-600 text-xs mt-1">
+                              Uploaded without compression 
+                              (Size: {(formData.profilePicture.compressedSize / 1024).toFixed(0)}KB)
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Camera className="w-12 h-12 text-blue-500" />
+                        <div>
+                          <p className="text-lg font-semibold text-gray-700 mb-1">
+                            Upload Profile Picture
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            JPEG, PNG files (Max 5MB) - Auto-compressed if needed
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </label>
+                </div>
+                <div className="flex justify-between gap-2 mt-4 sm:mt-6">
+                  <Button
+                    type="button"
+                    onClick={prevStep}
+                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="bg-green-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
+                  >
+                    {isLoading ? "Saving your information..." : "Complete Setup"}
                   </Button>
                 </div>
               </div>

@@ -17,7 +17,9 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [googleRetryCount, setGoogleRetryCount] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,6 +44,81 @@ export function Login() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    setError("");
+    
+    try {
+      const success = await loginWithGoogle();
+      if (success) {
+        // Reset retry count on successful login
+        setGoogleRetryCount(0);
+        // Check if user needs to complete their profile
+        // Note: The loginWithGoogle function will handle user creation in Firestore
+        // We'll navigate to home by default, but users can go to profile to complete details
+        navigate("/");
+        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.add("light");
+        localStorage.setItem("SilverCare_theme", "light");
+        setTheme("light");
+        speak("Google login successful. Welcome to SilverCare AI!");
+      } else {
+        setError("Google login failed. Please try again.");
+        speak("Google login failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Google login error:", err);
+      
+      // Handle specific error types with user-friendly messages
+      let errorMessage = "Google login failed. Please try again.";
+      let shouldAllowRetry = true;
+      
+      if (err.code === 'network-request-failed') {
+        errorMessage = "Network connection failed. Please check your internet connection and try again.";
+      } else if (err.code === 'popup-blocked') {
+        errorMessage = "Popup was blocked by your browser. Please allow popups for this site and try again.";
+        shouldAllowRetry = false; // Don't auto-retry popup blocks
+      } else if (err.code === 'popup-closed-by-user') {
+        errorMessage = "Sign-in was cancelled. Please try again.";
+        shouldAllowRetry = false; // Don't auto-retry user cancellations
+      } else if (err.code === 'cancelled-popup-request') {
+        errorMessage = "Another sign-in request is in progress. Please wait and try again.";
+      } else if (err.code === 'internal-error') {
+        errorMessage = "A temporary authentication error occurred. Please try again in a moment.";
+      } else if (err.code === 'account-exists-with-different-credential') {
+        errorMessage = "An account already exists with this email using a different sign-in method. Please try signing in with email/password.";
+        shouldAllowRetry = false;
+      } else if (err.code === 'too-many-requests') {
+        errorMessage = "Too many sign-in attempts. Please wait a moment and try again.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+      speak(errorMessage);
+      
+      // Track retry count for network and internal errors
+      if (shouldAllowRetry && (err.code === 'network-request-failed' || err.code === 'internal-error')) {
+        setGoogleRetryCount(prev => prev + 1);
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleRetry = async () => {
+    if (googleRetryCount >= 3) {
+      setError("Maximum retry attempts reached. Please try again later or use email/password sign-in.");
+      speak("Maximum retry attempts reached. Please try again later.");
+      return;
+    }
+    
+    // Add a small delay before retry to avoid rapid consecutive attempts
+    setTimeout(() => {
+      handleGoogleLogin();
+    }, 1000);
   };
 
   const handleVoiceInput = (field) => (text) => {
@@ -189,35 +266,9 @@ export function Login() {
 
             {/* Google Sign-In Button */}
             <div 
-              onClick={async () => {
-                setIsLoading(true);
-                setError("");
-                try {
-                  const success = await loginWithGoogle();
-                  if (success) {
-                    // Check if user needs to complete their profile
-                    // Note: The loginWithGoogle function will handle user creation in Firestore
-                    // We'll navigate to home by default, but users can go to profile to complete details
-                    navigate("/");
-                    document.documentElement.classList.remove("dark");
-                    document.documentElement.classList.add("light");
-                    localStorage.setItem("SilverCare_theme", "light");
-                    setTheme("light");
-                    speak("Google login successful. Welcome to SilverCare AI!");
-                  } else {
-                    setError("Google login failed. Please try again.");
-                    speak("Google login failed. Please try again.");
-                  }
-                } catch (err) {
-                  const errorMessage = err.message || "Google login failed. Please try again.";
-                  setError(errorMessage);
-                  speak("Google login failed. Please try again.");
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
+              onClick={handleGoogleLogin}
               className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white hover:bg-gray-50 cursor-pointer transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ pointerEvents: isLoading ? 'none' : 'auto' }}
+              style={{ pointerEvents: (isLoading || isGoogleLoading) ? 'none' : 'auto' }}
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -226,10 +277,46 @@ export function Login() {
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
               <span className="text-gray-700 font-medium text-lg sm:text-xl md:text-2xl">
-                {isLoading ? "Signing in..." : "Sign in with Google"}
+                {isGoogleLoading ? "Signing in..." : "Sign in with Google"}
               </span>
             </div>
+
+            {/* Retry Button for Google Login (shown only after network/internal errors) */}
+            {error && googleRetryCount > 0 && googleRetryCount < 3 && (
+              error.includes("Network connection failed") || 
+              error.includes("temporary authentication error")
+            ) && (
+              <div className="mt-3">
+                <button
+                  onClick={handleGoogleRetry}
+                  disabled={isGoogleLoading}
+                  className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="text-blue-700 font-medium text-sm">
+                    Retry Google Sign-in ({3 - googleRetryCount} attempts left)
+                  </span>
+                </button>
+              </div>
+            )}
           </form>
+
+          {/* Troubleshooting for Google Login Issues */}
+          {error && (error.includes("popup") || error.includes("Network") || error.includes("authentication error")) && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h4 className="text-sm font-semibold text-yellow-800 mb-2">Having trouble with Google Sign-in?</h4>
+              <div className="text-xs text-yellow-700 space-y-1">
+                {error.includes("popup") && (
+                  <p>• Allow popups for this website in your browser settings</p>
+                )}
+                {error.includes("Network") && (
+                  <p>• Check your internet connection and try again</p>
+                )}
+                <p>• Try clearing your browser cache and cookies</p>
+                <p>• Disable ad blockers temporarily</p>
+                <p>• Try using email/password sign-in instead</p>
+              </div>
+            </div>
+          )}
 
           {/* Signup Link */}
           <div className="text-center mt-4">

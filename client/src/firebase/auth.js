@@ -115,11 +115,53 @@ export const loginWithGoogle = async () => {
     // Add additional scopes if needed
     provider.addScope("profile");
     provider.addScope("email");
+    
+    // Set custom parameters to force account selection (helps with popup issues)
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+    
     const result = await signInWithPopup(auth, provider);
     return result.user;
   } catch (error) {
     console.error("Google login error:", error);
-    throw error;
+    
+    // Provide more specific error messages for different failure scenarios
+    if (error.code === 'auth/network-request-failed') {
+      const networkError = new Error("Network connection failed. Please check your internet connection and try again.");
+      networkError.code = 'network-request-failed';
+      throw networkError;
+    } else if (error.code === 'auth/popup-blocked') {
+      const popupError = new Error("Popup was blocked by your browser. Please allow popups for this site and try again.");
+      popupError.code = 'popup-blocked';
+      throw popupError;
+    } else if (error.code === 'auth/popup-closed-by-user') {
+      const popupClosedError = new Error("Sign-in was cancelled. Please try again.");
+      popupClosedError.code = 'popup-closed-by-user';
+      throw popupClosedError;
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      const cancelledError = new Error("Another sign-in request is in progress. Please wait and try again.");
+      cancelledError.code = 'cancelled-popup-request';
+      throw cancelledError;
+    } else if (error.code === 'auth/internal-error' || error.message.includes('INTERNAL ASSERTION FAILED')) {
+      const internalError = new Error("A temporary authentication error occurred. Please try again in a moment.");
+      internalError.code = 'internal-error';
+      throw internalError;
+    } else if (error.code === 'auth/account-exists-with-different-credential') {
+      const accountError = new Error("An account already exists with this email using a different sign-in method. Please try signing in with email/password.");
+      accountError.code = 'account-exists-with-different-credential';
+      throw accountError;
+    } else if (error.code === 'auth/too-many-requests') {
+      const rateLimitError = new Error("Too many sign-in attempts. Please wait a moment and try again.");
+      rateLimitError.code = 'too-many-requests';
+      throw rateLimitError;
+    }
+    
+    // For any other errors, provide a generic message
+    const genericError = new Error("Google sign-in failed. Please try again or use email/password sign-in.");
+    genericError.code = error.code || 'unknown-error';
+    genericError.originalError = error;
+    throw genericError;
   }
 };
 

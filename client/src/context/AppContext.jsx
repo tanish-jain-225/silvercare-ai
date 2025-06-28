@@ -60,6 +60,7 @@ export function AppProvider({ children }) {
           if (userDoc.exists()) {
             userData = { ...userData, ...userDoc.data() };
           }
+          
           setUser(userData);
           setIsAuthenticated(true);
           storage.set("SilverCare_user", userData);
@@ -199,7 +200,10 @@ export function AppProvider({ children }) {
       return true;
     } catch (error) {
       console.error("Google login error:", error);
-      return false;
+      
+      // Re-throw the error with the user-friendly message from auth.js
+      // This allows the UI components to display the specific error message
+      throw error;
     }
   };
 

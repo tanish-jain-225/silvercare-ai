@@ -7,6 +7,8 @@ import {
   Globe,
   LogOut,
   Edit,
+  FileText,
+  Download,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
@@ -64,9 +66,30 @@ export function Profile() {
           </button>
           <div className="flex flex-col items-center gap-4 mt-4">
             <div className="relative">
-              <div className="w-30 h-30 rounded-full bg-primary-200 text-white flex items-center justify-center p-5">
-                <User size={50} />
-              </div>
+              {user?.profilePicture?.data ? (
+                <div className="w-32 h-32 rounded-full bg-slate-200 dark:bg-primary-200/30 border-4 border-white dark:border-primary-100/20 shadow-lg overflow-hidden">
+                  <img
+                    src={user.profilePicture.data}
+                    alt="Profile Picture"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to default icon if image fails to load
+                      e.target.style.display = 'none';
+                      e.target.parentNode.innerHTML = `
+                        <div class="w-full h-full rounded-full bg-primary-200 text-white flex items-center justify-center">
+                          <svg width="50" height="50" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                          </svg>
+                        </div>
+                      `;
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="w-32 h-32 rounded-full bg-primary-200 text-white flex items-center justify-center shadow-lg">
+                  <User size={50} />
+                </div>
+              )}
             </div>
             <h2 className="text-3xl font-extrabold text-slate-800 dark:text-primary-100 mt-2 tracking-tight">
               {user?.name || 'User'}
@@ -133,6 +156,67 @@ export function Profile() {
             </div>
           )}
         </Card>
+
+        {/* Medical Report */}
+        {user?.medicalReport && (
+          <Card className="w-full max-w-2xl mb-8 animate-fade-in-up bg-white dark:bg-dark-50/95 border border-slate-200 dark:border-dark-600/30 backdrop-blur-md shadow-xl rounded-2xl transition-shadow hover:shadow-2xl">
+            <div className="flex items-center mb-5">
+              <div className="p-2 rounded-full bg-slate-100 dark:bg-primary-100/20 mr-4">
+                <FileText
+                  className="text-slate-600 dark:text-primary-100"
+                  size={28}
+                  aria-hidden="true"
+                />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-primary-100 tracking-tight">
+                Medical Report
+              </h3>
+            </div>
+            <div className="bg-slate-50 dark:bg-primary-100/10 rounded-lg px-4 py-3 border border-slate-200 dark:border-primary-100/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="text-blue-600 dark:text-blue-400" size={20} />
+                  <div>
+                    <p className="font-medium text-slate-800 dark:text-primary-100">
+                      {user.medicalReport.name || 'Medical Report'}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <span className="text-xs text-slate-500 dark:text-primary-100/60 bg-slate-100 dark:bg-primary-100/10 px-2 py-1 rounded">
+                        {((user.medicalReport.compressedSize || user.medicalReport.originalSize || 0) / 1024).toFixed(0)}KB
+                      </span>
+                      {user.medicalReport.compressed ? (
+                        <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                          Compressed ({user.medicalReport.compressionRatio}% saved)
+                        </span>
+                      ) : (
+                        <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
+                          Original Quality
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (user.medicalReport.data) {
+                      // Create and download from base64 data
+                      const link = document.createElement('a');
+                      link.href = user.medicalReport.data;
+                      link.download = user.medicalReport.name || 'medical-report.pdf';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium"
+                >
+                  <Download size={16} />
+                  View/Download
+                </button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Emergency Contacts */}
         {user?.emergencyContacts && user.emergencyContacts.length > 0 && (
