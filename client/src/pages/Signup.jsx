@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { User, Mail, Lock } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { VoiceButton } from "../components/voice/VoiceButton";
@@ -11,7 +10,6 @@ import { motion } from "framer-motion";
 
 export function Signup() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const { signup } = useApp();
   const { speak } = useVoice();
   const [name, setName] = useState("");
@@ -26,16 +24,39 @@ export function Signup() {
     setError("");
 
     try {
-      const success = await signup(name, email, password);
-      if (success) {
-        navigate("/user-details");
-      } else {
-        setError("Signup failed. Please try again.");
-        speak("Signup failed. Please try again.");
-      }
+      await signup(name, email, password);
+      // If we reach here, signup was successful
+      navigate("/user-details");
     } catch (err) {
-      setError("Signup failed. Please try again.");
-      speak("Signup failed. Please try again.");
+      // Display the detailed error message from AppContext, falling back to code-based messages
+      let errorMessage = err.message;
+      
+      if (!errorMessage && err.code) {
+        // Fallback error messages if AppContext didn't provide a message
+        switch (err.code) {
+          case "auth/email-already-in-use":
+            errorMessage = "Account already in use. Please log in or use a different email.";
+            break;
+          case "auth/invalid-email":
+            errorMessage = "Invalid email address. Please enter a valid email.";
+            break;
+          case "auth/weak-password":
+            errorMessage = "Password is too weak. Please use at least 6 characters.";
+            break;
+          case "auth/network-request-failed":
+            errorMessage = "Network error. Please check your connection and try again.";
+            break;
+          case "auth/too-many-requests":
+            errorMessage = "Too many attempts. Please wait and try again later.";
+            break;
+          default:
+            errorMessage = "Signup failed. Please try again.";
+        }
+      } else if (!errorMessage) {
+        errorMessage = "Signup failed. Please try again.";
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +97,7 @@ export function Signup() {
             <div className="logo">
               <img
                 src="/voice-search.png"
-                alt="SilverCare AI Logo"
+                alt="SilverCareAI Logo"
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto"
               />
             </div>
@@ -86,7 +107,7 @@ export function Signup() {
               transition={{ duration: 0.6 }}
               className="text-4xl md:text-5xl font-extrabold text-gray-700 bg-clip-text md:mb-2 leading-tight"
             >
-              SilverCare AI
+              SilverCareAI
             </motion.h1>
           </div>
           <motion.p
@@ -95,7 +116,7 @@ export function Signup() {
             transition={{ duration: 0.7 }}
             className="text-lg sm:text-xl md:text-2xl font-bold text-gray-600 tracking-wide leading-relaxed"
           >
-            {t("Sign Up")}
+            Sign Up
           </motion.p>
         </div>
 
@@ -114,7 +135,7 @@ export function Signup() {
             <div className="relative flex items-center min-w-0">
               <Input
                 type="text"
-                label={t("name")}
+                label="Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 icon={User}
@@ -127,6 +148,7 @@ export function Signup() {
                   size="sm"
                   className="!w-9 sm:!w-10"
                   type="button"
+                  tabIndex={-1}
                 />
               </div>
             </div>
@@ -135,7 +157,7 @@ export function Signup() {
             <div className="relative flex items-center min-w-0">
               <Input
                 type="email"
-                label={t("email")}
+                label="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 icon={Mail}
@@ -148,6 +170,7 @@ export function Signup() {
                   size="sm"
                   className="!w-9 sm:!w-10"
                   type="button"
+                  tabIndex={-1}
                 />
               </div>
             </div>
@@ -156,7 +179,7 @@ export function Signup() {
             <div className="relative flex items-center min-w-0">
               <Input
                 type="password"
-                label={t("password")}
+                label="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 icon={Lock}
@@ -168,6 +191,7 @@ export function Signup() {
                     size="sm"
                     className="!w-9 sm:!w-10"
                     type="button"
+                    tabIndex={-1}
                   />
                 }
               />
@@ -192,19 +216,19 @@ export function Signup() {
               className="w-full mt-2 text-lg sm:text-xl md:text-2xl font-semibold"
               size="xl"
             >
-              {isLoading ? "Creating Account..." : t("signupButton")}
+              {isLoading ? "Creating Account..." : "Sign Up"}
             </Button>
           </form>
 
           {/* Login Link */}
           <div className="text-center mt-4">
             <p className="text-gray-700 font-semibold text-sm sm:text-base md:text-lg leading-relaxed">
-              {t("haveAccount")}{" "}
+              Already have an account?{" "}
               <Link
                 to="/login"
                 className="text-blue-500 hover:text-blue-800 font-semibold"
               >
-                {t("login")}
+                Log in
               </Link>
             </p>
           </div>

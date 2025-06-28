@@ -18,13 +18,21 @@ export const useLocation = () => {
                     setError(null); // Clear any previous error
                 },
                 (error) => {
+                    let friendlyError = error;
+                    if (error.code === 1) {
+                        friendlyError = new Error('Location permission denied. Please allow location access.');
+                    } else if (error.code === 2) {
+                        friendlyError = new Error('Location unavailable. Please check your device settings.');
+                    } else if (error.code === 3) {
+                        friendlyError = new Error('Location request timed out. Try again or check your connection.');
+                    }
                     console.error('Error watching location:', error);
-                    setError(error);
+                    setError(friendlyError);
                     setLoading(false);
                 },
                 {
                     enableHighAccuracy: true,
-                    timeout: 10000, // Timeout for each position request
+                    timeout: 30000, // Increased timeout for each position request
                     maximumAge: 0, // Don't use a cached position
                 }
             );

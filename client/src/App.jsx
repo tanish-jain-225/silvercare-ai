@@ -9,8 +9,6 @@ import {
 import { AppProvider, useApp } from "./context/AppContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { RootLayout } from "./components/layout/RootLayout";
-import { ThemeDebugger } from "./components/ui/ThemeDebugger";
-import { LanguageSelection } from "./pages/LanguageSelection";
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import { UserDetails } from "./pages/UserDetails";
@@ -20,25 +18,27 @@ import { Reminders } from "./pages/Reminders";
 import Emergency from "./pages/Emergency";
 import { AskQueries } from "./pages/AskQueries";
 import { Profile } from "./pages/Profile";
-import { storage } from "./utils/storage";
 import { Header } from "./components/layout/Header";
 import { BottomNavigation } from "./components/layout/BottomNavigation";
 import ErrorBoundary from "./components/ErrorBoundary";
-import "./utils/i18n";
 import LoadingScreen from './components/LoadingScreen';
 
+// ProtectedRoute component - defined outside to ensure proper context access
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useApp();
-  // While auth state is loading, show the loading screen
-  if (loading) return <LoadingScreen />;
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  try {
+    const { isAuthenticated, loading } = useApp();
+    // While auth state is loading, show the loading screen
+    if (loading) return <LoadingScreen />;
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
+  } catch (error) {
+    console.error("ProtectedRoute error:", error);
+    // Fallback to redirect to login if context is not available
+    return <Navigate to="/login" replace />;
+  }
 }
 
 function AppRoutes() {
-  const { language, isAuthenticated, loading } = useApp();
   const location = useLocation();
-  // Check if user has selected a language
-  const hasSelectedLanguage = storage.get("silvercare_language");
 
   // Define routes where layout should be hidden
   const hideLayoutRoutes = [
@@ -133,16 +133,16 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AppProvider>
-          <Router
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <AppProvider>
             <AppRoutes />
-          </Router>
-        </AppProvider>
+          </AppProvider>
+        </Router>
       </ThemeProvider>
     </ErrorBoundary>
   );

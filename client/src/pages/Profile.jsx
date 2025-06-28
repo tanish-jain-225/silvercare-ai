@@ -9,43 +9,28 @@ import {
   Edit,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { useApp } from "../context/AppContext";
 import { useVoice } from "../hooks/useVoice";
 
-const languages = [
-  { code: "en", name: "English" },
-  { code: "hi", name: "Hindi" },
-  { code: "mr", name: "Marathi" },
-  { code: "gu", name: "Gujarati" },
-];
-
 export function Profile() {
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
-  const { user, setUser, language, setLanguage, logout } = useApp();
+  const { logout, user, loading } = useApp(); // get user and loading from context
   const { speak } = useVoice();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedUser, setEditedUser] = useState(user);
 
-  const handleSave = () => {
-    if (editedUser) {
-      setUser(editedUser);
-      setIsEditing(false);
-      speak("Profile updated successfully");
-    }
-  };
-
-  const handleLanguageChange = (newLanguage) => {
-    setLanguage(newLanguage);
-    i18n.changeLanguage(newLanguage);
-    const langName =
-      languages.find((l) => l.code === newLanguage)?.name || newLanguage;
-    speak(`Language changed to ${langName}`);
-  };
+  // Show loading state if user data is not yet available
+  if (loading || !user) {
+    return (
+      <main className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </main>
+    );
+  }
 
   const handleLogout = () => {
     logout();
@@ -54,11 +39,9 @@ export function Profile() {
 
   React.useEffect(() => {
     speak(
-      "Welcome to your profile. You can view and edit your information here."
+      "Welcome to your profile. You can view your information here."
     );
   }, [speak]);
-
-  if (!user) return null;
 
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-dark-50 dark:to-dark-100/30 flex flex-col items-center justify-center pb-32">
@@ -81,44 +64,34 @@ export function Profile() {
           </button>
           <div className="flex flex-col items-center gap-4 mt-4">
             <div className="relative">
-              {user.profileImage ? (
-                <img
-                  src={user.profileImage}
-                  alt="Profile"
-                  className="w-28 h-28 rounded-full object-cover border-4 border-slate-200 dark:border-primary-200 shadow-md bg-white dark:bg-dark-50"
-                />
-              ) : (
-                <div className="w-28 h-28 rounded-full bg-white/90 dark:bg-dark-50/90 flex items-center justify-center text-slate-500 dark:text-primary-300 text-5xl font-bold border-4 border-slate-200 dark:border-primary-200/50 shadow-md">
-                  <User size={56} />
-                </div>
-              )}
-              <span className="absolute bottom-2 right-2 bg-green-500 border-2 border-white dark:border-dark-50 w-5 h-5 rounded-full shadow-sm"></span>
+              <div className="w-30 h-30 rounded-full bg-primary-200 text-white flex items-center justify-center p-5">
+                <User size={50} />
+              </div>
             </div>
             <h2 className="text-3xl font-extrabold text-slate-800 dark:text-primary-100 mt-2 tracking-tight">
-              {user.name}
+              {user?.name || 'User'}
             </h2>
             <p className="text-slate-600 dark:text-primary-200 text-lg font-medium">
-              {user.email}
+              {user?.email || 'No email provided'}
             </p>
             <div className="flex flex-wrap justify-center gap-4 mt-3">
-              {user.age && (
+              {user?.age && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 dark:bg-dark-50/90 text-slate-700 dark:text-primary-100 rounded-full text-sm font-medium border border-slate-200 dark:border-primary-200/30">
                   <span className="font-semibold">{user.age}</span>{" "}
-                  {t("years", "years")}
+                  years
                 </span>
               )}
-              {user.gender && (
+              {user?.gender && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent-yellow/40 dark:bg-accent-yellow/20 text-slate-700 dark:text-primary-100 rounded-full text-sm font-medium border border-accent-yellow/50 dark:border-accent-yellow/30">
                   {user.gender}
                 </span>
               )}
             </div>
-            {user.address && (
+            {user?.address && (
               <div className="mt-2 px-4 py-2 bg-slate-100 dark:bg-dark-50/90 rounded-xl border border-slate-200 dark:border-primary-200/30 text-slate-700 dark:text-primary-100 text-center text-sm max-w-xs shadow-sm">
                 <span className="font-medium text-slate-800 dark:text-primary-200">
-                  {t("address", "Address")}:{" "}
+                  Address: {user.address}
                 </span>
-                {user.address}
               </div>
             )}
           </div>
@@ -135,49 +108,34 @@ export function Profile() {
               />
             </div>
             <h3 className="text-xl font-bold text-slate-800 dark:text-primary-100 tracking-tight">
-              {t("Health Information")}
+              Health Information
             </h3>
           </div>
-          {user.healthCondition ? (
+          {user?.healthCondition ? (
             <div className="flex flex-wrap gap-2">
               <span className="px-3 py-1 bg-slate-100 dark:bg-primary-100/20 text-slate-700 dark:text-primary-100 rounded-full text-sm border border-slate-200 dark:border-primary-100/20">
-                {t(user.healthCondition)}
+                {user.healthCondition}
               </span>
             </div>
           ) : (
             <p className="text-slate-600 dark:text-primary-100/70">
-              {t("noHealthConditions", "No health conditions recorded")}
+              No health conditions recorded
             </p>
           )}
-          {user.currentMedicalStatus && (
+          {user?.currentMedicalStatus && (
             <div className="mt-3">
               <p className="text-sm text-slate-600 dark:text-primary-100/70">
-                {t("currentMedicalStatus", "Current Medical Status")}
+                Current Medical Status
               </p>
               <p className="text-lg font-medium text-slate-800 dark:text-primary-100">
                 {user.currentMedicalStatus}
               </p>
             </div>
           )}
-          {user.medicalCertificates && (
-            <div className="mt-3">
-              <p className="text-sm text-slate-600 dark:text-primary-100/70">
-                {t("medicalCertificates", "Medical Certificates")}
-              </p>
-              <a
-                href={user.medicalCertificates}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-700 dark:text-primary-100 underline break-all hover:text-slate-900 dark:hover:text-primary-100/80 transition-colors"
-              >
-                {t("viewCertificate", "View Certificate")}
-              </a>
-            </div>
-          )}
         </Card>
 
         {/* Emergency Contacts */}
-        {user.emergencyContacts && user.emergencyContacts.length > 0 && (
+        {user?.emergencyContacts && user.emergencyContacts.length > 0 && (
           <Card className="w-full max-w-2xl mb-8 animate-fade-in-up bg-white dark:bg-dark-50/95 border border-slate-200 dark:border-dark-600/30 backdrop-blur-md shadow-xl rounded-2xl transition-shadow hover:shadow-2xl">
             <div className="flex items-center mb-5">
               <div className="p-2 rounded-full bg-slate-100 dark:bg-primary-100/20 mr-4">
@@ -188,7 +146,7 @@ export function Profile() {
                 />
               </div>
               <h3 className="text-xl font-bold text-slate-800 dark:text-primary-100 tracking-tight">
-                {t("emergencyContacts", "Emergency Contacts")}
+                Emergency Contacts
               </h3>
             </div>
             <ul className="space-y-2">
@@ -216,9 +174,9 @@ export function Profile() {
           className="w-full max-w-2xl animate-fade-in-up mt-2 shadow-lg text-lg font-semibold py-4"
           size="lg"
           icon={LogOut}
-          ariaLabel={t("logout")}
+          ariaLabel={"logout"}
         >
-          {t("logout")}
+          logout
         </Button>
       </div>
     </main>

@@ -1,9 +1,8 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from routes.format_reminder import format_reminder_bp
-from routes.send_emergency import send_emergency_bp
 from routes.ask_query import chat_bp
-from routes.interests import interests_bp
+from routes.saved_contacts import saved_contacts_bp
 import traceback
 
 app = Flask(__name__)
@@ -17,13 +16,12 @@ def favicon():
 
 # Register blueprints at root paths
 app.register_blueprint(format_reminder_bp)
-app.register_blueprint(send_emergency_bp)
 app.register_blueprint(chat_bp)
-app.register_blueprint(interests_bp)
+app.register_blueprint(saved_contacts_bp)
 
 @app.route('/', methods=['GET'])
 def index():
-    return "Welcome to the VoiceBuddy AI Assistant API!"
+    return "Welcome to the AI Assistant API!"
 
 @app.route('/health', methods=['GET'])
 def health_check():

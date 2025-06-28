@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary colors
+        // Primary colors 
         primary: {
           50: "#e6f4f9", // Lightest shade of light blue
           100: "#8ecae6", // Light blue

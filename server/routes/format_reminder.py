@@ -66,24 +66,18 @@ def convert_to_json_friendly(document):
 
 # Initialize MongoDB connection settings
 mongo_url = os.environ.get('MONGO_URI')
-# Database and collection names from env vars
-db_name = os.environ.get('DB_NAME')  # Database name override, default in code below
-collection_name = os.environ.get('COLLECTION_NAME')  # Collection name override
+db_name = os.environ.get('DB_NAME')
+reminders_collection_name = os.environ.get('REMINDERS_COLLECTION')
 
 # Initialize Together AI client
-together_api_key = os.environ.get('TOGETHER_API_KEY', 'tgp_v1_WSJUCyB6cAaCZff7oVSK30nK1rxEgSlqAWBHzYdipfM')
+together_api_key = os.environ.get('TOGETHER_API_KEY')
 client = Together(api_key=together_api_key)
 
 # Initialize MongoDB client
 if mongo_url:
     mongo_client = MongoClient(mongo_url)
-    db = mongo_client[db_name] if db_name else mongo_client['assistant_db']
-    reminders_collection = db[collection_name] if collection_name else db['reminders']
-else:
-    # Fallback to hardcoded values if env vars are not set
-    mongo_client = MongoClient('mongodb+srv://tanish-jain-225:tanishjain02022005@cluster0.578qvco.mongodb.net/')
-    db = mongo_client['assistant_db']
-    reminders_collection = db['reminders']
+    db = mongo_client[db_name] 
+    reminders_collection = db[reminders_collection_name]
 
 def process_reminders(reminders_list, user_id):
     """Process multiple reminders and save them to MongoDB"""
@@ -141,7 +135,7 @@ def format_reminder():
         messages=[
             {
                 "role": "system",
-                "content": "Format user input as one or more reminders. Extract title, date, and time for each reminder. Always return a JSON array with each reminder having id, title, date, and time fields. Date should be in YYYY-MM-DD format. If date is not mentioned set it has null and same for the title. Time should be in HH:MM format. If there are multiple reminders in the input, create multiple JSON objects in the array."
+                "content": "Format user input as one or more reminders. Extract title, date and time for each reminder. Always return a JSON array with each reminder having id, title, date and time fields. Date should be in YYYY-MM-DD format. If date is not mentioned set it has null and same for the title. Time should be in HH:MM format. If there are multiple reminders in the input, create multiple JSON objects in the array."
             },
             {
                 "role": "user",

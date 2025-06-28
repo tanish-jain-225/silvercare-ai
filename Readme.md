@@ -1,4 +1,4 @@
-# <img src="client/public/bot-image.png" alt="SilverCare AI Logo" width="60" style="vertical-align:middle;"> SilverCare AI
+# <img src="client/public/bot-image.png" alt="SilverCare AI Logo" width="60" style="vertical-align:middle;"> SilverCare-AI
 
 ---
 
@@ -8,14 +8,14 @@
 
 <p align="center">
   <b>Empowering Seniors with a Voice-First, Accessible AI Assistant.</b><br>
-  <i>Chat, Reminders, Onboarding, and Accessibility—All in One Place.</i>
+  <i>Chat, Reminders, Emergency Alerts and Accessibility—All in One Place.</i>
 </p>
 
 ---
 
 ## 🌟 Overview
 
-SilverCare AI is a full-stack, voice-first AI assistant designed specifically for senior citizens. It bridges the digital divide by making technology accessible, intuitive, and empowering for older adults. With step-by-step onboarding, voice-enabled chat, smart reminders, and a beautiful, accessible UI, SilverCare AI is more than a tool—it's a companion for independent living.
+SilverCare-AI is a full-stack, voice-first AI assistant designed for senior citizens. It bridges the digital divide by making technology accessible, intuitive and empowering for older adults. With step-by-step onboarding, voice-enabled chat, smart reminders, emergency alerts and a beautiful, accessible UI, SilverCare-AI is more than a tool—it's a companion for independent living.
 
 ---
 
@@ -31,29 +31,7 @@ SilverCare AI is a full-stack, voice-first AI assistant designed specifically fo
   <img src="client/public/screenshots/emergency-page.png" alt="Emergency - Mobile" width="220" style="margin:10px; border-radius:12px; box-shadow:0 2px 8px #ccc;" />
 </p>
 
-> **Note:** All screenshots above showcase the mobile-first, accessible design of SilverCare AI. For best results, view on a mobile device or resize your browser window.
-
----
-
-## 🎯 Problem Statement
-
-Seniors face unique challenges with technology:
-
-- **Limited Tech Proficiency**: Complex interfaces are overwhelming.
-- **Vision & Motor Impairments**: Small text and precise gestures are difficult.
-- **Memory Issues**: Forgetting schedules and tasks is common.
-- **Digital Overload**: Too much information, not enough clarity.
-
----
-
-## 💡 Our Solution
-
-- **Voice-First Interaction**: Use your voice everywhere—onboarding, chat, reminders.
-- **Step-by-Step Onboarding**: A 6-step, mobile-friendly, voice-enabled form ensures every user is set up for success.
-- **Smart Reminders**: Schedule, view, and get notified about tasks and medications.
-- **Conversational AI**: Natural, human-like chat for queries and support.
-- **Personalized Experience**: Learns user preferences and adapts.
-- **Accessible UI**: High contrast, adjustable text, dark/light modes, and large touch targets.
+> **Note:** All screenshots above showcase the mobile-first, accessible design of SilverCare-AI. For best results, view on a mobile device or resize your browser window.
 
 ---
 
@@ -61,27 +39,29 @@ Seniors face unique challenges with technology:
 
 ### Frontend
 
-- **React + Vite**: Fast, modern, and modular UI development.
-- **Tailwind CSS**: Utility-first, accessible, and responsive styling.
+- **React + Vite**: Fast, modern and modular UI development.
+- **Tailwind CSS**: Utility-first, accessible and responsive styling.
 - **React Context & Hooks**: State management and custom logic.
 - **Speech Recognition & Synthesis APIs**: Voice input/output everywhere.
- 
+- **Firebase Auth**: Secure authentication and user management.
+
 ### Backend
 
-- **Python (Flask)**: Lightweight, robust REST API for chat, reminders, and onboarding.
-- **Firebase**: Authentication and user management.
-- **Vercel**: Seamless deployment for both frontend and backend.
+- **Python (Flask)**: REST API for chat, reminders, onboarding and emergency features.
+- **Firebase Firestore**: User data, reminders and profile storage.
+- **MongoDB**: Emergency contacts storage and reminders.
+- **Vercel**: Serverless deployment for both frontend and backend.
 
 ---
 
 ## ✨ Features
 
-- **Step-by-Step Onboarding**: 6-step, voice-enabled, mobile-friendly form with validation and accessibility.
+- **Step-by-Step Onboarding**: Voice-enabled, mobile-friendly form with validation and accessibility.
 - **Voice-First Chat**: Ask anything, set reminders, or get help—just speak!
-- **Smart Reminders**: Create, view, and get notified about reminders. Unique alarms, no duplicates, and reliable scheduling.
-- **Chat History**: All conversations are saved and accessible.
-- **Dynamic Routing**: Messages are routed to chat or reminders based on context.
-- **Accessibility**: High-contrast themes, adjustable text, voice feedback, and large buttons.
+- **Smart Reminders**: Create, view and get notified about reminders. Unique alarms, no duplicates and reliable scheduling.
+- **Emergency Alerts**: Instantly send emergency alerts and manage emergency contacts.
+- **Blog/News Section**: Fetches news using World News API (API key required).
+- **Accessibility**: High-contrast, large touch targets, voice feedback and screen reader support.
 - **Mobile-First Design**: Fully responsive and touch-friendly.
 - **Personalization**: Learns and adapts to user interests and needs.
 
@@ -89,10 +69,23 @@ Seniors face unique challenges with technology:
 
 ## ♿ Accessibility & Onboarding
 
-- **Accessible by Design**: Every page and component is built for seniors—clear labels, voice feedback, and easy navigation.
+- **Accessible by Design**: Every page and component is built for seniors—clear labels, voice feedback and easy navigation.
 - **Voice Input Everywhere**: All forms and chat fields support voice input, with clear buttons and feedback.
 - **Step Progress**: Onboarding shows clear progress and prevents skipping required steps.
 - **Screen Reader Friendly**: Uses semantic HTML and ARIA where needed.
+
+---
+
+## 🔒 Security & Best Practices
+
+- All API keys and credentials are stored in `.env` files (never hardcoded).
+- Firestore rules restrict access to authenticated users where appropriate.
+- No user passwords are stored—uses Firebase Auth only.
+- All focus ring and focus state CSS have been removed for a cleaner UI.
+- Margins and layout are standardized to prevent extra scroll.
+- SEO meta tags are included in `index.html`.
+- Error handling and user feedback are improved throughout the app.
+- Filtered unused filetypes for optimised storage. 
 
 ---
 
@@ -109,14 +102,14 @@ Seniors face unique challenges with technology:
 
 1. **Clone the Repository**
 
-   ```bash
-   git clone https://github.com/tanish-jain-225/SilverCare-AI.git
-   cd SilverCare-AI
+   ```sh
+   git clone <Repository-Link>
+   cd <Repository-Name>
    ```
 
 2. **Install Client Dependencies**
 
-   ```bash
+   ```sh
    cd client
    npm install
    # or
@@ -124,24 +117,30 @@ Seniors face unique challenges with technology:
    ```
 
 3. **Install Server Dependencies**
-   ```bash
+
+   ```sh
    cd ../server
    pip install -r requirements.txt
    ```
+
+### Environment Variables
+
+- All API keys and credentials must be set in `.env` files in both `client/` and `server/` directories.
+- See `client/Readme.md` and `server/Readme.md` for example `.env` files and required variables.
 
 ### Running the Application
 
 1. **Start the Backend (Flask Server)**
 
-   ```bash
+   ```sh
    cd server
    python app.py
-   # or use a process manager like flask run or gunicorn for production
+   # or use flask run
    ```
 
 2. **Start the Frontend (Vite/React)**
 
-   ```bash
+   ```sh
    cd client
    npm run dev
    # or
@@ -150,6 +149,15 @@ Seniors face unique challenges with technology:
 
 3. **Access the App**
    Open your browser at [http://localhost:5173](http://localhost:5173) (default Vite port).
+
+---
+
+## 🗂️ Project Structure
+
+- `client/` — Frontend React app ([see client/Readme.md](client/Readme.md))
+- `server/` — Backend Python API ([see server/Readme.md](server/Readme.md))
+- `public/` — Static assets (images, audio, etc.)
+- `index.html` — Main HTML entry point (SEO/meta tags)
 
 ---
 
@@ -165,8 +173,8 @@ Seniors face unique challenges with technology:
 ## 👨‍💻 Contributors
 
 | [![](https://github.com/parthnarkar.png?size=100)](https://github.com/parthnarkar) | [![](https://github.com/tanish-jain-225.png?size=100)](https://github.com/tanish-jain-225) | [![](https://github.com/pankaj0695.png?size=100)](https://github.com/pankaj0695) | [![](https://github.com/Chief-Ayush.png?size=100)](https://github.com/Chief-Ayush) |
-|:--:|:--:|:--:|:--:|
-| [**Parth Narkar**](https://github.com/parthnarkar) | [**Tanish Sanghvi**](https://github.com/tanish-jain-225) | [**Pankaj Gupta**](https://github.com/pankaj0695) | [**Ayush Attarde**](https://github.com/Chief-Ayush) |
+| :--------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
+|                 [**Parth Narkar**](https://github.com/parthnarkar)                 |                  [**Tanish Sanghvi**](https://github.com/tanish-jain-225)                  |                [**Pankaj Gupta**](https://github.com/pankaj0695)                 |                [**Ayush Attarde**](https://github.com/Chief-Ayush)                 |
 
 ---
 
@@ -180,13 +188,12 @@ We welcome contributions! To get started:
 
 ---
 
-## 🏆 Why SilverCare AI?
+## 🏆 Why SilverCare-AI?
 
-SilverCare AI is more than a hackathon project—it's a mission to empower seniors with technology that truly understands and supports them. Our focus on accessibility, usability, and real-world impact sets us apart. We believe every senior deserves a digital companion that is friendly, reliable, and empowering.
+SilverCare-AI is more than a hackathon project—it's a mission to empower seniors with technology that truly understands and supports them. Our focus on accessibility, usability and real-world impact sets us apart. We believe every senior deserves a digital companion that is friendly, reliable and empowering.
 
 ---
 
 <p align="center">
   <b>Making Technology Human—For Everyone.</b>
 </p>
-

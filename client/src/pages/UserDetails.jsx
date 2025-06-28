@@ -6,54 +6,64 @@ import {
   Phone,
   MapPin,
   ClipboardList,
-  Upload,
   Heart,
   Mic,
   Sparkles,
   Shield,
   Activity,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { useApp } from "../context/AppContext";
 import { useVoice } from "../hooks/useVoice";
+import { storage } from "../utils/storage";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
-import { db } from "../firebase/firebase";
-import { doc, setDoc } from "firebase/firestore";
-import { uploadToCloudinary } from "../utils/cloudinary";
 
 const VoiceButton = ({ listening, onClick, fieldName }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`p-2.5 rounded-full transition-all duration-300 transform hover:scale-110 ${listening
-      ? "bg-gradient-to-r from-red-500 to-pink-500 text-white animate-pulse shadow-lg shadow-red-500/50"
-      : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 shadow-md hover:shadow-lg"
-      }`}
+    className={`p-2.5 rounded-full transition-all duration-300 transform hover:scale-110 ${
+      listening
+        ? "bg-gradient-to-r from-red-500 to-pink-500 text-white animate-pulse shadow-lg shadow-red-500/50"
+        : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 shadow-md hover:shadow-lg"
+    }`}
     aria-label={
       listening ? "Stop recording" : `Start voice input for ${fieldName}`
     }
   >
     <Mic
       size={18}
-      className={`transition-transform duration-300 ${listening ? "animate-bounce" : ""
-        }`}
+      className={`transition-transform duration-300 ${
+        listening ? "animate-bounce" : ""
+      }`}
     />
   </button>
 );
 
 export function UserDetails() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
-  const { user, setUser } = useApp();
+  const { user, setUser, updateUser, loading } = useApp();
   const { speak } = useVoice();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [activeVoiceField, setActiveVoiceField] = useState(null);
   const [step, setStep] = useState(1); // Step state
   const [subStep, setSubStep] = useState(0); // For emergency contacts
+
+  // Show loading state if user data is not yet available
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading user data...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Speech recognition hooks
   const {
@@ -66,7 +76,7 @@ export function UserDetails() {
 
   // Form state
   const [formData, setFormData] = useState({
-    name: "",
+    name: user?.name || "",
     age: "",
     gender: "",
     address: "",
@@ -76,8 +86,6 @@ export function UserDetails() {
     ],
     healthCondition: { selected: "", custom: "" },
     currentMedicalStatus: "",
-    medicalCertificates: null,
-    profileImage: null,
   });
 
   // Options for dropdowns
@@ -101,12 +109,10 @@ export function UserDetails() {
 
   // Step progress bar
   const steps = [
-    t("Age & Gender"),
-    t("Address"),
-    t("Emergency Contact"),
-    t("Health & Status"),
-    t("Medical Certificate"),
-    t("Profile Image"),
+    "Age & Gender",
+    "Address",
+    "Emergency Contact",
+    "Health & Status",
   ];
 
   useEffect(() => {
@@ -116,17 +122,14 @@ export function UserDetails() {
         age: user.age || "",
         gender: user.gender || "",
         address: user.address || "",
-        emergencyContacts: user.emergencyContacts || [
-          { name: "", number: "" },
-          { name: "", number: "" },
-        ],
+        emergencyContacts: user.emergencyContacts && user.emergencyContacts.length > 0 
+          ? user.emergencyContacts 
+          : [{ name: "", number: "" }, { name: "", number: "" }],
         healthCondition: {
           selected: user.healthCondition || "",
           custom: "",
         },
         currentMedicalStatus: user.currentMedicalStatus || "",
-        medicalCertificates: null,
-        profileImage: null,
       });
     }
   }, [user]);
@@ -219,42 +222,32 @@ export function UserDetails() {
     let title = "";
     switch (step) {
       case 1:
-        title = t("Enter Your Age & Gender");
+        title = "Enter Your Age & Gender";
         break;
       case 2:
-        title = t("Enter Your Address");
+        title = "Enter Your Address";
         break;
       case 3:
-        title = t("Enter Emergency Contact");
+        title = "Enter Emergency Contact";
         break;
       case 4:
-        title = t("Enter Health & Status");
-        break;
-      case 5:
-        title = t("Upload Medical Certificate");
-        break;
-      case 6:
-        title = t("Upload Profile Image");
+        title = "Enter Health & Status";
         break;
       default:
         break;
     }
     if (title) speak(title);
     // eslint-disable-next-line
-  }, [step, t]);
+  }, [step]);
 
   const toggleVoiceInput = (fieldName) => {
     if (!browserSupportsSpeechRecognition) {
-      alert(
-        "Speech recognition not supported in your browser. Please use Chrome or Edge."
-      );
+      setError("Speech recognition not supported in your browser. Please use Chrome or Edge.");
       return;
     }
 
     if (!isMicrophoneAvailable) {
-      alert(
-        "Microphone access is required for voice input. Please enable microphone permissions."
-      );
+      setError("Microphone access is required for voice input. Please enable microphone permissions.");
       return;
     }
 
@@ -282,7 +275,7 @@ export function UserDetails() {
       });
     } catch (error) {
       console.error("Error starting voice recognition:", error);
-      alert("Failed to start voice recognition. Please try again.");
+      setError("Failed to start voice recognition. Please try again.");
     }
   };
 
@@ -315,26 +308,28 @@ export function UserDetails() {
   // Step navigation with validation
   const validateStep = () => {
     if (step === 1) {
-      return formData.age && formData.gender;
+      const age = parseInt(formData.age, 10);
+      return formData.age && age > 0 && age <= 150 && formData.gender;
     }
     if (step === 2) {
-      return formData.address;
+      return formData.address.trim();
     }
     if (step === 3) {
       const contact = formData.emergencyContacts[subStep];
-      return contact.name && contact.number;
+      return contact.name.trim() && contact.number.trim();
     }
     if (step === 4) {
       if (formData.healthCondition.selected === "Other") {
-        return formData.healthCondition.custom && formData.currentMedicalStatus;
+        return formData.healthCondition.custom.trim() && formData.currentMedicalStatus.trim();
       }
-      return formData.healthCondition.selected && formData.currentMedicalStatus;
+      return formData.healthCondition.selected && formData.currentMedicalStatus.trim();
     }
     return true;
   };
 
   const nextStep = () => {
     if (!validateStep()) return;
+    setError(""); // Clear any existing errors when moving to next step
     if (step === 3 && subStep < 1) {
       setSubStep(subStep + 1);
     } else {
@@ -343,6 +338,7 @@ export function UserDetails() {
     }
   };
   const prevStep = () => {
+    setError(""); // Clear any existing errors when moving to previous step
     if (step === 3 && subStep > 0) {
       setSubStep(subStep - 1);
     } else if (step > 1) {
@@ -351,97 +347,72 @@ export function UserDetails() {
     }
   };
 
-  // Add state for image previews
-  const [previewUrls, setPreviewUrls] = useState({
-    medicalCertificate: null,
-    profileImage: null,
-  });
-
-  // Handle file upload with preview
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        medicalCertificates: file,
-      }));
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewUrls((prev) => ({
-        ...prev,
-        medicalCertificate: previewUrl,
-      }));
-    }
-  };
-
-  // Handle profile image upload with preview
-  const handleProfileImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        profileImage: file,
-      }));
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewUrls((prev) => ({
-        ...prev,
-        profileImage: previewUrl,
-      }));
-    }
-  };
-
-  // Cleanup preview URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (previewUrls.medicalCertificate) {
-        URL.revokeObjectURL(previewUrls.medicalCertificate);
-      }
-      if (previewUrls.profileImage) {
-        URL.revokeObjectURL(previewUrls.profileImage);
-      }
-    };
-  }, [previewUrls]);
-
-  // Form submission
+  // Form submission with proper Firebase sync before navigation
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isLoading) return;
+    
     setIsLoading(true);
-
+    setError(""); // Clear any existing errors when submitting
+    
     try {
-      let imageUrl = "";
-      let medicalCertificateUrl = "";
-      if (formData.profileImage) {
-        imageUrl = await uploadToCloudinary(formData.profileImage);
+      if (!user || !user.id) {
+        throw new Error("User not authenticated");
       }
-      if (formData.medicalCertificates) {
-        medicalCertificateUrl = await uploadToCloudinary(
-          formData.medicalCertificates
-        );
-      }
-      const userData = {
-        ...formData,
-        healthCondition:
-          formData.healthCondition.selected === "Other"
-            ? formData.healthCondition.custom
-            : formData.healthCondition.selected,
-        profileImage: imageUrl,
-        medicalCertificates: medicalCertificateUrl,
+
+      console.log('Current user before update:', user);
+
+      // Prepare cleaned data
+      const cleanedFormData = {
+        name: formData.name.trim(),
+        age: formData.age ? parseInt(formData.age, 10) || 0 : 0,
+        gender: formData.gender.trim(),
+        address: formData.address.trim(),
+        emergencyContacts: formData.emergencyContacts
+          .filter(contact => contact.name.trim() && contact.number.trim())
+          .map(contact => ({
+            name: contact.name.trim(),
+            number: contact.number.trim(),
+          })),
+        healthCondition: formData.healthCondition.selected === "Other" 
+          ? formData.healthCondition.custom.trim()
+          : formData.healthCondition.selected,
+        currentMedicalStatus: formData.currentMedicalStatus.trim(),
       };
-      if (user) {
-        const updatedUser = {
-          ...user,
-          ...userData,
-        };
-        console.log("Updated user data:", updatedUser);
-        setUser(updatedUser);
-        // Store in Firestore users collection
-        await setDoc(doc(db, "users", user.id), userData);
-      }
+
+      console.log('Submitting user data:', cleanedFormData);
+
+      // Wait for Firebase update to complete before proceeding
+      await updateUser(cleanedFormData);
+      
+      // Only proceed after successful update
       speak("Your medical information has been saved successfully.");
-      navigate("/home");
+      
+      // Navigate to profile page to show updated data
+      navigate("/profile");
+      
     } catch (error) {
-      console.error("Error saving medical information:", error);
+      console.error("Error saving user data:", error);
+      speak("Failed to save your information. Please try again.");
+      
+      // Show user-friendly error message
+      if (error.message.includes("User not authenticated")) {
+        setError("You are not logged in. Please login again.");
+        setTimeout(() => navigate("/login"), 2000);
+      } else if (error.message.includes("permission-denied")) {
+        setError("Permission denied. Please check your authentication.");
+      } else if (error.message.includes("network") || error.message.includes("unavailable")) {
+        setError("Network error. Please check your internet connection and try again.");
+      } else if (error.message.includes("deadline-exceeded")) {
+        setError("The request took too long to complete. Please check your connection and try again.");
+      } else if (error.message.includes("unauthenticated")) {
+        setError("Authentication expired. Please log in again.");
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        setError(`Failed to save information: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -451,7 +422,7 @@ export function UserDetails() {
   if (!browserSupportsSpeechRecognition) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50 p-4">
-        <div className="bg-white/80 backdrop-blur-lg p-8 rounded-3xl shadow-2xl max-w-md text-center border border-white/20">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-md text-center border border-white/20">
           <div className="text-red-500 mb-6">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -483,9 +454,9 @@ export function UserDetails() {
   }
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-2 sm:p-4 relative">
+    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-2 sm:p-4 relative text-gray-900">
       {/* Progress bar (show only current step on mobile) */}
-      <div className="fixed top-0 left-0 w-full z-40 bg-white/80 py-2 px-1 sm:py-3 sm:px-4 flex items-center justify-center gap-1 sm:gap-2 shadow-md">
+      <div className="fixed top-0 left-0 w-full z-40 bg-white py-2 px-1 sm:py-3 sm:px-4 flex items-center justify-center gap-1 sm:gap-2 shadow-md">
         <div className="flex-1 flex flex-col items-center sm:hidden">
           <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-base shadow-lg bg-gradient-to-br from-purple-500 to-indigo-500 scale-110">
             {step}
@@ -498,18 +469,20 @@ export function UserDetails() {
           {steps.map((label, idx) => (
             <div key={label} className="flex-1 flex flex-col items-center">
               <div
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-white text-base sm:text-lg shadow-lg transition-all duration-300 ${step === idx + 1
-                  ? "bg-gradient-to-br from-purple-500 to-indigo-500 scale-110"
-                  : step > idx + 1
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-white text-base sm:text-lg shadow-lg transition-all duration-300 ${
+                  step === idx + 1
+                    ? "bg-gradient-to-br from-purple-500 to-indigo-500 scale-110"
+                    : step > idx + 1
                     ? "bg-green-400 scale-100"
                     : "bg-gray-300 scale-90"
-                  }`}
+                }`}
               >
                 {idx + 1}
               </div>
               <span
-                className={`text-[10px] sm:text-xs mt-1 font-medium ${step === idx + 1 ? "text-indigo-700" : "text-gray-400"
-                  }`}
+                className={`text-[10px] sm:text-xs mt-1 font-medium ${
+                  step === idx + 1 ? "text-indigo-700" : "text-gray-400"
+                }`}
               >
                 {label}
               </span>
@@ -518,21 +491,43 @@ export function UserDetails() {
         </div>
       </div>
 
-      <div className="w-full max-w-lg relative z-10 mt-20 sm:mt-24">
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/20 p-4 sm:p-8 animate-fade-in-up">
-          <form onSubmit={handleSubmit} className="space-y-8 sm:space-y-10">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/20 p-4 sm:p-8 animate-fade-in-up">
+          <form
+            onSubmit={handleSubmit}
+            onKeyDown={(e) => {
+              // Prevent form submission by Enter
+              if (e.key === "Enter") {
+                // Do not submit form at all 
+                e.preventDefault();
+                return false;
+              }
+            }}
+            className="space-y-8 sm:space-y-10 text-gray-900"
+          >
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  {error}
+                </div>
+              </div>
+            )}
             {/* Step 1: Age & Gender */}
             {step === 1 && (
               <div className="space-y-6 sm:space-y-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
-                  <User className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
-                  {t("Your Age & Gender")}
+                  <User className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" /> Your
+                  Age & Gender
                 </h2>
                 <div className="flex items-center gap-2">
                   <div className="flex-1">
                     <Input
                       type="number"
-                      label={t("Age")}
+                      label="Age"
                       name="age"
                       value={formData.age}
                       onChange={handleChange}
@@ -555,13 +550,13 @@ export function UserDetails() {
                       name="gender"
                       value={formData.gender}
                       onChange={handleChange}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-300 shadow-sm bg-white/60"
+                      className="w-full p-4 border border-gray-200 rounded-xl transition-all duration-300 shadow-sm bg-white/60"
                       required
                     >
-                      <option value="">{t("Select Gender")}</option>
+                      <option value="">Select Gender</option>
                       {genderOptions.map((option) => (
                         <option key={option} value={option}>
-                          {t(option)}
+                          {option}
                         </option>
                       ))}
                     </select>
@@ -579,7 +574,7 @@ export function UserDetails() {
                     disabled={!validateStep()}
                     className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-full sm:w-auto"
                   >
-                    {t("Next")}
+                    Next
                   </Button>
                 </div>
               </div>
@@ -589,13 +584,13 @@ export function UserDetails() {
               <div className="space-y-6 sm:space-y-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
                   <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
-                  {t("Your Address")}
+                  Your Address
                 </h2>
                 <div className="flex items-center gap-2">
                   <div className="flex-1">
                     <Input
                       type="text"
-                      label={t("Address")}
+                      label="Address"
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
@@ -616,7 +611,7 @@ export function UserDetails() {
                     onClick={prevStep}
                     className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
                   >
-                    {t("Back")}
+                    Back
                   </Button>
                   <Button
                     type="button"
@@ -624,7 +619,7 @@ export function UserDetails() {
                     disabled={!validateStep()}
                     className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
                   >
-                    {t("Next")}
+                    Next
                   </Button>
                 </div>
               </div>
@@ -634,13 +629,13 @@ export function UserDetails() {
               <div className="space-y-6 sm:space-y-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
                   <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
-                  {t("Emergency Contact")}
+                  Emergency Contact
                 </h2>
                 <div className="flex items-center gap-2">
                   <div className="flex-1">
                     <Input
                       type="text"
-                      label={t("Contact Name") + ` (${subStep + 1})`}
+                      label={`Contact Name (${subStep + 1})`}
                       value={formData.emergencyContacts[subStep].name}
                       onChange={(e) =>
                         handleEmergencyContactChange(
@@ -666,7 +661,7 @@ export function UserDetails() {
                   <div className="flex-1">
                     <Input
                       type="tel"
-                      label={t("Contact Number") + ` (${subStep + 1})`}
+                      label={`Contact Number (${subStep + 1})`}
                       value={formData.emergencyContacts[subStep].number}
                       onChange={(e) =>
                         handleEmergencyContactChange(
@@ -695,7 +690,7 @@ export function UserDetails() {
                     onClick={prevStep}
                     className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
                   >
-                    {t("Back")}
+                    Back
                   </Button>
                   <Button
                     type="button"
@@ -703,7 +698,7 @@ export function UserDetails() {
                     disabled={!validateStep()}
                     className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
                   >
-                    {subStep === 1 ? t("Next") : t("Next Contact")}
+                    {subStep === 1 ? "Next" : "Next Contact"}
                   </Button>
                 </div>
               </div>
@@ -713,25 +708,23 @@ export function UserDetails() {
               <div className="space-y-6 sm:space-y-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
                   <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
-                  {t("Health & Status")}
+                  Health & Status
                 </h2>
                 <div className="flex items-center gap-2">
                   <div className="flex-1">
                     <select
                       value={formData.healthCondition.selected}
                       onChange={handleHealthConditionChange}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-300 shadow-sm bg-white/60"
+                      className="w-full p-4 border border-gray-200 rounded-xl transition-all duration-300 shadow-sm bg-white/60"
                       required
                     >
-                      <option value="">
-                        {t("Select Your Health Condition")}
-                      </option>
+                      <option value="">Select Your Health Condition</option>
                       {healthConditionOptions.map((option) => (
                         <option key={option} value={option}>
-                          {t(option)}
+                          {option}
                         </option>
                       ))}
-                      <option value="Other">{t("Other")}</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
                   <VoiceButton
@@ -747,7 +740,7 @@ export function UserDetails() {
                     <div className="flex-1">
                       <Input
                         type="text"
-                        label={t("specifyCondition")}
+                        label="Specify Condition"
                         value={formData.healthCondition.custom}
                         onChange={(e) =>
                           setFormData((prev) => ({
@@ -777,13 +770,13 @@ export function UserDetails() {
                       name="currentMedicalStatus"
                       value={formData.currentMedicalStatus}
                       onChange={handleChange}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-300 shadow-sm bg-white/60"
+                      className="w-full p-4 border border-gray-200 rounded-xl transition-all duration-300 shadow-sm bg-white/60"
                       required
                     >
-                      <option value="">{t("Select Status")}</option>
+                      <option value="">Select Status</option>
                       {medicalStatusOptions.map((option) => (
                         <option key={option} value={option}>
-                          {t(option)}
+                          {option}
                         </option>
                       ))}
                     </select>
@@ -802,127 +795,14 @@ export function UserDetails() {
                     onClick={prevStep}
                     className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
                   >
-                    {t("Back")}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={nextStep}
-                    disabled={!validateStep()}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
-                  >
-                    {t("Next")}
-                  </Button>
-                </div>
-              </div>
-            )}
-            {/* Step 5: Medical Certificate Upload */}
-            {step === 5 && (
-              <div className="space-y-6 sm:space-y-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
-                  {t("Medical Certificate Upload")}{" "}
-                  <span className="text-sm text-gray-500">
-                    ({t("Optional")})
-                  </span>
-                </h2>
-                <label className="flex-1 cursor-pointer">
-                  <div className="flex items-center justify-center gap-4 p-6 border-2 border-dashed border-blue-200 rounded-xl hover:border-blue-400 transition-all duration-300 bg-white/60 hover:bg-blue-50/50">
-                    <Upload className="text-blue-400 w-6 h-6" />
-                    <span className="text-sm text-blue-600 font-medium">
-                      {formData.medicalCertificates
-                        ? formData.medicalCertificates.name
-                        : t("Click to Upload")}
-                    </span>
-                  </div>
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    accept=".jpg,.jpeg,.png"
-                  />
-                </label>
-                {previewUrls.medicalCertificate && (
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-600 mb-2">
-                      {t("Preview")}:
-                    </p>
-                    <img
-                      src={previewUrls.medicalCertificate}
-                      alt="Medical Certificate Preview"
-                      className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
-                    />
-                  </div>
-                )}
-                <div className="flex justify-between gap-2 mt-4 sm:mt-6">
-                  <Button
-                    type="button"
-                    onClick={prevStep}
-                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
-                  >
-                    {t("Back")}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={nextStep}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
-                  >
-                    {t("Next")}
-                  </Button>
-                </div>
-              </div>
-            )}
-            {/* Step 6: Profile Image Upload */}
-            {step === 6 && (
-              <div className="space-y-6 sm:space-y-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 sm:mb-6 flex items-center gap-2">
-                  <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
-                  {t("Profile Image Upload")}{" "}
-                  <span className="text-sm text-gray-500">
-                    ({t("Optional")})
-                  </span>
-                </h2>
-                <label className="flex-1 cursor-pointer">
-                  <div className="flex items-center justify-center gap-4 p-6 border-2 border-dashed border-blue-200 rounded-xl hover:border-blue-400 transition-all duration-300 bg-white/60 hover:bg-blue-50/50">
-                    <Upload className="text-blue-400 w-6 h-6" />
-                    <span className="text-sm text-blue-600 font-medium">
-                      {formData.profileImage
-                        ? formData.profileImage.name
-                        : t("Click to Upload")}
-                    </span>
-                  </div>
-                  <input
-                    type="file"
-                    onChange={handleProfileImageUpload}
-                    className="hidden"
-                    accept=".jpg,.jpeg,.png"
-                  />
-                </label>
-                {previewUrls.profileImage && (
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-600 mb-2">
-                      {t("Preview")}:
-                    </p>
-                    <img
-                      src={previewUrls.profileImage}
-                      alt="Profile Image Preview"
-                      className="w-32 h-32 object-cover rounded-full mx-auto shadow-md border-4 border-white"
-                    />
-                  </div>
-                )}
-                <div className="flex justify-between gap-2 mt-4 sm:mt-6">
-                  <Button
-                    type="button"
-                    onClick={prevStep}
-                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
-                  >
-                    {t("Back")}
+                    Back
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || !validateStep()}
                     className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
                   >
-                    {isLoading ? t("Saving...") : t("Finish & Save")}
+                    {isLoading ? "Saving your information..." : "Submit"}
                   </Button>
                 </div>
               </div>

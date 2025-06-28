@@ -11,7 +11,6 @@ import {
   Trash2,
 } from "lucide-react"; // Added Trash2
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { useVoice } from "../hooks/useVoice";
@@ -19,10 +18,14 @@ import { useApp } from "../context/AppContext";
 import { useLocation } from "../hooks/useLocation";
 import LocationComponent from "../components/location/LocationComponet";
 import { route_endpoint } from "../utils/helper";
+import {
+  getSavedContacts,
+  addSavedContact,
+  deleteSavedContact,
+} from "../utils/apiService";
 
 export default function Emergency() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const { speak } = useVoice();
   const { user } = useApp();
   const {
@@ -38,117 +41,77 @@ export default function Emergency() {
   const [recognition, setRecognition] = useState(null);
 
   // State for emergency contacts
-  // const initialContacts = []; // No longer using hardcoded initial contacts here
-  // const [emergencyContacts, setEmergencyContacts] = useState(() => {
-  //   const savedContacts = localStorage.getItem("emergencyContacts");
-  //   return savedContacts ? JSON.parse(savedContacts) : []; // Initialize with empty array if nothing in localStorage
-  // });
   const [emergencyContacts, setEmergencyContacts] = useState([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
 
   useEffect(() => {
-    // Always use latest from context, plus any saved contacts from localStorage
-    const savedContacts = localStorage.getItem("emergencyContacts");
-    const extraContacts = savedContacts
-      ? JSON.parse(savedContacts).filter((c) => !c.isDefault)
-      : [];
-    const defaultContacts = (user?.emergencyContacts || []).map(
-      (contact, index) => ({
-        id: `default-${index}`,
-        name: contact.name,
-        phone: contact.number,
-        relationship: "Emergency Contact",
-        isDefault: true,
-      })
-    );
-    setEmergencyContacts([...defaultContacts, ...extraContacts]);
+    async function fetchContacts() {
+      setLoadingContacts(true);
+      let savedContacts = [];
+      if (user && user.id) {
+        try {
+          savedContacts = await getSavedContacts(user.id);
+        } catch (e) {
+          savedContacts = [];
+        }
+      }
+      const defaultContacts = (user?.emergencyContacts || []).map(
+        (contact, index) => ({
+          id: `default-${index}`,
+          name: contact.name,
+          phone: contact.number,
+          relationship: "Emergency Contact",
+          isDefault: true,
+        })
+      );
+      setEmergencyContacts([...defaultContacts, ...savedContacts]);
+      setLoadingContacts(false);
+    }
+    fetchContacts();
   }, [user]);
 
   const [showAddContactForm, setShowAddContactForm] = useState(false);
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
 
-  const handleAddContact = () => {
+  const handleAddContact = async () => {
     if (!newContactName.trim() || !newContactPhone.trim()) {
       speak("Please enter both name and phone number for the new contact.");
       return;
     }
+    if (!user || !user.id) {
+      speak("User not authenticated.");
+      return;
+    }
     const newContact = {
-      id: Date.now().toString(), // Simple unique ID
+      id: Date.now().toString(),
       name: newContactName.trim(),
       phone: newContactPhone.trim(),
-      relationship: "Custom", // Or allow user to specify
+      relationship: "Custom",
     };
-    setEmergencyContacts((prevContacts) => {
-      const updatedContacts = [...prevContacts, newContact];
-      localStorage.setItem(
-        "emergencyContacts",
-        JSON.stringify(updatedContacts)
-      );
-      return updatedContacts;
-    });
-    setNewContactName("");
-    setNewContactPhone("");
-    setShowAddContactForm(false);
-    speak(`${newContact.name} has been added to your emergency contacts.`);
+    try {
+      await addSavedContact(user.id, newContact);
+      setEmergencyContacts((prev) => [...prev, newContact]);
+      setNewContactName("");
+      setNewContactPhone("");
+      setShowAddContactForm(false);
+      speak(`${newContact.name} has been added to your emergency contacts.`);
+    } catch (e) {
+      speak("Failed to add contact.");
+    }
   };
-  const handleDeleteContact = (contactId) => {
-    setEmergencyContacts((prevContacts) => {
-      const updatedContacts = prevContacts.filter(
-        (contact) => contact.id !== contactId
-      );
-      localStorage.setItem(
-        "emergencyContacts",
-        JSON.stringify(updatedContacts)
-      );
+  const handleDeleteContact = async (contactId) => {
+    if (!user || !user.id) {
+      speak("User not authenticated.");
+      return;
+    }
+    try {
+      await deleteSavedContact(user.id, contactId);
+      setEmergencyContacts((prev) => prev.filter((c) => c.id !== contactId));
       speak("Contact removed.");
-      return updatedContacts;
-    });
-  };
-
-  const handleEmergencyCall = () => {
-    // Use actual location if available, otherwise use fallback coordinates
-    const currentLocation = location || { lat: 28.6139, lng: 77.209 };
-
-    console.log("Sending emergency call with location:", currentLocation);
-
-    fetch(`${route_endpoint}/send-emergency`, {
-      method: "POST",
-      body: JSON.stringify({
-        contacts: ["+919222001998", "+919321242515", "+918104439075"],
-        latitude: currentLocation.lat,
-        longitude: currentLocation.lng,
-      }),
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Emergency call sent successfully:", data);
-      })
-      .catch((error) => {
-        console.error("Error sending emergency call:", error);
-      });
-
-    setIsEmergencyActive(true);
-    speak("Emergency help is being activated. Stay calm, help is on the way.");
-
-    // Simulate emergency call
-    setTimeout(() => {
-      speak(
-        "Emergency contacts are being notified. If this is a medical emergency, please call 911 directly."
-      );
-      setIsEmergencyActive(false);
-    }, 3000);
-  };
-
-  const handleContactCall = (contact) => {
-    speak(`Calling ${contact.name}`);
-    // In a real app, this would initiate a phone call
-    window.location.href = `tel:${contact.phone}`;
+    } catch (e) {
+      speak("Failed to delete contact.");
+    }
   };
 
   // Initialize speech recognition
@@ -231,26 +194,19 @@ export default function Emergency() {
   // Re-initialize contacts when user changes
   useEffect(() => {
     if (user && user.emergencyContacts && user.emergencyContacts.length > 0) {
-      const savedContacts = localStorage.getItem("emergencyContacts");
-      let contacts = savedContacts ? JSON.parse(savedContacts) : [];
-
-      // Check if default contacts are already added
-      const hasDefaults = contacts.some((c) => c.isDefault);
-      if (!hasDefaults) {
-        const defaultContacts = user.emergencyContacts.map(
-          (contact, index) => ({
-            id: `default-${index}`,
-            name: contact.name,
-            phone: contact.number,
-            relationship: "Emergency Contact",
-            isDefault: true,
-          })
-        );
-
-        contacts = [...defaultContacts, ...contacts];
-        localStorage.setItem("emergencyContacts", JSON.stringify(contacts));
-        setEmergencyContacts(contacts);
-      }
+      // Only use default contacts from user.emergencyContacts and saved contacts from API
+      const defaultContacts = user.emergencyContacts.map((contact, index) => ({
+        id: `default-${index}`,
+        name: contact.name,
+        phone: contact.number,
+        relationship: "Emergency Contact",
+        isDefault: true,
+      }));
+      setEmergencyContacts((prev) => {
+        // If already set by fetchContacts, don't duplicate
+        const nonDefault = prev.filter((c) => !c.isDefault);
+        return [...defaultContacts, ...nonDefault];
+      });
     }
   }, [user]);
   React.useEffect(() => {
@@ -263,518 +219,418 @@ export default function Emergency() {
   const savedContacts = emergencyContacts.filter((c) => !c.isDefault);
 
   return (
-    <div className="min-h-screen mb-20 w-full overflow-x-hidden bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col">
+    <div className="min-h-screen mb-20 w-full overflow-x-hidden bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col px-2">
       {/* Content */}
-      <div className="container mx-auto w-full max-w-7xl px-6 py-8 flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Emergency Button and Location */}
-          <div className="space-y-8">
-            {/* Emergency Button */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary-300 to-primary-400 dark:from-primary-100 dark:to-primary-200 rounded-2xl shadow-xl opacity-90 group-hover:opacity-100 transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-2xl"></div>
-              <Card className="flex items-center justify-center relative overflow-hidden border-0 bg-gradient-to-r from-primary-400 to-primary-500 dark:from-primary-200 dark:to-primary-300 text-white">
-                <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/10 dark:bg-white/5 rounded-full"></div>
-                <div className="absolute -right-5 -bottom-5 w-20 h-20 bg-white/10 dark:bg-white/5 rounded-full"></div>
-                <div className="relative text-center py-6">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-white/10 rounded-full mb-4 mx-auto">
-                    <AlertTriangle size={32} className="text-white" />
+      <div className="container mx-auto w-full max-w-4xl px-2 sm:px-4 py-6 sm:py-8 flex-1 flex flex-col gap-8">
+        {/* Location Section */}
+        <section className="w-full">
+          <Card className="p-4 sm:p-6 bg-white/90 dark:bg-dark-100/90 backdrop-blur-sm border border-primary-100/20 dark:border-primary-100/10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="flex items-start">
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full">
+                      <MapPin
+                        className="text-primary-300 dark:text-primary-100"
+                        size={24}
+                      />
+                    </div>
+                    <h3 className="text-lg font-semibold text-primary-300 dark:text-primary-100">
+                      Your Current Location
+                    </h3>
                   </div>
-                  <h2 className="text-2xl font-bold mb-2 text-white">
-                    Need Immediate Help?
-                  </h2>
-                  <p className="text-white/90 dark:text-white/80 mb-6">
-                    Press the button below for emergency assistance
+                  <button className="text-md font-bold hover:text-yellow-400" onClick={()=>{window.location.reload()}}>Refresh</button>
+                </div>
+                {locationLoading ? (
+                  <p className="text-primary-200 dark:text-primary-100/90">
+                    <span className="font-medium text-accent-yellow dark:text-accent-yellow/90">
+                      Loading location...
+                    </span>{" "}
+                    Please allow location access for emergency services.
                   </p>
-                  <Button
-                    onClick={handleEmergencyCall}
-                    disabled={isEmergencyActive || locationLoading}
-                    className={`relative z-10
-                      ${isEmergencyActive
-                        ? "bg-white/90 text-primary-400 dark:bg-white/80 dark:text-primary-200"
-                        : // Red button in light mode, keep gradient in dark mode
-                        "bg-red-600 hover:bg-red-700 text-white dark:bg-gradient-to-r dark:from-primary-500 dark:to-primary-600 dark:text-white dark:hover:from-primary-600 dark:hover:to-primary-700"
-                      }
-                      text-lg font-bold px-8 py-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 w-full max-w-xs`}
-                    size="xl"
-                  >
-                    {isEmergencyActive ? (
-                      <span className="flex items-center justify-center">
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-primary-400 dark:text-primary-200"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Getting Help...
-                      </span>
-                    ) : locationLoading ? (
-                      <span className="flex items-center justify-center">
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Getting Location...
-                      </span>
-                    ) : (
-                      t("Get Help")
-                    )}
-                  </Button>
-                </div>
-              </Card>
+                ) : locationError ? (
+                  <p className="text-primary-200 dark:text-primary-100/90">
+                    <span className="font-medium text-primary-400 dark:text-primary-200">
+                      Location unavailable
+                    </span>{" "}
+                    Please enable location permissions for emergency services.
+                  </p>
+                ) : location ? (
+                  <p className="text-primary-200 dark:text-primary-100/90">
+                    Location sharing is{" "}
+                    <span className="font-medium text-green-500 dark:text-green-500">
+                      active
+                    </span>{" "}
+                    for emergency services.
+                    <br />
+                    <span className="text-sm text-primary-200/80 dark:text-primary-100/70">
+                      Coordinates: {location.lat.toFixed(6)},{" "}
+                      {location.lng.toFixed(6)}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-primary-200 dark:text-primary-100/90">
+                    <span className="font-medium text-primary-300 dark:text-primary-100">
+                      Location not available
+                    </span>{" "}
+                    Using fallback coordinates for emergency services.
+                  </p>
+                )}
+              </div>
             </div>
+            <div className="pt-3 max-w-full overflow-x-auto">
+              <LocationComponent />
+            </div>
+          </Card>
+        </section>
 
-            {/* Location Info */}
-            <Card className="p-6 bg-white/90 dark:bg-dark-100/90 backdrop-blur-sm border border-primary-100/20 dark:border-primary-100/10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
-              <div className="flex items-start">
-                <div className="flex items-center justify-center w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full mr-4">
-                  <MapPin
-                    className="text-primary-300 dark:text-primary-100"
-                    size={24}
-                  />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-primary-300 dark:text-primary-100 mb-2">
-                    Your Current Location
-                  </h3>
-                  {locationLoading ? (
-                    <p className="text-primary-200 dark:text-primary-100/90">
-                      <span className="font-medium text-accent-yellow dark:text-accent-yellow/90">
-                        Loading location...
-                      </span>
-                      Please allow location access for emergency services.
-                    </p>
-                  ) : locationError ? (
-                    <p className="text-primary-200 dark:text-primary-100/90">
-                      <span className="font-medium text-primary-400 dark:text-primary-200">
-                        Location unavailable
-                      </span>
-                      Please enable location permissions for emergency services.
-                    </p>
-                  ) : location ? (
-                    <p className="text-primary-200 dark:text-primary-100/90">
-                      Location sharing is{" "}
-                      <span className="font-medium text-green-500 dark:text-green-500">
-                        active
-                      </span>{" "}
-                      for emergency services.
-                      <br />
-                      <span className="text-sm text-primary-200/80 dark:text-primary-100/70">
-                        Coordinates: {location.lat.toFixed(6)},{" "}
-                        {location.lng.toFixed(6)}
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="text-primary-200 dark:text-primary-100/90">
-                      <span className="font-medium text-primary-300 dark:text-primary-100">
-                        Location not available
-                      </span>
-                      Using fallback coordinates for emergency services.
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="pt-3">
-                <LocationComponent />
-              </div>
-            </Card>
+        {/* Emergency Chat Section */}
+        <section className="w-full">
+          <div className="flex items-center mb-4 sm:mb-6">
+            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-lg mr-3 sm:mr-4">
+              <Send className="text-primary-300 dark:text-primary-100" size={24} />
+            </div>
+            <h3 className="text-xl sm:text-2xl font-semibold text-primary-300 dark:text-primary-100">
+              Emergency Chat
+            </h3>
           </div>
 
-          {/* Right Column - Emergency Chat Section */}
-          <div className="space-y-8">
-            {/* Section Header */}
-            <div className="flex items-center mb-6">
-              <div className="flex items-center justify-center w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-lg mr-4">
+          {/* Send to Any Number Section */}
+          <Card className="mb-4 sm:mb-6 p-4 sm:p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 rounded-2xl backdrop-blur-sm">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full flex items-center justify-center mr-3 sm:mr-4">
                 <Send
                   className="text-primary-300 dark:text-primary-100"
                   size={24}
                 />
               </div>
-              <h3 className="text-2xl font-semibold text-primary-300 dark:text-primary-100">
-                Emergency Chat
-              </h3>
+              <div>
+                <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
+                  Send to Any Number
+                </h4>
+                <p className="text-primary-200 dark:text-primary-100/90 text-sm">
+                  Send emergency message to any WhatsApp number
+                </p>
+              </div>
             </div>
 
-            {/* Send to Any Number Section */}
-            <Card className="mb-6 p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 rounded-2xl backdrop-blur-sm">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full flex items-center justify-center mr-4">
-                  <Send
-                    className="text-primary-300 dark:text-primary-100"
-                    size={24}
-                  />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
-                    Send to Any Number
-                  </h4>
-                  <p className="text-primary-200 dark:text-primary-100/90 text-sm">
-                    Send emergency message to any WhatsApp number
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex flex-col sm:flex-row items-stretch gap-2">
                 <input
                   type="tel"
                   placeholder="Enter phone number (e.g., +919876543210)"
                   value={newContactPhone}
                   onChange={(e) => setNewContactPhone(e.target.value)}
-                  className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
+                  className="flex-1 p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg  bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40 min-w-0"
                 />
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleSpeechToText("any-number")}
-                    className={`p-3 rounded-full transition-all duration-200 ${isListening["any-number"]
+                <button
+                  onClick={() => handleSpeechToText("any-number")}
+                  className={`flex justify-center items-center p-3 rounded-full transition-all duration-200 ${
+                    isListening["any-number"]
                       ? "bg-primary-400 text-white animate-pulse"
                       : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
-                      }`}
-                    title={
-                      isListening["any-number"]
-                        ? "Listening..."
-                        : "Start voice recording"
-                    }
-                  >
-                    {isListening["any-number"] ? (
-                      <MicOff size={22} />
-                    ) : (
-                      <Mic size={22} />
-                    )}
-                  </button>
-
-                  <textarea
-                    value={messages["any-number"] || ""}
-                    onChange={(e) =>
-                      setMessages((prev) => ({
-                        ...prev,
-                        "any-number": e.target.value,
-                      }))
-                    }
-                    placeholder="Type emergency message or use microphone..."
-                    className="flex-1 p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 resize-none bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
-                    rows={2}
-                  />
-                </div>
-
-                {isListening["any-number"] && (
-                  <p className="text-primary-300 dark:text-primary-100 text-sm animate-pulse">
-                    Listening for your voice...
-                  </p>
-                )}
-
-                <button
-                  onClick={() => {
-                    const phoneNumber = newContactPhone.trim();
-                    const message = messages["any-number"];
-
-                    if (!phoneNumber) {
-                      speak("Please enter a phone number first");
-                      return;
-                    }
-
-                    if (!message || !message.trim()) {
-                      speak("Please enter a message first");
-                      return;
-                    }
-
-                    const cleanNumber = phoneNumber.replace(/[^0-9]/g, "");
-                    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(
-                      message.trim()
-                    )}`;
-
-                    window.open(whatsappUrl, "_blank");
-                    speak(
-                      `Emergency message sent to ${phoneNumber} via WhatsApp`
-                    );
-
-                    // Clear the message after sending
-                    setMessages((prev) => ({
-                      ...prev,
-                      "any-number": "",
-                    }));
-                  }}
-                  disabled={
-                    !newContactPhone.trim() || !messages["any-number"]?.trim()
+                  }`}
+                  title={
+                    isListening["any-number"]
+                      ? "Listening..."
+                      : "Start voice recording"
                   }
-                  className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
                 >
-                  <Send size={20} />
-                  Send via WhatsApp
+                  {isListening["any-number"] ? (
+                    <MicOff size={22} />
+                  ) : (
+                    <Mic size={22} />
+                  )}
                 </button>
               </div>
-            </Card>
-
-            {/* Add Contact Form */}
-            <div>
+              <textarea
+                value={messages["any-number"] || ""}
+                onChange={(e) =>
+                  setMessages((prev) => ({
+                    ...prev,
+                    "any-number": e.target.value,
+                  }))
+                }
+                placeholder="Type emergency message or use microphone..."
+                className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none  resize-none bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
+                rows={2}
+              />
+              {isListening["any-number"] && (
+                <p className="text-primary-300 dark:text-primary-100 text-sm animate-pulse">
+                  Listening for your voice...
+                </p>
+              )}
               <button
-                onClick={() => setShowAddContactForm(!showAddContactForm)}
-                className="mb-4 w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                onClick={() => {
+                  const phoneNumber = newContactPhone.trim();
+                  const message = messages["any-number"];
+                  if (!phoneNumber) {
+                    speak("Please enter a phone number first");
+                    return;
+                  }
+                  if (!message || !message.trim()) {
+                    speak("Please enter a message first");
+                    return;
+                  }
+                  const cleanNumber = phoneNumber.replace(/[^0-9]/g, "").trim();
+                  const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(
+                    message.trim()
+                  )}`;
+                  window.open(whatsappUrl, "_blank");
+                  speak(`Emergency message sent to ${phoneNumber} via WhatsApp`);
+                  setMessages((prev) => ({
+                    ...prev,
+                    "any-number": "",
+                  }));
+                }}
+                disabled={!newContactPhone.trim() || !messages["any-number"]?.trim()}
+                className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
               >
-                <Users size={20} />
-                {showAddContactForm
-                  ? "Cancel Adding Contact"
-                  : "Add New Contact"}
+                <Send size={20} />
+                Send via WhatsApp
               </button>
-              {showAddContactForm && (
-                <Card className="mb-4 p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 rounded-2xl backdrop-blur-sm">
-                  <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg mb-4">
-                    Add New Emergency Contact
-                  </h4>
-                  <div className="space-y-4">
-                    <input
-                      type="text"
-                      placeholder="Contact Name"
-                      value={newContactName}
-                      onChange={(e) => setNewContactName(e.target.value)}
-                      className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
-                    />
-                    <input
-                      type="tel"
-                      placeholder="Contact Phone Number"
-                      value={newContactPhone}
-                      onChange={(e) => setNewContactPhone(e.target.value)}
-                      className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
-                    />
+            </div>
+          </Card>
+        </section>
+
+        {/* New Contact Button & Add Contact Form Section */}
+        <section className="w-full">
+          <div>
+            <button
+              onClick={() => setShowAddContactForm(!showAddContactForm)}
+              className="mb-4 w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+            >
+              <Users size={20} />
+              {showAddContactForm ? "Cancel Adding Contact" : "Add New Contact"}
+            </button>
+            {showAddContactForm && (
+              <Card className="mb-4 p-4 sm:p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 rounded-2xl backdrop-blur-sm">
+                <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg mb-4">
+                  Add New Emergency Contact
+                </h4>
+                <div className="space-y-3 sm:space-y-4">
+                  <input
+                    type="text"
+                    placeholder="Contact Name"
+                    value={newContactName}
+                    onChange={(e) => setNewContactName(e.target.value)}
+                    className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none  bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Contact Phone Number"
+                    value={newContactPhone}
+                    onChange={(e) => setNewContactPhone(e.target.value)}
+                    className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none  bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
+                  />
+                  <button
+                    onClick={handleAddContact}
+                    className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+                  >
+                    Save Contact
+                  </button>
+                </div>
+              </Card>
+            )}
+          </div>
+        </section>
+
+        {/* Default Contacts Section */}
+        <section className="w-full">
+          <h4 className="text-xl font-semibold text-primary-300 dark:text-primary-100 mb-4 sm:mb-6">
+            Default Contacts
+          </h4>
+          <div className="space-y-3 sm:space-y-4">
+            {defaultContacts.length > 0 ? (
+              defaultContacts.map((contact) => (
+                <Card
+                  key={contact.id}
+                  className="p-4 sm:p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 hover:border-primary-200/30 dark:hover:border-primary-100/20 transition-all duration-200 rounded-2xl backdrop-blur-sm"
+                >
+                  {/* Contact Info Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full flex items-center justify-center">
+                        <span className="text-primary-300 dark:text-primary-100 font-bold text-lg">
+                          {contact.name.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
+                          {contact.name}
+                        </h4>
+                        <p className="text-primary-200 dark:text-primary-100/90 text-sm">
+                          {contact.phone}
+                        </p>
+                        <span className="inline-block px-2 py-1 text-xs bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 rounded-full">
+                          Default Contact
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Microphone Button */}
                     <button
-                      onClick={handleAddContact}
-                      className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+                      onClick={() => handleSpeechToText(contact.id)}
+                      className={`p-3 rounded-full transition-all duration-200 ${
+                        isListening[contact.id]
+                          ? "bg-primary-400 text-white animate-pulse"
+                          : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
+                      }`}
+                      title={
+                        isListening[contact.id]
+                          ? "Listening..."
+                          : "Start voice recording"
+                      }
                     >
-                      Save Contact
+                      {isListening[contact.id] ? (
+                        <MicOff size={22} />
+                      ) : (
+                        <Mic size={22} />
+                      )}
                     </button>
                   </div>
+
+                  {/* Message Input */}
+                  <div className="mb-4">
+                    <textarea
+                      value={messages[contact.id] || ""}
+                      onChange={(e) =>
+                        setMessages((prev) => ({
+                          ...prev,
+                          [contact.id]: e.target.value,
+                        }))
+                      }
+                      placeholder="Type emergency message or use microphone..."
+                      className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none resize-none bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
+                      rows={3}
+                    />
+                    {isListening[contact.id] && (
+                      <p className="text-primary-300 dark:text-primary-100 text-sm mt-2 animate-pulse">
+                        Listening for your voice...
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Send WhatsApp Button */}
+                  <button
+                    onClick={() => handleSendWhatsApp(contact)}
+                    disabled={!messages[contact.id]?.trim()}
+                    className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                  >
+                    <Send size={20} />
+                    Send via WhatsApp
+                  </button>
                 </Card>
-              )}
-            </div>
-
-            {/* Contacts Sections */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {/* Default Contacts Section */}
-              <div>
-                <h4 className="text-xl font-semibold text-primary-300 dark:text-primary-100 mb-6">
-                  Default Contacts
-                </h4>
-                <div className="space-y-4">
-                  {defaultContacts.length > 0 ? (
-                    defaultContacts.map((contact) => (
-                      <Card
-                        key={contact.id}
-                        className="p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 hover:border-primary-200/30 dark:hover:border-primary-100/20 transition-all duration-200 rounded-2xl backdrop-blur-sm"
-                      >
-                        {/* Contact Info Header */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full flex items-center justify-center">
-                              <span className="text-primary-300 dark:text-primary-100 font-bold text-lg">
-                                {contact.name.charAt(0)}
-                              </span>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
-                                {contact.name}
-                              </h4>
-                              <p className="text-primary-200 dark:text-primary-100/90 text-sm">
-                                {contact.phone}
-                              </p>
-                              <span className="inline-block px-2 py-1 text-xs bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 rounded-full">
-                                Default Contact
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Microphone Button */}
-                          <button
-                            onClick={() => handleSpeechToText(contact.id)}
-                            className={`p-3 rounded-full transition-all duration-200 ${isListening[contact.id]
-                              ? "bg-primary-400 text-white animate-pulse"
-                              : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
-                              }`}
-                            title={
-                              isListening[contact.id]
-                                ? "Listening..."
-                                : "Start voice recording"
-                            }
-                          >
-                            {isListening[contact.id] ? (
-                              <MicOff size={22} />
-                            ) : (
-                              <Mic size={22} />
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Message Input */}
-                        <div className="mb-4">
-                          <textarea
-                            value={messages[contact.id] || ""}
-                            onChange={(e) =>
-                              setMessages((prev) => ({
-                                ...prev,
-                                [contact.id]: e.target.value,
-                              }))
-                            }
-                            placeholder="Type emergency message or use microphone..."
-                            className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 resize-none bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
-                            rows={3}
-                          />
-                          {isListening[contact.id] && (
-                            <p className="text-primary-300 dark:text-primary-100 text-sm mt-2 animate-pulse">
-                              Listening for your voice...
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Send WhatsApp Button */}
-                        <button
-                          onClick={() => handleSendWhatsApp(contact)}
-                          disabled={!messages[contact.id]?.trim()}
-                          className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
-                        >
-                          <Send size={20} />
-                          Send via WhatsApp
-                        </button>
-                      </Card>
-                    ))
-                  ) : (
-                    <p className="text-primary-200 dark:text-primary-100/90 text-center py-8">
-                      No default contacts available.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Saved Contacts Section */}
-              <div>
-                <h4 className="text-xl font-semibold text-primary-300 dark:text-primary-100 mb-6">
-                  Saved Contacts
-                </h4>
-                <div className="space-y-4">
-                  {savedContacts.length > 0 ? (
-                    savedContacts.map((contact) => (
-                      <Card
-                        key={contact.id}
-                        className="p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 hover:border-primary-200/30 dark:hover:border-primary-100/20 transition-all duration-200 rounded-2xl backdrop-blur-sm"
-                      >
-                        {/* Contact Info Header */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full flex items-center justify-center">
-                              <span className="text-primary-300 dark:text-primary-100 font-bold text-lg">
-                                {contact.name.charAt(0)}
-                              </span>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
-                                {contact.name}
-                              </h4>
-                              <p className="text-primary-200 dark:text-primary-100/90 text-sm">
-                                {contact.phone}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {/* Microphone Button */}
-                            <button
-                              onClick={() => handleSpeechToText(contact.id)}
-                              className={`p-3 rounded-full transition-all duration-200 ${isListening[contact.id]
-                                ? "bg-primary-400 text-white animate-pulse"
-                                : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
-                                }`}
-                              title={
-                                isListening[contact.id]
-                                  ? "Listening..."
-                                  : "Start voice recording"
-                              }
-                            >
-                              {isListening[contact.id] ? (
-                                <MicOff size={22} />
-                              ) : (
-                                <Mic size={22} />
-                              )}
-                            </button>
-                            {/* Delete Contact Button */}
-                            <button
-                              onClick={() => handleDeleteContact(contact.id)}
-                              className="p-3 rounded-full bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20 transition-all duration-200"
-                              title="Delete Contact"
-                            >
-                              <Trash2 size={22} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Message Input */}
-                        <div className="mb-4">
-                          <textarea
-                            value={messages[contact.id] || ""}
-                            onChange={(e) =>
-                              setMessages((prev) => ({
-                                ...prev,
-                                [contact.id]: e.target.value,
-                              }))
-                            }
-                            placeholder="Type emergency message or use microphone..."
-                            className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-100 resize-none bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
-                            rows={3}
-                          />
-                          {isListening[contact.id] && (
-                            <p className="text-primary-300 dark:text-primary-100 text-sm mt-2 animate-pulse">
-                              Listening for your voice...
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Send WhatsApp Button */}
-                        <button
-                          onClick={() => handleSendWhatsApp(contact)}
-                          disabled={!messages[contact.id]?.trim()}
-                          className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
-                        >
-                          <Send size={20} />
-                          Send via WhatsApp
-                        </button>
-                      </Card>
-                    ))
-                  ) : (
-                    <p className="text-primary-200 dark:text-primary-100/90 text-center py-8">
-                      No saved contacts added.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
+              ))
+            ) : (
+              <p className="text-primary-200 dark:text-primary-100/90 text-center py-8">
+                No default contacts available.
+              </p>
+            )}
           </div>
-        </div>
+        </section>
+
+        {/* Saved Contacts Section */}
+        <section className="w-full">
+          <h4 className="text-xl font-semibold text-primary-300 dark:text-primary-100 mb-4 sm:mb-6">
+            Saved Contacts
+          </h4>
+          <div className="space-y-3 sm:space-y-4">
+            {savedContacts.length > 0 ? (
+              savedContacts.map((contact) => (
+                <Card
+                  key={contact.id}
+                  className="p-4 sm:p-6 bg-white/90 dark:bg-dark-100/90 border border-primary-100/20 dark:border-primary-100/10 hover:border-primary-200/30 dark:hover:border-primary-100/20 transition-all duration-200 rounded-2xl backdrop-blur-sm"
+                >
+                  {/* Contact Info Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full flex items-center justify-center">
+                        <span className="text-primary-300 dark:text-primary-100 font-bold text-lg">
+                          {contact.name.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-primary-300 dark:text-primary-100 text-lg">
+                          {contact.name}
+                        </h4>
+                        <p className="text-primary-200 dark:text-primary-100/90 text-sm">
+                          {contact.phone}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Microphone Button */}
+                      <button
+                        onClick={() => handleSpeechToText(contact.id)}
+                        className={`p-3 rounded-full transition-all duration-200 ${
+                          isListening[contact.id]
+                            ? "bg-primary-400 text-white animate-pulse"
+                            : "bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20"
+                        }`}
+                        title={
+                          isListening[contact.id]
+                            ? "Listening..."
+                            : "Start voice recording"
+                        }
+                      >
+                        {isListening[contact.id] ? (
+                          <MicOff size={22} />
+                        ) : (
+                          <Mic size={22} />
+                        )}
+                      </button>
+                      {/* Delete Contact Button */}
+                      <button
+                        onClick={() => handleDeleteContact(contact.id)}
+                        className="p-3 rounded-full bg-primary-100/50 dark:bg-primary-100/10 text-primary-300 dark:text-primary-100 hover:bg-primary-200/50 dark:hover:bg-primary-100/20 transition-all duration-200"
+                        title="Delete Contact"
+                      >
+                        <Trash2 size={22} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Message Input */}
+                  <div className="mb-4">
+                    <textarea
+                      value={messages[contact.id] || ""}
+                      onChange={(e) =>
+                        setMessages((prev) => ({
+                          ...prev,
+                          [contact.id]: e.target.value,
+                        }))
+                      }
+                      placeholder="Type emergency message or use microphone..."
+                      className="w-full p-3 border border-primary-100/20 dark:border-primary-100/10 rounded-lg focus:outline-none  resize-none bg-white/50 dark:bg-dark-100/50 text-primary-300 dark:text-primary-100 placeholder-primary-200/50 dark:placeholder-primary-100/40"
+                      rows={3}
+                    />
+                    {isListening[contact.id] && (
+                      <p className="text-primary-300 dark:text-primary-100 text-sm mt-2 animate-pulse">
+                        Listening for your voice...
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Send WhatsApp Button */}
+                  <button
+                    onClick={() => handleSendWhatsApp(contact)}
+                    disabled={!messages[contact.id]?.trim()}
+                    className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                  >
+                    <Send size={20} />
+                    Send via WhatsApp
+                  </button>
+                </Card>
+              ))
+            ) : (
+              <p className="text-primary-200 dark:text-primary-100/90 text-center py-8">
+                No saved contacts added.
+              </p>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );

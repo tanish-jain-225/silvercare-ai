@@ -9,20 +9,16 @@ import {
   Mic,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { useVoice } from "../hooks/useVoice";
-import { VoiceButton } from "../components/voice/VoiceButton";
-import axios from "axios";
 import { route_endpoint } from "../utils/helper";
 import { useApp } from "../context/AppContext";
 
 export function Reminders() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
-  const { speak } = useVoice();
+  const { speak, stop, isSpeaking } = useVoice();
   const { user } = useApp();
   const [reminders, setReminders] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -46,7 +42,7 @@ export function Reminders() {
   // Enhanced fetch with better error handling and sync status
   const fetchReminders = async (showLoadingState = true) => {
     if (!user?.id) {
-      console.log("No user ID available for fetching reminders");
+      console.error("No user ID available for fetching reminders");
       return;
     }
 
@@ -56,7 +52,6 @@ export function Reminders() {
         setSyncStatus("syncing");
       }
 
-      console.log(`Fetching reminders for user: ${user.id}`);
       const response = await fetch(
         `${route_endpoint}/reminders?userId=${user.id}&timestamp=${Date.now()}`,
         {
@@ -74,7 +69,6 @@ export function Reminders() {
       }
 
       const data = await response.json();
-      console.log("Reminders data received:", data);
 
       if (data.success && Array.isArray(data.reminders)) {
         // Sort reminders by created_at in descending order (newest first)
@@ -99,11 +93,11 @@ export function Reminders() {
   };
   const handleAddReminder = async () => {
     if (!newReminder.title || !newReminder.time || !newReminder.date) {
-      console.log("Missing required fields:", { newReminder });
+      console.error("Missing required fields:", { newReminder });
       return;
     }
     if (!user?.id) {
-      console.log("No user ID available");
+      console.error("No user ID available");
       speak("Please log in to add reminders");
       return;
     }
@@ -115,8 +109,6 @@ export function Reminders() {
       date: newReminder.date,
       userId: user.id,
     };
-
-    console.log("Adding new reminder:", reminder);
 
     try {
       setSyncStatus("syncing");
@@ -135,7 +127,6 @@ export function Reminders() {
       }
 
       const data = await response.json();
-      console.log("Server response:", data);
 
       if (data.success) {
         // Fetch updated reminders after successful addition
@@ -226,7 +217,7 @@ export function Reminders() {
   React.useEffect(() => {
     let timers = [];
     let alarmActive = false;
-    // Only schedule alarms for future reminders, and limit to 1 audio at a time
+    // Only schedule alarms for future reminders and limit to 1 audio at a time
     const now = new Date();
     const futureReminders = uniqueReminders.filter((reminder) => {
       if (!reminder.date || !reminder.time) return false;
@@ -297,7 +288,6 @@ export function Reminders() {
     setSyncStatus("syncing");
 
     try {
-      console.log("Sending voice input for reminder creation:", voiceInput);
 
       const response = await fetch(`${route_endpoint}/format-reminder`, {
         method: "POST",
@@ -318,7 +308,6 @@ export function Reminders() {
       }
 
       const data = await response.json();
-      console.log("Voice reminder response:", data);
 
       if (data.success && data.reminders) {
         speak(data.message || "Voice reminder created successfully");
@@ -327,9 +316,6 @@ export function Reminders() {
         await fetchReminders(false); // Don't show loading state
         setSyncStatus("success");
 
-        console.log(
-          `Voice reminder created: ${data.reminders.length} reminders processed`
-        );
       } else {
         throw new Error(data.error || "Failed to create voice reminder");
       }
@@ -345,30 +331,16 @@ export function Reminders() {
   // Auto-sync when user changes
   useEffect(() => {
     if (user?.id) {
-      console.log("User changed, fetching reminders for:", user.id);
       fetchReminders();
     } else {
-      console.log("No user ID available, skipping reminder fetch");
+      console.error("No user ID available for fetching reminders");
     }
-  }, [user?.id]);
-
-  // Auto-sync every 30 seconds to keep data fresh
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const syncInterval = setInterval(() => {
-      console.log("Auto-syncing reminders...");
-      fetchReminders(false); // Silent sync without loading indicator
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(syncInterval);
   }, [user?.id]);
 
   // Sync when window regains focus (user comes back to tab)
   useEffect(() => {
     const handleFocus = () => {
       if (user?.id) {
-        console.log("Window focused, syncing reminders...");
         fetchReminders(false);
       }
     };
@@ -377,18 +349,8 @@ export function Reminders() {
     return () => window.removeEventListener("focus", handleFocus);
   }, [user?.id]);
 
-  // Initial load on component mount
-  useEffect(() => {
-    if (user?.id) {
-      console.log("Initial load, fetching reminders for:", user.id);
-      fetchReminders();
-    } else {
-      console.log("No user ID available on initial load");
-    }
-  }, []);
-
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-primary-50 via-primary-100/50 to-accent-yellow/20 dark:from-dark-50 dark:via-dark-100/50 dark:to-accent-yellow/10 flex flex-col">
+    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-primary-50 via-primary-100/50 to-accent-yellow/20 dark:from-dark-50 dark:via-dark-100/50 dark:to-accent-yellow/10 flex flex-col mb-10">
       {/* Show Stop Alarm button if alarm is playing */}
       {isAlarmPlaying && alarmAudio && (
         <div className="fixed top-0 left-0 w-full flex justify-center z-50 px-4">
@@ -407,18 +369,21 @@ export function Reminders() {
         <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
           <div className="flex flex-col items-center text-center gap-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-300 dark:text-primary-100">
-              {t("Reminders")}
+              Reminders
             </h1>
             <p className="text-primary-200/80 dark:text-primary-100/60 text-sm sm:text-base max-w-md">
-              {t("manageReminders", "Manage your daily reminders and stay on track")}
+              Manage your daily reminders and stay on track
             </p>
-            <div className="flex items-center gap-4 mt-4">
+            <div className="flex items-center gap-2 md:gap-6 mt-4 justify-around">
               <Button
-                onClick={() => fetchReminders(true)}
+                onClick={() => {
+                  stop(); // Stop any ongoing speech
+                  fetchReminders(true)
+                }}
                 variant="outline"
                 size="lg"
                 disabled={isLoading || syncStatus === "syncing"}
-                ariaLabel={t("refreshReminders", "Refresh reminders")}
+                ariaLabel="Refresh reminders"
                 className={`${syncStatus === "syncing" ? "animate-pulse" : ""} 
                   px-6 py-3 
                   dark:hover:text-white
@@ -428,14 +393,14 @@ export function Reminders() {
                   transition-all duration-300
                   hover:scale-105
                   hover:shadow-lg
-                  focus:ring-2 focus:ring-primary-200/50 dark:focus:ring-primary-100/50
                   disabled:opacity-50 disabled:cursor-not-allowed
                   text-base font-medium
-                  flex items-center justify-center gap-2`}
+                  flex items-center justify-center gap-2
+                  `}
               >
                 <div className="flex items-center gap-1 align-middle">
                   <RefreshCw className="w-5 h-5" />
-                  <span>{t("Refresh")}</span>
+                  <span>Refresh</span>
                 </div>
 
               </Button>
@@ -443,7 +408,7 @@ export function Reminders() {
                 onClick={() => setShowAddForm(true)}
                 variant="primary"
                 size="lg"
-                ariaLabel={t("add")}
+                ariaLabel="Add reminder"
                 className="
                   px-6 py-3
                   bg-gradient-to-r from-primary-300 to-primary-400 
@@ -462,7 +427,7 @@ export function Reminders() {
               >
                 <div className="flex items-center gap-1">
                   <Plus className="w-5 h-5" />
-                  <span>{t("addReminder")}</span>
+                  <span>Add Reminder</span>
                 </div>
               </Button>
             </div>
@@ -476,20 +441,20 @@ export function Reminders() {
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-primary-200 dark:border-primary-100"></div>
             <p className="ml-3 sm:ml-4 text-sm sm:text-base text-primary-300 dark:text-primary-100">
-              {t("loadingReminders", "Loading reminders...")}
+              Loading reminders...
             </p>
           </div>
         ) : uniqueReminders.length === 0 ? (
-          <div className="text-center py-12 bg-white/50 dark:bg-dark-50/50 rounded-2xl border border-primary-100/20 dark:border-dark-600/20 backdrop-blur-sm">
+          <div className="text-center py-12 bg-white/50 dark:bg-dark-50/50 rounded-2xl border border-primary-100/20 dark:border-dark-600/20 backdrop-blur-sm mb-10">
             <div className="text-primary-200 dark:text-primary-100 mb-2 text-base sm:text-lg">
-              {t("noReminders", "No reminders found")}
+              No reminders found
             </div>
             <p className="text-sm text-primary-200/80 dark:text-primary-100/60">
-              {t("addFirstReminder", "Add your first reminder to get started")}
+              Add your first reminder to get started
             </p>
           </div>
         ) : (
-          <div className="grid gap-3 sm:gap-4">
+          <div className="grid gap-3 sm:gap-4 mb-10">
             {uniqueReminders.map((reminder) => (
               <Card
                 key={reminder.created_at}
@@ -524,15 +489,15 @@ export function Reminders() {
                     variant="outline"
                     size="sm"
                     icon={Volume2}
-                    ariaLabel={t("readReminder", "Read reminder")}
-                    className="flex-1 sm:flex-none hover:bg-primary-100/10 dark:hover:bg-primary-100/5"
+                    ariaLabel="Read reminder"
+                    className="flex-1 sm:flex-none hover:bg-primary-100 dark:hover:bg-primary-100"
                   />
                   <Button
                     onClick={() => handleDeleteReminder(reminder.id)}
                     variant="danger"
                     size="sm"
                     icon={Trash2}
-                    ariaLabel={t("deleteReminder", "Delete reminder")}
+                    ariaLabel="Delete reminder"
                     className="flex-1 sm:flex-none dark:bg-red-600"
                   />
                 </div>
@@ -546,23 +511,23 @@ export function Reminders() {
             <div className="bg-white/95 dark:bg-dark-50/95 rounded-xl sm:rounded-2xl shadow-xl w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto transform animate-in fade-in zoom-in-95 duration-200 border border-primary-100/20 dark:border-dark-600/20 backdrop-blur-sm">
               <div className="p-4 sm:p-6">
                 <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-primary-300 dark:text-primary-100">
-                  {t("addReminder")}
+                  Add Reminder
                 </h2>
 
                 <div className="space-y-3 sm:space-y-4">
                   <Input
-                    label={t("title")}
+                    label="Title"
                     value={newReminder.title}
                     onChange={(e) =>
                       setNewReminder({ ...newReminder, title: e.target.value })
                     }
                     required
-                    placeholder={t("reminderTitle", "Enter reminder title")}
+                    placeholder="Enter reminder title"
                     className="w-full dark:bg-dark-200"
                   />
 
                   <Input
-                    label={t("date")}
+                    label="Date"
                     type="date"
                     value={newReminder.date}
                     onChange={(e) =>
@@ -573,7 +538,7 @@ export function Reminders() {
                   />
 
                   <Input
-                    label={t("time")}
+                    label="Time"
                     type="time"
                     value={newReminder.time}
                     onChange={(e) =>
@@ -589,16 +554,16 @@ export function Reminders() {
                     onClick={() => setShowAddForm(false)}
                     variant="outline"
                     size="md"
-                    ariaLabel={t("cancel")}
+                    ariaLabel="Cancel"
                     className="w-full sm:w-auto order-2 sm:order-1 dark:hover:bg-dark-200"
                   >
-                    {t("cancel")}
+                    Cancel
                   </Button>
                   <Button
                     onClick={handleAddReminder}
                     variant="primary"
                     size="md"
-                    ariaLabel={t("add")}
+                    ariaLabel="Add reminder"
                     className="w-full sm:w-auto order-1 sm:order-2 dark:bg-dark-300"
                     disabled={
                       !newReminder.title ||
@@ -606,7 +571,7 @@ export function Reminders() {
                       !newReminder.date
                     }
                   >
-                    {t("add")}
+                    Add
                   </Button>
                 </div>
               </div>

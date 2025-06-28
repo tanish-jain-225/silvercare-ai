@@ -1,4 +1,6 @@
 export const storage = {
+  // A simple wrapper for localStorage with JSON serialization
+  // and error handling. It provides methods to set, get, remove,
   set: (key, value) => {
     try {
       if (value === null || value === undefined) {
