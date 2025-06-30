@@ -173,6 +173,7 @@ export function AskQueries() {
             </motion.div>
             <button className="bg-primary-200 p-2 text-white rounded-md" onClick={() => {window.location.reload()}}>
               {/* Refresh By History Icon - From React Icons */}
+              
               <History />
             </button>
           </div>
