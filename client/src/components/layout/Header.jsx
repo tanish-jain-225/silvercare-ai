@@ -130,7 +130,13 @@ export function Header() {
                   aria-expanded={isMenuOpen}
                   type="button"
                 >
-                  {user.profileImage ? (
+                  {user.profilePicture && user.profilePicture.data ? (
+                    <img
+                      src={user.profilePicture.data}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full object-cover border-2 border-primary-200 dark:border-primary-100 shadow-sm"
+                    />
+                  ) : user.profileImage ? (
                     <img
                       src={user.profileImage}
                       alt="Profile"

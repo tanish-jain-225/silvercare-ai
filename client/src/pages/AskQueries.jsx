@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Pause } from "lucide-react";
+import { Send, Pause, User } from "lucide-react";
 import { VoiceButton } from "../components/voice/VoiceButton";
 import { MessageBubble } from "../components/chat/MessageBubble";
 import { LoadingIndicator } from "../components/chat/LoadingIndicator";
@@ -9,6 +9,7 @@ import TrueFocus from "../components/ask-queries/TrueFocus";
 import { motion } from "framer-motion";
 import { useVoice } from "../hooks/useVoice";
 import { BottomNavigation } from "../components/layout/BottomNavigation";
+import { LucidePanelLeftOpen, History } from "lucide-react";
 
 export function AskQueries() {
   const { user } = useApp();
@@ -39,6 +40,12 @@ export function AskQueries() {
       });
     }
   }, [user]);
+
+  // Handle chat history
+  const handleChatHistory = () => {
+    console.log("Chat history functionality not implemented yet.");
+    // This function can be used to handle chat history logic
+  }
 
   // Send a message
   const handleSendMessage = async (message) => {
@@ -121,44 +128,55 @@ export function AskQueries() {
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
           className="flex flex-col w-full max-w-4xl bg-white/95 dark:bg-dark-200/90 rounded-2xl shadow-lg border border-primary-100/30 dark:border-primary-200/40 overflow-hidden h-[80vh] mx-auto"
         >
-          <motion.div
-            layout
-            transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-            className="mb-4 sm:mb-6 flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6"
-          >
-            <motion.h1
-              layout
-              transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-              className="text-2xl sm:text-3xl font-semibold text-black dark:text-white font-['Poppins']"
-            >
-              Ask
-            </motion.h1>
+          <div className="flex items-center justify-between gap-2 p-2">
+            <button className="bg-primary-200 p-2 text-white rounded-md" onClick={()=> handleChatHistory()}>
+              {/* Panel Icon - From React Icons */}
+              <LucidePanelLeftOpen />
+            </button>
             <motion.div
               layout
-              transition={{ layout: { duration: 0.4, ease: "easeInOut" } }}
-              className="inline-flex items-center justify-center ml-3"
+              transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
+              className="flex items-center justify-center p-4"
             >
-              <TrueFocus
-                texts={[
-                  "Health",
-                  "Medicines",
-                  "Sleep",
-                  "Diet",
-                  "Pain",
-                  "Anxiety",
-                ]}
-                mainClassName="text-2xl sm:text-3xl font-semibold text-white px-2 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-2 bg-primary-200 overflow-hidden justify-center rounded-lg font-['Poppins'] transition-all duration-500 ease-in-out"
-                staggerFrom="last"
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "-120%" }}
-                staggerDuration={0.025}
-                splitLevelClassName="overflow-hidden"
-                transition={{ type: "spring", damping: 30, stiffness: 400 }}
-                rotationInterval={2000}
-              />
+              <motion.h1
+                layout
+                transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
+                className="text-2xl sm:text-3xl font-semibold text-black dark:text-white font-['Poppins']"
+              >
+                Ask
+              </motion.h1>
+              <motion.div
+                layout
+                transition={{ layout: { duration: 0.4, ease: "easeInOut" } }}
+                className="inline-flex items-center justify-center ml-3"
+              >
+                <TrueFocus
+                  texts={[
+                    "Health",
+                    "Medicines",
+                    "Sleep",
+                    "Diet",
+                    "Pain",
+                    "Anxiety",
+                  ]}
+                  mainClassName="text-2xl sm:text-3xl font-semibold text-white px-2 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-2 bg-primary-200 overflow-hidden justify-center rounded-lg font-['Poppins'] transition-all duration-500 ease-in-out"
+                  staggerFrom="last"
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "-120%" }}
+                  staggerDuration={0.025}
+                  splitLevelClassName="overflow-hidden"
+                  transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                  rotationInterval={2000}
+                />
+              </motion.div>
             </motion.div>
-          </motion.div>
+            <button className="bg-primary-200 p-2 text-white rounded-md" onClick={() => {window.location.reload()}}>
+              {/* Refresh By History Icon - From React Icons */}
+              <History />
+            </button>
+          </div>
+
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 custom-scrollbar">
             {messages.map((msg, index) => (
               <MessageBubble

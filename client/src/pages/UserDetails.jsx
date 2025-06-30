@@ -5,9 +5,6 @@ import {
   Calendar,
   Phone,
   MapPin,
-  ClipboardList,
-  Heart,
-  Sparkles,
   Shield,
   Activity,
   Upload,
@@ -22,8 +19,6 @@ import { Input } from "../components/ui/Input";
 import { VoiceButton } from "../components/voice/VoiceButton";
 import { useApp } from "../context/AppContext";
 import { useVoice } from "../hooks/useVoice";
-import { storage } from "../utils/storage";
-
 
 export function UserDetails() {
   const navigate = useNavigate();
@@ -34,27 +29,41 @@ export function UserDetails() {
   const [step, setStep] = useState(1); // Step state
   const [subStep, setSubStep] = useState(0); // For emergency contacts
   const [isPreFilled, setIsPreFilled] = useState(false); // Track if form is pre-filled with existing data
+  const [submissionAttempts, setSubmissionAttempts] = useState(0); // Track submission attempts
 
-  // Upload state management for cancelable uploads
+  // Bulletproof upload state management with atomic operations
   const [uploadStates, setUploadStates] = useState({
-    medicalReport: { 
-      isUploading: false, 
-      progress: 0, 
+    medicalReport: {
+      isUploading: false,
+      progress: 0,
       controller: null,
-      stage: 'idle' // idle, validating, compressing, uploading, complete, error
+      stage: "idle", // idle, validating, processing, uploading, complete, error, cancelled
+      error: null,
+      retryCount: 0,
+      operationId: null,
     },
-    profilePicture: { 
-      isUploading: false, 
-      progress: 0, 
+    profilePicture: {
+      isUploading: false,
+      progress: 0,
       controller: null,
-      stage: 'idle'
-    }
+      stage: "idle",
+      error: null,
+      retryCount: 0,
+      operationId: null,
+    },
+  });
+
+  // Track active upload operations to prevent duplicates and race conditions
+  const activeUploadOperations = React.useRef(new Set());
+  const uploadAttempts = React.useRef({
+    medicalReport: 0,
+    profilePicture: 0,
   });
 
   // Show loading state if user data is not yet available
   if (loading || !user) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading user data...</p>
@@ -110,20 +119,29 @@ export function UserDetails() {
 
   useEffect(() => {
     if (user) {
-      console.log('Initializing form with user data:', user);
-      
+      console.log("Initializing form with user data:", user);
+
       // Check if user has existing profile data
-      const hasExistingData = user.age || user.gender || user.address || user.healthCondition || user.currentMedicalStatus;
+      const hasExistingData =
+        user.age ||
+        user.gender ||
+        user.address ||
+        user.healthCondition ||
+        user.currentMedicalStatus;
       setIsPreFilled(hasExistingData);
-      
+
       setFormData({
         name: user.name || "",
         age: user.age || "",
         gender: user.gender || "",
         address: user.address || "",
-        emergencyContacts: user.emergencyContacts && user.emergencyContacts.length > 0 
-          ? user.emergencyContacts 
-          : [{ name: "", number: "" }, { name: "", number: "" }],
+        emergencyContacts:
+          user.emergencyContacts && user.emergencyContacts.length > 0
+            ? user.emergencyContacts
+            : [
+                { name: "", number: "" },
+                { name: "", number: "" },
+              ],
         healthCondition: {
           selected: user.healthCondition || "",
           custom: "",
@@ -135,53 +153,44 @@ export function UserDetails() {
     }
   }, [user]);
 
-  // Welcome message effect - must be at top level
+  // Welcome message effect
   useEffect(() => {
-    speak(
-      "Please provide your medical information for better healthcare assistance."
-    );
+    speak("Please provide your medical information.");
   }, [speak]);
 
-  // Cleanup effect to cancel uploads on unmount
+  // Enhanced cleanup effect to handle unmounting and cancel uploads
   useEffect(() => {
     return () => {
-      // Cancel any ongoing uploads when component unmounts
+      console.log("Component unmounting - cleaning up uploads...");
+
+      // Cancel any ongoing uploads
       Object.entries(uploadStates).forEach(([field, state]) => {
         if (state.controller && state.isUploading) {
+          console.log(`Aborting upload for ${field} on unmount`);
           state.controller.abort();
         }
       });
+
+      // Clear active operations
+      activeUploadOperations.current.clear();
+
+      console.log("Upload cleanup completed");
     };
   }, []); // Empty dependency array ensures this only runs on unmount
 
-  // Read aloud the title at each step
+  // Read step titles aloud
   useEffect(() => {
-    let title = "";
-    switch (step) {
-      case 1:
-        title = "Enter Your Age & Gender";
-        break;
-      case 2:
-        title = "Enter Your Address";
-        break;
-      case 3:
-        title = "Enter Emergency Contact";
-        break;
-      case 4:
-        title = "Enter Health & Status";
-        break;
-      case 5:
-        title = "Upload Medical Report";
-        break;
-      case 6:
-        title = "Upload Profile Picture";
-        break;
-      default:
-        break;
-    }
-    if (title) speak(title);
-    // eslint-disable-next-line
-  }, [step]);
+    const titles = [
+      "",
+      "Enter Your Age & Gender",
+      "Enter Your Address", 
+      "Enter Emergency Contact",
+      "Enter Health & Status",
+      "Upload Medical Report",
+      "Upload Profile Picture"
+    ];
+    if (titles[step]) speak(titles[step]);
+  }, [step, speak]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -216,18 +225,18 @@ export function UserDetails() {
         // Extract numbers from voice input
         const ageMatch = text.match(/\d+/);
         if (ageMatch) {
-          setFormData(prev => ({ ...prev, age: ageMatch[0] }));
+          setFormData((prev) => ({ ...prev, age: ageMatch[0] }));
         }
         break;
       case "address":
-        setFormData(prev => ({ ...prev, address: text }));
+        setFormData((prev) => ({ ...prev, address: text }));
         break;
       case "emergencyContactName":
         handleEmergencyContactChange(subStep, "name", text);
         break;
       case "emergencyContactNumber":
         // Extract phone number patterns
-        const cleanedNumber = text.replace(/\D/g, ''); // Remove non-digits
+        const cleanedNumber = text.replace(/\D/g, ""); // Remove non-digits
         if (cleanedNumber.length >= 10) {
           handleEmergencyContactChange(subStep, "number", cleanedNumber);
         } else {
@@ -235,12 +244,12 @@ export function UserDetails() {
         }
         break;
       case "healthConditionCustom":
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           healthCondition: {
             ...prev.healthCondition,
-            custom: text
-          }
+            custom: text,
+          },
         }));
         break;
       default:
@@ -248,221 +257,474 @@ export function UserDetails() {
     }
   };
 
-  // Helper function to update upload progress
-  const updateUploadProgress = (field, progress, stage) => {
-    setUploadStates(prev => ({
-      ...prev,
-      [field]: {
-        ...prev[field],
-        progress,
-        stage
-      }
-    }));
-  };
-
-  // Cancel upload function
+  // Enhanced cancel upload function with operation tracking
   const cancelUpload = (field) => {
+    console.log(`Cancelling upload for ${field}...`);
+
     const uploadState = uploadStates[field];
-    
-    if (uploadState.controller) {
+
+    // Abort the upload operation if controller exists
+    if (uploadState.controller && !uploadState.controller.signal.aborted) {
       uploadState.controller.abort();
+      console.log(`Aborted controller for ${field}`);
     }
-    
-    setUploadStates(prev => ({
+
+    // Remove from active operations
+    activeUploadOperations.current.delete(field);
+
+    // Reset upload state atomically
+    setUploadStates((prev) => ({
       ...prev,
       [field]: {
         isUploading: false,
         progress: 0,
         controller: null,
-        stage: 'idle'
-      }
+        stage: "idle",
+        error: null,
+        retryCount: prev[field].retryCount,
+        operationId: null,
+      },
     }));
-    
-    // Clear file data if upload was in progress
-    setFormData(prev => ({ ...prev, [field]: null }));
-    
+
+    // Clear file data from form
+    setFormData((prev) => ({ ...prev, [field]: null }));
+
     // Clear any existing errors
     setError("");
-    
-    speak(`${field === 'medicalReport' ? 'Medical report' : 'Profile picture'} upload cancelled.`);
+
+    // Reset file input
+    setTimeout(() => {
+      const fileInput = document.getElementById(field);
+      if (fileInput) {
+        fileInput.value = "";
+        console.log(`Reset file input for ${field} after cancellation`);
+      }
+    }, 100);
+
+    const fieldName =
+      field === "medicalReport" ? "Medical report" : "Profile picture";
+    speak(`${fieldName} upload cancelled.`);
+    console.log(`Upload cancellation completed for ${field}`);
   };
 
-  // Remove uploaded file
+  // Enhanced remove uploaded file function
   const removeFile = (field) => {
-    setFormData(prev => ({ ...prev, [field]: null }));
+    console.log(`Removing file for ${field}...`);
+
+    // Ensure no upload is in progress before removing
+    if (uploadStates[field].isUploading) {
+      console.log(`Cannot remove file - upload in progress for ${field}`);
+      return;
+    }
+
+    // Clear file data from form atomically
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: null };
+      console.log(`File data cleared for ${field}`);
+      return newData;
+    });
+
+    // Reset upload state
+    setUploadStates((prev) => ({
+      ...prev,
+      [field]: {
+        ...prev[field],
+        stage: "idle",
+        error: null,
+        progress: 0,
+        operationId: null,
+      },
+    }));
+
+    // Clear any existing errors
     setError("");
-    speak(`${field === 'medicalReport' ? 'Medical report' : 'Profile picture'} removed.`);
+
+    // Reset file input
+    setTimeout(() => {
+      const fileInput = document.getElementById(field);
+      if (fileInput) {
+        fileInput.value = "";
+        console.log(`Reset file input for ${field} after removal`);
+      }
+    }, 100);
+
+    const fieldName =
+      field === "medicalReport" ? "Medical report" : "Profile picture";
+    speak(`${fieldName} removed.`);
+    console.log(`File removal completed for ${field}`);
   };
 
-  // Smart compression function - only used when files are too large
-  const compressImage = (file, maxWidth = 800, quality = 0.7, maxSizeKB = 300) => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculate new dimensions while maintaining aspect ratio
-        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
-        
-        // Draw image
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        // Try different quality levels until we get under maxSizeKB
-        const tryCompress = (currentQuality) => {
-          canvas.toBlob((blob) => {
-            if (blob.size <= maxSizeKB * 1024 || currentQuality <= 0.1) {
-              resolve(blob);
-            } else {
-              // Reduce quality and try again
-              tryCompress(currentQuality - 0.1);
-            }
-          }, 'image/jpeg', currentQuality);
+  // Enhanced smart compression function with error handling and quality optimization
+  const compressImage = (
+    file,
+    maxWidth = 800,
+    quality = 0.7,
+    maxSizeKB = 300
+  ) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const img = new Image();
+
+        // Timeout for image loading
+        const loadTimeout = setTimeout(() => {
+          reject(new Error("Image loading timeout"));
+        }, 10000); // 10 second timeout
+
+        img.onload = () => {
+          clearTimeout(loadTimeout);
+
+          try {
+            // Calculate optimal dimensions maintaining aspect ratio
+            const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+            const newWidth = Math.floor(img.width * ratio);
+            const newHeight = Math.floor(img.height * ratio);
+
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+
+            // Use high-quality scaling
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+
+            // Draw image with optimal settings
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+            // Progressive quality reduction until target size is met
+            const tryCompress = (currentQuality) => {
+              if (currentQuality <= 0.1) {
+                // If we can't compress enough, resolve with current result
+                canvas.toBlob(
+                  (blob) => {
+                    if (blob) {
+                      resolve(blob);
+                    } else {
+                      reject(new Error("Failed to create compressed blob"));
+                    }
+                  },
+                  "image/jpeg",
+                  0.1
+                );
+                return;
+              }
+
+              canvas.toBlob(
+                (blob) => {
+                  if (!blob) {
+                    reject(
+                      new Error("Failed to create blob during compression")
+                    );
+                    return;
+                  }
+
+                  const sizeKB = blob.size / 1024;
+
+                  if (sizeKB <= maxSizeKB) {
+                    // Target size achieved
+                    console.log(
+                      `Compression successful: ${sizeKB.toFixed(
+                        0
+                      )}KB (quality: ${Math.round(currentQuality * 100)}%)`
+                    );
+                    resolve(blob);
+                  } else {
+                    // Continue compressing with lower quality
+                    tryCompress(currentQuality - 0.1);
+                  }
+                },
+                "image/jpeg",
+                currentQuality
+              );
+            };
+
+            // Start compression process
+            tryCompress(quality);
+          } catch (canvasError) {
+            console.error("Canvas processing error:", canvasError);
+            reject(
+              new Error(`Canvas processing failed: ${canvasError.message}`)
+            );
+          }
         };
-        
-        tryCompress(quality);
-      };
-      
-      img.src = URL.createObjectURL(file);
+
+        img.onerror = (imgError) => {
+          clearTimeout(loadTimeout);
+          console.error("Image loading error:", imgError);
+          reject(new Error("Failed to load image for compression"));
+        };
+
+        // Start image loading
+        img.src = URL.createObjectURL(file);
+      } catch (error) {
+        console.error("Compression setup error:", error);
+        reject(new Error(`Compression setup failed: ${error.message}`));
+      }
     });
   };
 
-  // Handle file uploads with smart compression and cancellation support
+  // Bulletproof file upload handler with atomic state management
   const handleFileUpload = async (field, file) => {
-    if (!file) return;
-    
-    // Create AbortController for this upload
+    if (!file) {
+      console.log(`No file provided for ${field}`);
+      return;
+    }
+
+    // Generate unique operation ID for this upload
+    const operationId = `${field}_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
+    // Prevent duplicate uploads for the same field
+    if (
+      uploadStates[field].isUploading ||
+      activeUploadOperations.current.has(field)
+    ) {
+      console.log(
+        `Upload already in progress for ${field}, ignoring duplicate request`
+      );
+      return;
+    }
+
+    // Track this operation
+    activeUploadOperations.current.add(field);
+    uploadAttempts.current[field]++;
+
+    console.log(`Starting upload ${operationId} for ${field}:`, {
+      fileName: file.name,
+      fileSize: `${(file.size / 1024).toFixed(0)}KB`,
+      attempt: uploadAttempts.current[field],
+    });
+
+    // Create AbortController for this specific upload
     const controller = new AbortController();
-    
-    // Update upload state to show upload starting
-    setUploadStates(prev => ({
-      ...prev,
-      [field]: {
-        isUploading: true,
-        progress: 0,
-        controller: controller,
-        stage: 'validating'
-      }
-    }));
+
+    // Atomic state update helper
+    const updateUploadState = (updates) => {
+      setUploadStates((prev) => ({
+        ...prev,
+        [field]: {
+          ...prev[field],
+          operationId,
+          ...updates,
+        },
+      }));
+    };
+
+    // Initialize upload state atomically
+    updateUploadState({
+      isUploading: true,
+      progress: 0,
+      controller: controller,
+      stage: "validating",
+      error: null,
+    });
+
+    // Clear any existing errors
+    setError("");
 
     try {
-      // Clear any existing errors
-      setError("");
-      
-      // File type validation
+      // Stage 1: File Validation (5-15%)
+      console.log(`Validating file for ${field}...`);
+
       if (field === "medicalReport") {
-        const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
+        const allowedTypes = [
+          "application/pdf",
+          "image/jpeg",
+          "image/png",
+          "image/jpg",
+        ];
         if (!allowedTypes.includes(file.type)) {
-          throw new Error("Please upload a PDF or image file for medical report.");
+          throw new Error(
+            "Please upload a PDF or image file for medical report."
+          );
         }
-        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        if (file.size > 10 * 1024 * 1024) {
+          // 10MB limit
           throw new Error("Medical report file size should be less than 10MB.");
         }
       } else if (field === "profilePicture") {
         const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
         if (!allowedTypes.includes(file.type)) {
-          throw new Error("Please upload a JPEG or PNG image for profile picture.");
+          throw new Error(
+            "Please upload a JPEG or PNG image for profile picture."
+          );
         }
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        if (file.size > 5 * 1024 * 1024) {
+          // 5MB limit
           throw new Error("Profile picture file size should be less than 5MB.");
         }
       }
 
-      // Update progress: Validation complete
-      updateUploadProgress(field, 15, 'validating');
-      
-      // Check if upload was cancelled after validation
+      // Check for cancellation after validation
       if (controller.signal.aborted) {
-        throw new Error('Upload cancelled');
+        throw new Error("Upload cancelled by user");
       }
 
-      // Helper function to check if base64 size is acceptable for Firestore
-      const checkFileSize = (file) => {
+      updateUploadState({ progress: 15, stage: "validated" });
+      console.log(`File validation passed for ${field}`);
+
+      // Stage 2: Size Check and Processing (15-70%)
+      const checkFileSize = (fileToCheck) => {
         return new Promise((resolve, reject) => {
           if (controller.signal.aborted) {
-            reject(new Error('Upload cancelled'));
+            reject(new Error("Upload cancelled by user"));
             return;
           }
-          
+
           const reader = new FileReader();
+
           reader.onload = (e) => {
-            const base64Data = e.target.result;
-            const estimatedSize = base64Data.length;
-            const sizeInKB = estimatedSize / 1024;
-            
-            // Check if file is within Firestore limits (400KB for safe storage)
-            const isAcceptableSize = estimatedSize <= 400000; // 400KB limit for direct upload
-            resolve({ isAcceptableSize, base64Data, estimatedSize, sizeInKB });
+            try {
+              const base64Data = e.target.result;
+              const estimatedSize = base64Data.length;
+              const sizeInKB = estimatedSize / 1024;
+
+              // Conservative Firestore limit (380KB for safety margin)
+              const isAcceptableSize = estimatedSize <= 380000;
+
+              resolve({
+                isAcceptableSize,
+                base64Data,
+                estimatedSize,
+                sizeInKB: Math.round(sizeInKB),
+              });
+            } catch (error) {
+              console.error(
+                `Error processing base64 data for ${field}:`,
+                error
+              );
+              reject(new Error("Failed to process file data"));
+            }
           };
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsDataURL(file);
+
+          reader.onerror = () => {
+            console.error(`FileReader error for ${field}`);
+            reject(new Error("Failed to read file"));
+          };
+
+          reader.readAsDataURL(fileToCheck);
         });
       };
 
-      // Update progress: Starting size check
-      updateUploadProgress(field, 25, 'checking size');
-      
-      // First, check if the original file can be uploaded as-is
+      updateUploadState({ progress: 25, stage: "analyzing" });
+
+      // Check original file size
       const originalFileCheck = await checkFileSize(file);
-      
-      // Check if upload was cancelled after size check
+      console.log(`Original file analysis for ${field}:`, {
+        size: `${originalFileCheck.sizeInKB}KB`,
+        acceptable: originalFileCheck.isAcceptableSize,
+      });
+
+      // Check for cancellation after analysis
       if (controller.signal.aborted) {
-        throw new Error('Upload cancelled');
+        throw new Error("Upload cancelled by user");
       }
-      
+
       let processedFile = file;
       let compressionApplied = false;
       let finalBase64Data = originalFileCheck.base64Data;
-      
-      // Only compress if the original file is too large for Firestore
+      let compressionStats = null;
+
+      // Only compress if file exceeds safe size limits
       if (!originalFileCheck.isAcceptableSize) {
-        updateUploadProgress(field, 40, 'compressing');
-        console.log(`File too large (${originalFileCheck.sizeInKB.toFixed(0)}KB), applying compression...`);
-        
-        if (file.type.startsWith('image/')) {
-          if (field === "profilePicture") {
-            processedFile = await compressImage(file, 400, 0.6, 250); // Max 250KB for profile pictures
-          } else if (field === "medicalReport") {
-            processedFile = await compressImage(file, 800, 0.7, 300); // Max 300KB for medical reports
+        updateUploadState({ progress: 40, stage: "compressing" });
+        console.log(
+          `File too large (${originalFileCheck.sizeInKB}KB), applying smart compression for ${field}...`
+        );
+
+        if (file.type.startsWith("image/")) {
+          try {
+            // Apply aggressive compression settings based on file type
+            const compressionSettings =
+              field === "profilePicture"
+                ? { maxWidth: 400, quality: 0.6, maxSizeKB: 220 } // More aggressive for profile pics
+                : { maxWidth: 800, quality: 0.7, maxSizeKB: 280 }; // Balanced for medical reports
+
+            processedFile = await compressImage(
+              file,
+              compressionSettings.maxWidth,
+              compressionSettings.quality,
+              compressionSettings.maxSizeKB
+            );
+
+            compressionApplied = true;
+            compressionStats = {
+              originalSize: file.size,
+              compressedSize: processedFile.size,
+              savings: file.size - processedFile.size,
+              ratio: (
+                ((file.size - processedFile.size) / file.size) *
+                100
+              ).toFixed(1),
+            };
+
+            console.log(`Compression successful for ${field}:`, {
+              original: `${Math.round(file.size / 1024)}KB`,
+              compressed: `${Math.round(processedFile.size / 1024)}KB`,
+              savings: `${Math.round(compressionStats.savings / 1024)}KB`,
+              ratio: `${compressionStats.ratio}%`,
+            });
+
+            // Check for cancellation after compression
+            if (controller.signal.aborted) {
+              throw new Error("Upload cancelled by user");
+            }
+
+            updateUploadState({ progress: 60, stage: "validating compressed" });
+
+            // Verify compressed file meets requirements
+            const compressedCheck = await checkFileSize(processedFile);
+            finalBase64Data = compressedCheck.base64Data;
+
+            console.log(`Compressed file validation for ${field}:`, {
+              size: `${compressedCheck.sizeInKB}KB`,
+              acceptable: compressedCheck.isAcceptableSize,
+            });
+
+            if (!compressedCheck.isAcceptableSize) {
+              throw new Error(
+                `File still too large after compression (${compressedCheck.sizeInKB}KB). ` +
+                  `Please use a smaller file or lower resolution image.`
+              );
+            }
+          } catch (compressionError) {
+            if (compressionError.message.includes("cancelled")) {
+              throw compressionError;
+            }
+            console.error(
+              `Compression failed for ${field}:`,
+              compressionError
+            );
+            throw new Error(
+              `Compression failed: ${compressionError.message}. Please try a smaller file.`
+            );
           }
-          compressionApplied = true;
-          
-          // Check if upload was cancelled during compression
-          if (controller.signal.aborted) {
-            throw new Error('Upload cancelled');
-          }
-          
-          // Update progress: Compression complete
-          updateUploadProgress(field, 70, 'validating compressed file');
-          
-          // Check compressed file size
-          const compressedCheck = await checkFileSize(processedFile);
-          finalBase64Data = compressedCheck.base64Data;
-          
-          if (!compressedCheck.isAcceptableSize) {
-            throw new Error(`File still too large after compression (${compressedCheck.sizeInKB.toFixed(0)}KB). Please use a smaller file or lower resolution image.`);
-          }
-        } else if (file.type === 'application/pdf') {
-          // For PDFs, check if they're small enough after base64 encoding
-          if (originalFileCheck.estimatedSize > 400000) { // 400KB limit for PDFs
-            throw new Error("PDF file is too large. Please compress it to under 300KB or convert to image format.");
+        } else if (file.type === "application/pdf") {
+          // For PDFs, we can't compress, so enforce stricter limits
+          if (originalFileCheck.estimatedSize > 380000) {
+            throw new Error(
+              "PDF file is too large even for direct storage. " +
+                "Please compress it to under 280KB or convert to image format."
+            );
           }
         }
       } else {
-        updateUploadProgress(field, 60, 'preparing upload');
-        console.log(`File size acceptable (${originalFileCheck.sizeInKB.toFixed(0)}KB), uploading as-is.`);
+        updateUploadState({ progress: 50, stage: "preparing" });
+        console.log(
+          `File size acceptable (${originalFileCheck.sizeInKB}KB), uploading directly for ${field}`
+        );
       }
 
-      // Final check for cancellation before setting form data
+      // Check for cancellation before finalizing
       if (controller.signal.aborted) {
-        throw new Error('Upload cancelled');
+        throw new Error("Upload cancelled by user");
       }
-      
-      // Update progress: Finalizing
-      updateUploadProgress(field, 85, 'finalizing');
 
+      // Stage 3: Finalization (70-100%)
+      updateUploadState({ progress: 80, stage: "finalizing" });
+
+      // Create final file data object
       const fileData = {
         name: file.name,
         originalSize: file.size,
@@ -472,125 +734,208 @@ export function UserDetails() {
         lastModified: file.lastModified,
         uploadedAt: new Date().toISOString(),
         compressed: compressionApplied,
-        compressionRatio: compressionApplied ? ((file.size - (processedFile.size || file.size)) / file.size * 100).toFixed(1) : 0
+        compressionRatio: compressionApplied ? compressionStats.ratio : 0,
+        operationId: operationId,
       };
-      
-      // Update form data - this is the critical step that sometimes fails
-      setFormData((prev) => {
-        console.log(`Setting form data for ${field}:`, fileData.name);
-        return { ...prev, [field]: fileData };
+
+      console.log(`Final file package prepared for ${field}:`, {
+        name: fileData.name,
+        originalSize: `${Math.round(fileData.originalSize / 1024)}KB`,
+        finalSize: `${Math.round(fileData.compressedSize / 1024)}KB`,
+        compressed: fileData.compressed,
+        compressionRatio: `${fileData.compressionRatio}%`,
+        base64Length: `${Math.round(fileData.data.length / 1024)}KB`,
+        operationId: fileData.operationId,
       });
-      
-      // Update progress: Complete
-      updateUploadProgress(field, 100, 'complete');
-      
-      // Mark upload as complete with a shorter delay and better error handling
+
+      // Atomic form data update
+      setFormData((prevData) => {
+        const newData = { ...prevData, [field]: fileData };
+        console.log(`Form data atomically updated for ${field}:`, {
+          fileName: newData[field].name,
+          hasData: !!newData[field].data,
+          operationId: newData[field].operationId,
+        });
+        return newData;
+      });
+
+      // Mark upload as complete
+      updateUploadState({ progress: 100, stage: "complete" });
+
+      // Success logging and feedback
+      const successMessage = compressionApplied
+        ? `${
+            field === "medicalReport" ? "Medical report" : "Profile picture"
+          } uploaded and optimized successfully (${
+            fileData.compressionRatio
+          }% size reduction).`
+        : `${
+            field === "medicalReport" ? "Medical report" : "Profile picture"
+          } uploaded successfully.`;
+
+      console.log(
+        `Upload completed successfully for ${field}:`,
+        successMessage
+      );
+      speak(successMessage);
+
+      // Clean up upload state after brief delay
       setTimeout(() => {
-        setUploadStates(prev => ({
-          ...prev,
-          [field]: {
-            ...prev[field],
-            isUploading: false,
-            controller: null,
-            stage: 'complete'
-          }
-        }));
-      }, 500); // Reduced from 1000ms to 500ms
-      
-      // Show success message with compression info
-      if (compressionApplied) {
-        const savedKB = ((file.size - (processedFile.size || file.size)) / 1024).toFixed(0);
-        console.log(`File compressed: Saved ${savedKB}KB (${fileData.compressionRatio}% reduction)`);
-        speak(`${field === 'medicalReport' ? 'Medical report' : 'Profile picture'} uploaded successfully with ${fileData.compressionRatio}% compression.`);
-      } else {
-        console.log(`File uploaded without compression: ${(file.size / 1024).toFixed(0)}KB`);
-        speak(`${field === 'medicalReport' ? 'Medical report' : 'Profile picture'} uploaded successfully.`);
-      }
-      
+        updateUploadState({
+          isUploading: false,
+          controller: null,
+          stage: "complete",
+        });
+        activeUploadOperations.current.delete(field);
+      }, 300);
     } catch (error) {
-      console.error("Error processing file:", error);
-      
-      // Always reset upload state on error
-      setUploadStates(prev => ({
-        ...prev,
-        [field]: {
+      console.error(
+        `Upload failed for ${field} (${operationId}):`,
+        error.message
+      );
+
+      // Clean up operation tracking
+      activeUploadOperations.current.delete(field);
+
+      // Handle cancellation gracefully
+      if (error.message.includes("cancelled")) {
+        updateUploadState({
           isUploading: false,
           progress: 0,
           controller: null,
-          stage: error.message === 'Upload cancelled' ? 'idle' : 'error'
+          stage: "cancelled",
+          error: null,
+        });
+        console.log(`Upload cancelled for ${field} (${operationId})`);
+        return;
+      }
+
+      // Reset upload state on error
+      updateUploadState({
+        isUploading: false,
+        progress: 0,
+        controller: null,
+        stage: "error",
+        error: error.message,
+      });
+
+      // Clear form data on error
+      setFormData((prevData) => {
+        console.log(`Clearing form data for ${field} due to error`);
+        return { ...prevData, [field]: null };
+      });
+
+      // Show error message
+      const errorMessage =
+        error.message || "Failed to process file. Please try again.";
+      setError(`Upload failed: ${errorMessage}`);
+      speak(
+        `Failed to upload ${
+          field === "medicalReport" ? "medical report" : "profile picture"
+        }. ${errorMessage}`
+      );
+
+      // Reset file input
+      setTimeout(() => {
+        const fileInput = document.getElementById(field);
+        if (fileInput) {
+          fileInput.value = "";
+          console.log(`Reset file input for ${field}`);
         }
-      }));
-      
-      // Clear form data on error (except for cancellation)
-      if (error.message !== 'Upload cancelled') {
-        setFormData(prev => ({ ...prev, [field]: null }));
-        setError(error.message || "Failed to process file. Please try again with a smaller file.");
-        speak(`Failed to upload ${field === 'medicalReport' ? 'medical report' : 'profile picture'}. ${error.message}`);
-      }
-      
-      // Reset file input to allow re-upload of the same file
-      const fileInput = document.getElementById(field);
-      if (fileInput) {
-        fileInput.value = '';
-      }
+      }, 100);
     }
   };
 
-  // Upload Progress Component
+  // Enhanced Upload Progress Component with better stage tracking
   const UploadProgress = ({ field, uploadState, onCancel }) => {
-    const { isUploading, progress, stage } = uploadState;
-    
+    const { isUploading, progress, stage, operationId } = uploadState;
+
     if (!isUploading) return null;
-    
+
     const stageMessages = {
-      idle: 'Ready to upload',
-      validating: 'Validating file...',
-      'checking size': 'Checking file size...',
-      compressing: 'Compressing for optimal storage...',
-      'validating compressed file': 'Validating compressed file...',
-      'preparing upload': 'Preparing upload...',
-      finalizing: 'Finalizing...',
-      complete: 'Upload complete!',
-      error: 'Upload failed'
+      idle: "Ready to upload",
+      validating: "Validating file...",
+      validated: "File validated",
+      analyzing: "Analyzing file size...",
+      compressing: "Optimizing file size...",
+      "validating compressed": "Validating optimized file...",
+      preparing: "Preparing for upload...",
+      finalizing: "Finalizing upload...",
+      complete: "Upload complete!",
+      error: "Upload failed",
+      cancelled: "Upload cancelled",
     };
-    
+
+    const getStageIcon = (stage) => {
+      switch (stage) {
+        case "complete":
+          return (
+            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+          );
+        case "error":
+          return (
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0" />
+          );
+        case "cancelled":
+          return (
+            <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+          );
+        default:
+          return (
+            <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+          );
+      }
+    };
+
+    const getProgressColor = (stage) => {
+      if (stage === "error") return "bg-red-600";
+      if (stage === "cancelled") return "bg-gray-600";
+      if (stage === "complete") return "bg-green-600";
+      return "bg-blue-600";
+    };
+
     return (
-      <div className="mt-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200 w-full overflow-hidden">
+      <div className="mt-4 p-3 sm:p-4 bg-blue-50 rounded border border-blue-200 w-full overflow-hidden">
         <div className="flex items-center justify-between mb-3 gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            {stage === 'complete' ? (
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
-            ) : stage === 'error' ? (
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0" />
-            ) : (
-              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-            )}
-            <span className="text-xs sm:text-sm font-medium text-blue-700 truncate">
-              {stageMessages[stage] || stage}
-            </span>
+            {getStageIcon(stage)}
+            <div className="min-w-0 flex-1">
+              <span className="text-xs sm:text-sm font-medium text-blue-700 truncate block">
+                {stageMessages[stage] || stage}
+              </span>
+              {operationId && (
+                <span className="text-xs text-blue-500 opacity-75 truncate block">
+                  ID: {operationId.split("_")[2]}
+                </span>
+              )}
+            </div>
           </div>
-          {stage !== 'complete' && stage !== 'error' && (
-            <button
-              onClick={() => onCancel(field)}
-              className="flex items-center gap-1 px-2 sm:px-3 py-1 text-red-600 hover:text-red-800 text-xs sm:text-sm font-medium bg-red-50 hover:bg-red-100 rounded-full transition-colors duration-200 flex-shrink-0"
-              aria-label="Cancel upload"
-            >
-              <X className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Cancel</span>
-            </button>
-          )}
+          {stage !== "complete" &&
+            stage !== "error" &&
+            stage !== "cancelled" && (
+              <button
+                onClick={() => onCancel(field)}
+                className="flex items-center gap-1 px-2 sm:px-3 py-1 text-red-600 hover:text-red-800 text-xs sm:text-sm font-medium bg-red-50 hover:bg-red-100 rounded transition-colors duration-200 flex-shrink-0"
+                aria-label="Cancel upload"
+              >
+                <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Cancel</span>
+              </button>
+            )}
         </div>
-        
+
         <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
-          <div 
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+          <div
+            className={`h-2 rounded-full transition-all duration-300 ease-out ${getProgressColor(
+              stage
+            )}`}
             style={{ width: `${progress}%` }}
           />
         </div>
-        
+
         <div className="flex justify-between text-xs text-blue-600 gap-2">
           <span className="truncate">{progress}% complete</span>
-          <span className="capitalize truncate">{stage}</span>
+          <span className="capitalize truncate">{stage.replace("_", " ")}</span>
         </div>
       </div>
     );
@@ -598,11 +943,11 @@ export function UserDetails() {
 
   // File Preview Component
   const FilePreview = ({ field, fileData, onRemove }) => {
-    const isImage = fileData.type.startsWith('image/');
+    const isImage = fileData.type.startsWith("image/");
     const sizeInMB = (fileData.compressedSize / (1024 * 1024)).toFixed(2);
-    
+
     return (
-      <div className="mt-3 p-3 sm:p-4 bg-green-50 rounded-lg border border-green-200 w-full overflow-hidden">
+      <div className="mt-3 p-3 sm:p-4 bg-green-50 rounded border border-green-200 w-full overflow-hidden">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             {isImage && fileData.data ? (
@@ -610,9 +955,9 @@ export function UserDetails() {
                 src={fileData.data}
                 alt="Preview"
                 className={`object-cover border-2 border-green-200 flex-shrink-0 ${
-                  field === 'profilePicture' 
-                    ? 'w-10 h-10 sm:w-12 sm:h-12 rounded-full' 
-                    : 'w-10 h-10 sm:w-12 sm:h-12 rounded'
+                  field === "profilePicture"
+                    ? "w-10 h-10 sm:w-12 sm:h-12 rounded-full"
+                    : "w-10 h-10 sm:w-12 sm:h-12 rounded"
                 }`}
               />
             ) : (
@@ -647,23 +992,23 @@ export function UserDetails() {
   };
 
   // Enhanced File Upload Card Component
-  const FileUploadCard = ({ 
-    field, 
-    title, 
-    description, 
-    accept, 
+  const FileUploadCard = ({
+    field,
+    title,
+    description,
+    accept,
     icon: Icon,
-    formData, 
-    uploadState, 
-    onFileSelect, 
-    onCancel, 
-    onRemove 
+    formData,
+    uploadState,
+    onFileSelect,
+    onCancel,
+    onRemove,
   }) => {
     const hasFile = formData[field] && formData[field].data;
     const { isUploading } = uploadState;
-    
+
     return (
-      <div className="w-full border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 text-center bg-white/60 hover:border-blue-400 transition-colors duration-300 overflow-hidden">
+      <div className="w-full border-2 border-dashed border-gray-300 rounded p-4 sm:p-6 text-center bg-white hover:border-blue-400 transition-colors duration-300 overflow-hidden">
         {!hasFile && !isUploading && (
           <>
             <input
@@ -673,25 +1018,36 @@ export function UserDetails() {
               onChange={(e) => onFileSelect(field, e.target.files[0])}
               className="hidden"
             />
-            <label htmlFor={field} className="cursor-pointer flex flex-col items-center gap-2 sm:gap-3 w-full">
+            <label
+              htmlFor={field}
+              className="cursor-pointer flex flex-col items-center gap-2 sm:gap-3 w-full"
+            >
               <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-blue-500" />
               <div className="w-full">
-                <p className="text-base sm:text-lg font-semibold text-gray-700 mb-1">{title}</p>
-                <p className="text-xs sm:text-sm text-gray-500 px-2 leading-relaxed">{description}</p>
+                <p className="text-base sm:text-lg font-semibold text-gray-700 mb-1">
+                  {title}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-500 px-2 leading-relaxed">
+                  {description}
+                </p>
               </div>
             </label>
           </>
         )}
-        
+
         {isUploading && (
-          <UploadProgress field={field} uploadState={uploadState} onCancel={onCancel} />
+          <UploadProgress
+            field={field}
+            uploadState={uploadState}
+            onCancel={onCancel}
+          />
         )}
-        
+
         {hasFile && !isUploading && (
-          <FilePreview 
-            field={field} 
-            fileData={formData[field]} 
-            onRemove={() => onRemove(field)} 
+          <FilePreview
+            field={field}
+            fileData={formData[field]}
+            onRemove={() => onRemove(field)}
           />
         )}
       </div>
@@ -713,9 +1069,15 @@ export function UserDetails() {
     }
     if (step === 4) {
       if (formData.healthCondition.selected === "Other") {
-        return formData.healthCondition.custom.trim() && formData.currentMedicalStatus.trim();
+        return (
+          formData.healthCondition.custom.trim() &&
+          formData.currentMedicalStatus.trim()
+        );
       }
-      return formData.healthCondition.selected && formData.currentMedicalStatus.trim();
+      return (
+        formData.healthCondition.selected &&
+        formData.currentMedicalStatus.trim()
+      );
     }
     if (step === 5) {
       // Medical report is optional, so always return true
@@ -748,22 +1110,42 @@ export function UserDetails() {
     }
   };
 
-  // Form submission - store everything directly in Firestore
+  // Enhanced form submission with timeout handling and retry logic
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Prevent multiple submissions
-    if (isLoading) return;
-    
+    if (isLoading) {
+      console.log(
+        "Submission already in progress, ignoring duplicate request"
+      );
+      return;
+    }
+
+    // Track submission attempts
+    setSubmissionAttempts((prev) => prev + 1);
     setIsLoading(true);
     setError(""); // Clear any existing errors when submitting
-    
+
+    // Create submission timeout to prevent infinite loading
+    const submissionTimeout = setTimeout(() => {
+      console.error("Form submission timeout after 30 seconds");
+      setIsLoading(false);
+      setError(
+        "Request timeout: The submission took too long. Please check your internet connection and try again."
+      );
+      speak("Form submission timeout. Please try again.");
+    }, 30000); // 30 second timeout
+
     try {
       if (!user || !user.id) {
         throw new Error("User not authenticated");
       }
 
-      console.log('Current user before update:', user);
+      console.log("Starting form submission...", {
+        userId: user.id,
+        timestamp: new Date().toISOString(),
+      });
 
       // Prepare cleaned data - all files stored directly in Firestore
       const cleanedFormData = {
@@ -772,110 +1154,176 @@ export function UserDetails() {
         gender: formData.gender.trim(),
         address: formData.address.trim(),
         emergencyContacts: formData.emergencyContacts
-          .filter(contact => contact.name.trim() && contact.number.trim())
-          .map(contact => ({
+          .filter((contact) => contact.name.trim() && contact.number.trim())
+          .map((contact) => ({
             name: contact.name.trim(),
             number: contact.number.trim(),
           })),
-        healthCondition: formData.healthCondition.selected === "Other" 
-          ? formData.healthCondition.custom.trim()
-          : formData.healthCondition.selected,
+        healthCondition:
+          formData.healthCondition.selected === "Other"
+            ? formData.healthCondition.custom.trim()
+            : formData.healthCondition.selected,
         currentMedicalStatus: formData.currentMedicalStatus.trim(),
-        medicalReport: formData.medicalReport && typeof formData.medicalReport === 'object' && formData.medicalReport.data 
-          ? formData.medicalReport 
-          : null,
-        profilePicture: formData.profilePicture && typeof formData.profilePicture === 'object' && formData.profilePicture.data 
-          ? formData.profilePicture 
-          : null,
+        medicalReport:
+          formData.medicalReport &&
+          typeof formData.medicalReport === "object" &&
+          formData.medicalReport.data
+            ? formData.medicalReport
+            : null,
+        profilePicture:
+          formData.profilePicture &&
+          typeof formData.profilePicture === "object" &&
+          formData.profilePicture.data
+            ? formData.profilePicture
+            : null,
       };
 
       // Calculate total document size to ensure it's under Firestore limits
       const estimatedSize = JSON.stringify(cleanedFormData).length;
-      console.log('Total document size:', (estimatedSize / 1024).toFixed(0), 'KB');
-      
-      if (estimatedSize > 800000) { // 800KB safety limit (Firestore max is 1MB)
-        setError("Profile data is too large even after compression. Please use smaller files or remove some data.");
-        return;
-      }
-
-      console.log('Submitting user data to Firestore:', {
-        ...cleanedFormData,
-        medicalReport: cleanedFormData.medicalReport ? {
-          name: cleanedFormData.medicalReport.name,
-          size: cleanedFormData.medicalReport.compressedSize,
-          compressed: cleanedFormData.medicalReport.compressed
-        } : null,
-        profilePicture: cleanedFormData.profilePicture ? {
-          name: cleanedFormData.profilePicture.name,
-          size: cleanedFormData.profilePicture.compressedSize,
-          compressed: cleanedFormData.profilePicture.compressed
-        } : null
+      console.log("Document size validation:", {
+        size: `${(estimatedSize / 1024).toFixed(0)}KB`,
+        limit: "800KB",
+        withinLimit: estimatedSize <= 800000,
       });
 
-      // Wait for Firebase update to complete before proceeding
-      await updateUser(cleanedFormData);
-      
-      // Verify the data was updated in context
-      console.log('Data update completed successfully');
-      
+      if (estimatedSize > 800000) {
+        // 800KB safety limit (Firestore max is 1MB)
+        throw new Error(
+          "Profile data is too large even after compression. Please use smaller files or remove some data."
+        );
+      }
+
+      console.log("Submitting user data to Firestore...", {
+        hasData: true,
+        medicalReport: cleanedFormData.medicalReport
+          ? {
+              name: cleanedFormData.medicalReport.name,
+              size: `${Math.round(
+                cleanedFormData.medicalReport.compressedSize / 1024
+              )}KB`,
+              compressed: cleanedFormData.medicalReport.compressed,
+            }
+          : null,
+        profilePicture: cleanedFormData.profilePicture
+          ? {
+              name: cleanedFormData.profilePicture.name,
+              size: `${Math.round(
+                cleanedFormData.profilePicture.compressedSize / 1024
+              )}KB`,
+              compressed: cleanedFormData.profilePicture.compressed,
+            }
+          : null,
+      });
+
+      // Create a promise race with timeout for the updateUser call
+      const updatePromise = updateUser(cleanedFormData);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Update operation timed out after 25 seconds"));
+        }, 25000); // 25 second timeout for the actual update
+      });
+
+      // Wait for either the update to complete or timeout
+      await Promise.race([updatePromise, timeoutPromise]);
+
+      // Clear the submission timeout since we completed successfully
+      clearTimeout(submissionTimeout);
+
+      console.log("Form submission completed successfully");
+
       // Success message with smart compression info
-      let successMessage = "Your medical information has been saved successfully.";
-      const files = [cleanedFormData.medicalReport, cleanedFormData.profilePicture].filter(Boolean);
-      const compressedFiles = files.filter(f => f.compressed);
-      const uncompressedFiles = files.filter(f => !f.compressed);
-      
+      let successMessage =
+        "Your medical information has been saved successfully.";
+      const files = [
+        cleanedFormData.medicalReport,
+        cleanedFormData.profilePicture,
+      ].filter(Boolean);
+      const compressedFiles = files.filter((f) => f.compressed);
+      const uncompressedFiles = files.filter((f) => !f.compressed);
+
       if (compressedFiles.length > 0 && uncompressedFiles.length > 0) {
-        successMessage += " Some files were compressed for optimal storage while others were uploaded as-is.";
+        successMessage +=
+          " Some files were compressed for optimal storage while others were uploaded as-is.";
       } else if (compressedFiles.length > 0) {
-        successMessage += " Files were automatically compressed for optimal storage.";
+        successMessage +=
+          " Files were automatically compressed for optimal storage.";
       } else if (uncompressedFiles.length > 0) {
         successMessage += " Files were uploaded in their original quality.";
       }
-      
+
       speak(successMessage + " Redirecting to your profile.");
-      
+
       // Small delay to ensure context update propagates
       setTimeout(() => {
         // Navigate to profile page to show updated data
         navigate("/profile");
       }, 500);
-      
     } catch (error) {
-      console.error("Error saving user data:", error);
+      // Clear the submission timeout on error
+      clearTimeout(submissionTimeout);
+
+      console.error("Form submission error:", {
+        message: error.message,
+        code: error.code,
+        timestamp: new Date().toISOString(),
+      });
+
       speak("Failed to save your information. Please try again.");
-      
-      // Show user-friendly error message
+
+      // Enhanced error handling with specific messages
+      let errorMessage = "Failed to save information. Please try again.";
+
       if (error.message.includes("User not authenticated")) {
-        setError("You are not logged in. Please login again.");
+        errorMessage = "You are not logged in. Please login again.";
         setTimeout(() => navigate("/login"), 2000);
       } else if (error.message.includes("permission-denied")) {
-        setError("Permission denied. Please check your authentication.");
-      } else if (error.message.includes("network") || error.message.includes("unavailable")) {
-        setError("Network error. Please check your internet connection and try again.");
-      } else if (error.message.includes("deadline-exceeded")) {
-        setError("The request took too long to complete. Please check your connection and try again.");
+        errorMessage =
+          "Permission denied. Please check your authentication and try again.";
+      } else if (
+        error.message.includes("network") ||
+        error.message.includes("unavailable")
+      ) {
+        errorMessage =
+          "Network error. Please check your internet connection and try again.";
+      } else if (
+        error.message.includes("deadline-exceeded") ||
+        error.message.includes("timed out")
+      ) {
+        errorMessage =
+          "Request timeout. The operation took too long. Please check your connection and try again.";
       } else if (error.message.includes("unauthenticated")) {
-        setError("Authentication expired. Please log in again.");
+        errorMessage = "Authentication expired. Please log in again.";
         setTimeout(() => navigate("/login"), 2000);
       } else if (error.message.includes("exceeds the maximum allowed size")) {
-        setError("Files are too large even after compression. Please upload smaller files with lower resolution.");
+        errorMessage =
+          "Files are too large even after compression. Please upload smaller files with lower resolution.";
+      } else if (error.message.includes("quota-exceeded")) {
+        errorMessage =
+          "Storage quota exceeded. Please contact support or try with smaller files.";
+      } else if (error.message.includes("Profile data is too large")) {
+        errorMessage = error.message; // Use the specific size error message
       } else {
-        setError(`Failed to save information: ${error.message}`);
+        errorMessage = `Failed to save information: ${error.message}`;
       }
+
+      setError(errorMessage);
     } finally {
+      // Always clear loading state and timeout
+      clearTimeout(submissionTimeout);
       setIsLoading(false);
+      console.log("Form submission process completed (success or error)");
     }
   };
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-2 sm:p-4 relative text-gray-900">
+    <div className="min-h-screen w-full overflow-x-hidden bg-gray-50 flex items-center justify-center p-2 sm:p-4 text-gray-900">
       {/* Progress bar (show only current step on mobile) */}
-      <div className="fixed top-0 left-0 w-full z-40 bg-white py-2 px-1 sm:py-3 sm:px-4 flex items-center justify-center gap-1 sm:gap-2 shadow-md">
+      <div className="fixed top-0 left-0 w-full z-40 bg-white py-2 px-1 sm:py-3 sm:px-4 flex items-center justify-center gap-1 sm:gap-2 border-b">
         <div className="flex-1 flex flex-col items-center sm:hidden">
-          <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-base shadow-lg bg-gradient-to-br from-purple-500 to-indigo-500 scale-110">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-base bg-blue-600">
             {step}
           </div>
-          <span className="text-[10px] mt-1 font-medium text-indigo-700">
+          <span className="text-[10px] mt-1 font-medium text-blue-700">
             {steps[step - 1]}
           </span>
         </div>
@@ -883,19 +1331,19 @@ export function UserDetails() {
           {steps.map((label, idx) => (
             <div key={label} className="flex-1 flex flex-col items-center">
               <div
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-white text-base sm:text-lg shadow-lg transition-all duration-300 ${
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-white text-base sm:text-lg transition-all duration-300 ${
                   step === idx + 1
-                    ? "bg-gradient-to-br from-purple-500 to-indigo-500 scale-110"
+                    ? "bg-blue-600"
                     : step > idx + 1
-                    ? "bg-green-400 scale-100"
-                    : "bg-gray-300 scale-90"
+                    ? "bg-green-400"
+                    : "bg-gray-300"
                 }`}
               >
                 {idx + 1}
               </div>
               <span
                 className={`text-[10px] sm:text-xs mt-1 font-medium text-center ${
-                  step === idx + 1 ? "text-indigo-700" : "text-gray-400"
+                  step === idx + 1 ? "text-blue-700" : "text-gray-400"
                 }`}
               >
                 {label}
@@ -906,27 +1354,70 @@ export function UserDetails() {
       </div>
 
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/20 p-4 sm:p-8 animate-fade-in-up my-10">
+        <div className="bg-white rounded-lg border p-4 sm:p-8 my-10">
           <form
             onSubmit={handleSubmit}
             onKeyDown={(e) => {
               // Prevent form submission by Enter
               if (e.key === "Enter") {
-                // Do not submit form at all 
+                // Do not submit form at all
                 e.preventDefault();
                 return false;
               }
             }}
             className="space-y-8 sm:space-y-10 text-gray-900"
           >
-            {/* Error Message */}
+            {/* Enhanced Error Message with Retry Option */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                <div className="flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  {error}
+              <div className="bg-red-50 border-l-4 border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+                <div className="flex items-start">
+                  <AlertCircle className="w-5 h-5 mr-3 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium text-red-800">
+                      {error.includes("timeout") || error.includes("Network")
+                        ? "Submission Error"
+                        : "Upload Error"}
+                    </p>
+                    <p className="text-red-700 mt-1">{error}</p>
+                    {(error.includes("timeout") ||
+                      error.includes("Network") ||
+                      error.includes("Failed to save")) &&
+                      submissionAttempts > 0 && (
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => {
+                              setError("");
+                              setSubmissionAttempts((prev) => prev + 1);
+                              // Retry form submission
+                              setTimeout(() => {
+                                const form = document.querySelector("form");
+                                if (form) {
+                                  const submitEvent = new Event("submit", {
+                                    bubbles: true,
+                                    cancelable: true,
+                                  });
+                                  form.dispatchEvent(submitEvent);
+                                }
+                              }, 100);
+                            }}
+                            className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm font-medium hover:bg-red-200 transition-colors"
+                            disabled={isLoading}
+                          >
+                            {isLoading ? "Retrying..." : "Retry Submission"}
+                          </button>
+                          <span className="text-xs text-red-600 self-center">
+                            Attempt {submissionAttempts + 1}
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                  <button
+                    onClick={() => setError("")}
+                    className="ml-3 text-red-400 hover:text-red-600 transition-colors"
+                    aria-label="Dismiss error"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             )}
@@ -981,7 +1472,7 @@ export function UserDetails() {
                     type="button"
                     onClick={nextStep}
                     disabled={!validateStep()}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow w-full sm:w-auto"
+                    className="bg-blue-600 text-white px-6 py-2 rounded w-full sm:w-auto"
                   >
                     Next
                   </Button>
@@ -1208,7 +1699,7 @@ export function UserDetails() {
                   <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
                   Medical Report (Optional)
                 </h2>
-                
+
                 <FileUploadCard
                   field="medicalReport"
                   title="Upload Medical Report"
@@ -1221,7 +1712,7 @@ export function UserDetails() {
                   onCancel={cancelUpload}
                   onRemove={removeFile}
                 />
-                
+
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
                   <Button
                     type="button"
@@ -1248,7 +1739,7 @@ export function UserDetails() {
                   <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
                   Profile Picture (Optional)
                 </h2>
-                
+
                 <FileUploadCard
                   field="profilePicture"
                   title="Upload Profile Picture"
@@ -1261,7 +1752,7 @@ export function UserDetails() {
                   onCancel={cancelUpload}
                   onRemove={removeFile}
                 />
-                
+
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
                   <Button
                     type="button"
@@ -1272,10 +1763,14 @@ export function UserDetails() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isLoading || uploadStates.medicalReport.isUploading || uploadStates.profilePicture.isUploading}
+                    disabled={
+                      isLoading ||
+                      uploadStates.medicalReport.isUploading ||
+                      uploadStates.profilePicture.isUploading
+                    }
                     className="bg-green-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? "Saving your information..." : "Complete Setup"}
+                    {isLoading ? "Saving..." : "Complete Setup"}
                   </Button>
                 </div>
               </div>
