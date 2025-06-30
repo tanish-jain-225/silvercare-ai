@@ -7,44 +7,23 @@ import {
   MapPin,
   ClipboardList,
   Heart,
-  Mic,
   Sparkles,
   Shield,
   Activity,
   Upload,
   Camera,
   FileText,
+  X,
+  AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { VoiceButton } from "../components/voice/VoiceButton";
 import { useApp } from "../context/AppContext";
 import { useVoice } from "../hooks/useVoice";
 import { storage } from "../utils/storage";
-import SpeechRecognition, {
-  useSpeechRecognition,
-} from "react-speech-recognition";
 
-const VoiceButton = ({ listening, onClick, fieldName }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`p-2.5 rounded-full transition-all duration-300 transform hover:scale-110 ${
-      listening
-        ? "bg-gradient-to-r from-red-500 to-pink-500 text-white animate-pulse shadow-lg shadow-red-500/50"
-        : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 shadow-md hover:shadow-lg"
-    }`}
-    aria-label={
-      listening ? "Stop recording" : `Start voice input for ${fieldName}`
-    }
-  >
-    <Mic
-      size={18}
-      className={`transition-transform duration-300 ${
-        listening ? "animate-bounce" : ""
-      }`}
-    />
-  </button>
-);
 
 export function UserDetails() {
   const navigate = useNavigate();
@@ -52,10 +31,25 @@ export function UserDetails() {
   const { speak } = useVoice();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeVoiceField, setActiveVoiceField] = useState(null);
   const [step, setStep] = useState(1); // Step state
   const [subStep, setSubStep] = useState(0); // For emergency contacts
   const [isPreFilled, setIsPreFilled] = useState(false); // Track if form is pre-filled with existing data
+
+  // Upload state management for cancelable uploads
+  const [uploadStates, setUploadStates] = useState({
+    medicalReport: { 
+      isUploading: false, 
+      progress: 0, 
+      controller: null,
+      stage: 'idle' // idle, validating, compressing, uploading, complete, error
+    },
+    profilePicture: { 
+      isUploading: false, 
+      progress: 0, 
+      controller: null,
+      stage: 'idle'
+    }
+  });
 
   // Show loading state if user data is not yet available
   if (loading || !user) {
@@ -68,15 +62,6 @@ export function UserDetails() {
       </div>
     );
   }
-
-  // Speech recognition hooks
-  const {
-    transcript,
-    listening,
-    resetTranscript,
-    browserSupportsSpeechRecognition,
-    isMicrophoneAvailable,
-  } = useSpeechRecognition();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -150,88 +135,24 @@ export function UserDetails() {
     }
   }, [user]);
 
-  // Update form field with transcript - MODIFIED VERSION
-  useEffect(() => {
-    if (!activeVoiceField || !transcript) return;
-
-    // Only update if we're still listening for the same field
-    if (listening && activeVoiceField) {
-      switch (activeVoiceField) {
-        case "name":
-          setFormData((prev) => ({ ...prev, name: transcript }));
-          break;
-        case "age":
-          const ageMatch = transcript.match(/\d+/);
-          if (ageMatch) setFormData((prev) => ({ ...prev, age: ageMatch[0] }));
-          break;
-        case "gender":
-          // Try to match transcript to one of the gender options
-          const genderMatch = genderOptions.find(
-            (g) => g.toLowerCase() === transcript.trim().toLowerCase()
-          );
-          if (genderMatch) {
-            setFormData((prev) => ({ ...prev, gender: genderMatch }));
-          }
-          break;
-        case "address":
-          setFormData((prev) => ({ ...prev, address: transcript }));
-          break;
-        case "contactName_0":
-          setFormData((prev) => ({
-            ...prev,
-            emergencyContacts: [
-              { ...prev.emergencyContacts[0], name: transcript },
-              prev.emergencyContacts[1],
-            ],
-          }));
-          break;
-        case "contactNumber_0":
-          setFormData((prev) => ({
-            ...prev,
-            emergencyContacts: [
-              {
-                ...prev.emergencyContacts[0],
-                number: transcript.replace(/\s+/g, ""),
-              },
-              prev.emergencyContacts[1],
-            ],
-          }));
-          break;
-        case "contactName_1":
-          setFormData((prev) => ({
-            ...prev,
-            emergencyContacts: [
-              prev.emergencyContacts[0],
-              { ...prev.emergencyContacts[1], name: transcript },
-            ],
-          }));
-          break;
-        case "contactNumber_1":
-          setFormData((prev) => ({
-            ...prev,
-            emergencyContacts: [
-              prev.emergencyContacts[0],
-              {
-                ...prev.emergencyContacts[1],
-                number: transcript.replace(/\s+/g, ""),
-              },
-            ],
-          }));
-          break;
-        default:
-          break;
-      }
-    }
-  }, [transcript, activeVoiceField, listening]);
-
   // Welcome message effect - must be at top level
   useEffect(() => {
-    if (browserSupportsSpeechRecognition) {
-      speak(
-        "Please provide your medical information for better healthcare assistance."
-      );
-    }
-  }, [speak, browserSupportsSpeechRecognition]);
+    speak(
+      "Please provide your medical information for better healthcare assistance."
+    );
+  }, [speak]);
+
+  // Cleanup effect to cancel uploads on unmount
+  useEffect(() => {
+    return () => {
+      // Cancel any ongoing uploads when component unmounts
+      Object.entries(uploadStates).forEach(([field, state]) => {
+        if (state.controller && state.isUploading) {
+          state.controller.abort();
+        }
+      });
+    };
+  }, []); // Empty dependency array ensures this only runs on unmount
 
   // Read aloud the title at each step
   useEffect(() => {
@@ -262,45 +183,6 @@ export function UserDetails() {
     // eslint-disable-next-line
   }, [step]);
 
-  const toggleVoiceInput = (fieldName) => {
-    if (!browserSupportsSpeechRecognition) {
-      setError("Speech recognition not supported in your browser. Please use Chrome or Edge.");
-      return;
-    }
-
-    if (!isMicrophoneAvailable) {
-      setError("Microphone access is required for voice input. Please enable microphone permissions.");
-      return;
-    }
-
-    // If we're already listening for this field, stop
-    if (listening && activeVoiceField === fieldName) {
-      SpeechRecognition.stopListening();
-      setActiveVoiceField(null);
-      resetTranscript();
-      return;
-    }
-
-    // If listening to a different field, stop that first
-    if (listening) {
-      SpeechRecognition.stopListening();
-    }
-
-    // Start listening for the new field
-    setActiveVoiceField(fieldName);
-    resetTranscript();
-
-    try {
-      SpeechRecognition.startListening({
-        continuous: true,
-        language: "en-US",
-      });
-    } catch (error) {
-      console.error("Error starting voice recognition:", error);
-      setError("Failed to start voice recognition. Please try again.");
-    }
-  };
-
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -325,6 +207,91 @@ export function UserDetails() {
         custom: value === "Other" ? prev.healthCondition.custom : "",
       },
     }));
+  };
+
+  // Handle voice input for different fields
+  const handleVoiceInput = (field) => (text) => {
+    switch (field) {
+      case "age":
+        // Extract numbers from voice input
+        const ageMatch = text.match(/\d+/);
+        if (ageMatch) {
+          setFormData(prev => ({ ...prev, age: ageMatch[0] }));
+        }
+        break;
+      case "address":
+        setFormData(prev => ({ ...prev, address: text }));
+        break;
+      case "emergencyContactName":
+        handleEmergencyContactChange(subStep, "name", text);
+        break;
+      case "emergencyContactNumber":
+        // Extract phone number patterns
+        const cleanedNumber = text.replace(/\D/g, ''); // Remove non-digits
+        if (cleanedNumber.length >= 10) {
+          handleEmergencyContactChange(subStep, "number", cleanedNumber);
+        } else {
+          handleEmergencyContactChange(subStep, "number", text);
+        }
+        break;
+      case "healthConditionCustom":
+        setFormData(prev => ({
+          ...prev,
+          healthCondition: {
+            ...prev.healthCondition,
+            custom: text
+          }
+        }));
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Helper function to update upload progress
+  const updateUploadProgress = (field, progress, stage) => {
+    setUploadStates(prev => ({
+      ...prev,
+      [field]: {
+        ...prev[field],
+        progress,
+        stage
+      }
+    }));
+  };
+
+  // Cancel upload function
+  const cancelUpload = (field) => {
+    const uploadState = uploadStates[field];
+    
+    if (uploadState.controller) {
+      uploadState.controller.abort();
+    }
+    
+    setUploadStates(prev => ({
+      ...prev,
+      [field]: {
+        isUploading: false,
+        progress: 0,
+        controller: null,
+        stage: 'idle'
+      }
+    }));
+    
+    // Clear file data if upload was in progress
+    setFormData(prev => ({ ...prev, [field]: null }));
+    
+    // Clear any existing errors
+    setError("");
+    
+    speak(`${field === 'medicalReport' ? 'Medical report' : 'Profile picture'} upload cancelled.`);
+  };
+
+  // Remove uploaded file
+  const removeFile = (field) => {
+    setFormData(prev => ({ ...prev, [field]: null }));
+    setError("");
+    speak(`${field === 'medicalReport' ? 'Medical report' : 'Profile picture'} removed.`);
   };
 
   // Smart compression function - only used when files are too large
@@ -362,53 +329,88 @@ export function UserDetails() {
     });
   };
 
-  // Handle file uploads with smart compression (only compress when needed)
+  // Handle file uploads with smart compression and cancellation support
   const handleFileUpload = async (field, file) => {
     if (!file) return;
     
-    // Validate file types
-    if (field === "medicalReport") {
-      const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
-      if (!allowedTypes.includes(file.type)) {
-        setError("Please upload a PDF or image file for medical report.");
-        return;
+    // Create AbortController for this upload
+    const controller = new AbortController();
+    
+    // Update upload state to show upload starting
+    setUploadStates(prev => ({
+      ...prev,
+      [field]: {
+        isUploading: true,
+        progress: 0,
+        controller: controller,
+        stage: 'validating'
       }
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        setError("Medical report file size should be less than 10MB.");
-        return;
-      }
-    } else if (field === "profilePicture") {
-      const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-      if (!allowedTypes.includes(file.type)) {
-        setError("Please upload a JPEG or PNG image for profile picture.");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setError("Profile picture file size should be less than 5MB.");
-        return;
-      }
-    }
-
-    // Helper function to check if base64 size is acceptable for Firestore
-    const checkFileSize = (file) => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const base64Data = e.target.result;
-          const estimatedSize = base64Data.length;
-          const sizeInKB = estimatedSize / 1024;
-          
-          // Check if file is within Firestore limits (400KB for safe storage)
-          const isAcceptableSize = estimatedSize <= 400000; // 400KB limit for direct upload
-          resolve({ isAcceptableSize, base64Data, estimatedSize, sizeInKB });
-        };
-        reader.readAsDataURL(file);
-      });
-    };
+    }));
 
     try {
+      // Clear any existing errors
+      setError("");
+      
+      // File type validation
+      if (field === "medicalReport") {
+        const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
+        if (!allowedTypes.includes(file.type)) {
+          throw new Error("Please upload a PDF or image file for medical report.");
+        }
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          throw new Error("Medical report file size should be less than 10MB.");
+        }
+      } else if (field === "profilePicture") {
+        const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+        if (!allowedTypes.includes(file.type)) {
+          throw new Error("Please upload a JPEG or PNG image for profile picture.");
+        }
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          throw new Error("Profile picture file size should be less than 5MB.");
+        }
+      }
+
+      // Update progress: Validation complete
+      updateUploadProgress(field, 15, 'validating');
+      
+      // Check if upload was cancelled after validation
+      if (controller.signal.aborted) {
+        throw new Error('Upload cancelled');
+      }
+
+      // Helper function to check if base64 size is acceptable for Firestore
+      const checkFileSize = (file) => {
+        return new Promise((resolve, reject) => {
+          if (controller.signal.aborted) {
+            reject(new Error('Upload cancelled'));
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const base64Data = e.target.result;
+            const estimatedSize = base64Data.length;
+            const sizeInKB = estimatedSize / 1024;
+            
+            // Check if file is within Firestore limits (400KB for safe storage)
+            const isAcceptableSize = estimatedSize <= 400000; // 400KB limit for direct upload
+            resolve({ isAcceptableSize, base64Data, estimatedSize, sizeInKB });
+          };
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        });
+      };
+
+      // Update progress: Starting size check
+      updateUploadProgress(field, 25, 'checking size');
+      
       // First, check if the original file can be uploaded as-is
       const originalFileCheck = await checkFileSize(file);
+      
+      // Check if upload was cancelled after size check
+      if (controller.signal.aborted) {
+        throw new Error('Upload cancelled');
+      }
       
       let processedFile = file;
       let compressionApplied = false;
@@ -416,6 +418,7 @@ export function UserDetails() {
       
       // Only compress if the original file is too large for Firestore
       if (!originalFileCheck.isAcceptableSize) {
+        updateUploadProgress(field, 40, 'compressing');
         console.log(`File too large (${originalFileCheck.sizeInKB.toFixed(0)}KB), applying compression...`);
         
         if (file.type.startsWith('image/')) {
@@ -426,24 +429,39 @@ export function UserDetails() {
           }
           compressionApplied = true;
           
+          // Check if upload was cancelled during compression
+          if (controller.signal.aborted) {
+            throw new Error('Upload cancelled');
+          }
+          
+          // Update progress: Compression complete
+          updateUploadProgress(field, 70, 'validating compressed file');
+          
           // Check compressed file size
           const compressedCheck = await checkFileSize(processedFile);
           finalBase64Data = compressedCheck.base64Data;
           
           if (!compressedCheck.isAcceptableSize) {
-            setError(`File still too large after compression (${compressedCheck.sizeInKB.toFixed(0)}KB). Please use a smaller file or lower resolution image.`);
-            return;
+            throw new Error(`File still too large after compression (${compressedCheck.sizeInKB.toFixed(0)}KB). Please use a smaller file or lower resolution image.`);
           }
         } else if (file.type === 'application/pdf') {
           // For PDFs, check if they're small enough after base64 encoding
           if (originalFileCheck.estimatedSize > 400000) { // 400KB limit for PDFs
-            setError("PDF file is too large. Please compress it to under 300KB or convert to image format.");
-            return;
+            throw new Error("PDF file is too large. Please compress it to under 300KB or convert to image format.");
           }
         }
       } else {
+        updateUploadProgress(field, 60, 'preparing upload');
         console.log(`File size acceptable (${originalFileCheck.sizeInKB.toFixed(0)}KB), uploading as-is.`);
       }
+
+      // Final check for cancellation before setting form data
+      if (controller.signal.aborted) {
+        throw new Error('Upload cancelled');
+      }
+      
+      // Update progress: Finalizing
+      updateUploadProgress(field, 85, 'finalizing');
 
       const fileData = {
         name: file.name,
@@ -457,21 +475,227 @@ export function UserDetails() {
         compressionRatio: compressionApplied ? ((file.size - (processedFile.size || file.size)) / file.size * 100).toFixed(1) : 0
       };
       
-      setFormData((prev) => ({ ...prev, [field]: fileData }));
-      setError(""); // Clear any existing errors
+      // Update form data - this is the critical step that sometimes fails
+      setFormData((prev) => {
+        console.log(`Setting form data for ${field}:`, fileData.name);
+        return { ...prev, [field]: fileData };
+      });
+      
+      // Update progress: Complete
+      updateUploadProgress(field, 100, 'complete');
+      
+      // Mark upload as complete with a shorter delay and better error handling
+      setTimeout(() => {
+        setUploadStates(prev => ({
+          ...prev,
+          [field]: {
+            ...prev[field],
+            isUploading: false,
+            controller: null,
+            stage: 'complete'
+          }
+        }));
+      }, 500); // Reduced from 1000ms to 500ms
       
       // Show success message with compression info
       if (compressionApplied) {
         const savedKB = ((file.size - (processedFile.size || file.size)) / 1024).toFixed(0);
         console.log(`File compressed: Saved ${savedKB}KB (${fileData.compressionRatio}% reduction)`);
+        speak(`${field === 'medicalReport' ? 'Medical report' : 'Profile picture'} uploaded successfully with ${fileData.compressionRatio}% compression.`);
       } else {
         console.log(`File uploaded without compression: ${(file.size / 1024).toFixed(0)}KB`);
+        speak(`${field === 'medicalReport' ? 'Medical report' : 'Profile picture'} uploaded successfully.`);
       }
       
     } catch (error) {
       console.error("Error processing file:", error);
-      setError("Failed to process file. Please try again with a smaller file.");
+      
+      // Always reset upload state on error
+      setUploadStates(prev => ({
+        ...prev,
+        [field]: {
+          isUploading: false,
+          progress: 0,
+          controller: null,
+          stage: error.message === 'Upload cancelled' ? 'idle' : 'error'
+        }
+      }));
+      
+      // Clear form data on error (except for cancellation)
+      if (error.message !== 'Upload cancelled') {
+        setFormData(prev => ({ ...prev, [field]: null }));
+        setError(error.message || "Failed to process file. Please try again with a smaller file.");
+        speak(`Failed to upload ${field === 'medicalReport' ? 'medical report' : 'profile picture'}. ${error.message}`);
+      }
+      
+      // Reset file input to allow re-upload of the same file
+      const fileInput = document.getElementById(field);
+      if (fileInput) {
+        fileInput.value = '';
+      }
     }
+  };
+
+  // Upload Progress Component
+  const UploadProgress = ({ field, uploadState, onCancel }) => {
+    const { isUploading, progress, stage } = uploadState;
+    
+    if (!isUploading) return null;
+    
+    const stageMessages = {
+      idle: 'Ready to upload',
+      validating: 'Validating file...',
+      'checking size': 'Checking file size...',
+      compressing: 'Compressing for optimal storage...',
+      'validating compressed file': 'Validating compressed file...',
+      'preparing upload': 'Preparing upload...',
+      finalizing: 'Finalizing...',
+      complete: 'Upload complete!',
+      error: 'Upload failed'
+    };
+    
+    return (
+      <div className="mt-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200 w-full overflow-hidden">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {stage === 'complete' ? (
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+            ) : stage === 'error' ? (
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0" />
+            ) : (
+              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            )}
+            <span className="text-xs sm:text-sm font-medium text-blue-700 truncate">
+              {stageMessages[stage] || stage}
+            </span>
+          </div>
+          {stage !== 'complete' && stage !== 'error' && (
+            <button
+              onClick={() => onCancel(field)}
+              className="flex items-center gap-1 px-2 sm:px-3 py-1 text-red-600 hover:text-red-800 text-xs sm:text-sm font-medium bg-red-50 hover:bg-red-100 rounded-full transition-colors duration-200 flex-shrink-0"
+              aria-label="Cancel upload"
+            >
+              <X className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Cancel</span>
+            </button>
+          )}
+        </div>
+        
+        <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
+          <div 
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        
+        <div className="flex justify-between text-xs text-blue-600 gap-2">
+          <span className="truncate">{progress}% complete</span>
+          <span className="capitalize truncate">{stage}</span>
+        </div>
+      </div>
+    );
+  };
+
+  // File Preview Component
+  const FilePreview = ({ field, fileData, onRemove }) => {
+    const isImage = fileData.type.startsWith('image/');
+    const sizeInMB = (fileData.compressedSize / (1024 * 1024)).toFixed(2);
+    
+    return (
+      <div className="mt-3 p-3 sm:p-4 bg-green-50 rounded-lg border border-green-200 w-full overflow-hidden">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            {isImage && fileData.data ? (
+              <img
+                src={fileData.data}
+                alt="Preview"
+                className={`object-cover border-2 border-green-200 flex-shrink-0 ${
+                  field === 'profilePicture' 
+                    ? 'w-10 h-10 sm:w-12 sm:h-12 rounded-full' 
+                    : 'w-10 h-10 sm:w-12 sm:h-12 rounded'
+                }`}
+              />
+            ) : (
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-green-700 font-medium text-xs sm:text-sm truncate">
+                {fileData.name}
+              </p>
+              <p className="text-green-600 text-xs">
+                <span className="truncate">Size: {sizeInMB} MB</span>
+                {fileData.compressed && (
+                  <span className="block sm:inline sm:ml-2 text-green-700 font-medium">
+                    (Compressed {fileData.compressionRatio}%)
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onRemove}
+            className="p-1 sm:p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors duration-200 flex-shrink-0"
+            aria-label="Remove file"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Enhanced File Upload Card Component
+  const FileUploadCard = ({ 
+    field, 
+    title, 
+    description, 
+    accept, 
+    icon: Icon,
+    formData, 
+    uploadState, 
+    onFileSelect, 
+    onCancel, 
+    onRemove 
+  }) => {
+    const hasFile = formData[field] && formData[field].data;
+    const { isUploading } = uploadState;
+    
+    return (
+      <div className="w-full border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 text-center bg-white/60 hover:border-blue-400 transition-colors duration-300 overflow-hidden">
+        {!hasFile && !isUploading && (
+          <>
+            <input
+              type="file"
+              id={field}
+              accept={accept}
+              onChange={(e) => onFileSelect(field, e.target.files[0])}
+              className="hidden"
+            />
+            <label htmlFor={field} className="cursor-pointer flex flex-col items-center gap-2 sm:gap-3 w-full">
+              <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-blue-500" />
+              <div className="w-full">
+                <p className="text-base sm:text-lg font-semibold text-gray-700 mb-1">{title}</p>
+                <p className="text-xs sm:text-sm text-gray-500 px-2 leading-relaxed">{description}</p>
+              </div>
+            </label>
+          </>
+        )}
+        
+        {isUploading && (
+          <UploadProgress field={field} uploadState={uploadState} onCancel={onCancel} />
+        )}
+        
+        {hasFile && !isUploading && (
+          <FilePreview 
+            field={field} 
+            fileData={formData[field]} 
+            onRemove={() => onRemove(field)} 
+          />
+        )}
+      </div>
+    );
   };
 
   // Step navigation with validation
@@ -643,41 +867,6 @@ export function UserDetails() {
     }
   };
 
-  // Check for browser support
-  if (!browserSupportsSpeechRecognition) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50 p-4">
-        <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-md text-center border border-white/20">
-          <div className="text-red-500 mb-6">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mx-auto"
-            >
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-3">
-            Browser Not Supported
-          </h3>
-          <p className="text-gray-600 leading-relaxed">
-            Your browser doesn't support speech recognition. Please use Chrome
-            or Edge for the best experience.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-2 sm:p-4 relative text-gray-900">
       {/* Progress bar (show only current step on mobile) */}
@@ -717,7 +906,7 @@ export function UserDetails() {
       </div>
 
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/20 p-4 sm:p-8 animate-fade-in-up">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/20 p-4 sm:p-8 animate-fade-in-up my-10">
           <form
             onSubmit={handleSubmit}
             onKeyDown={(e) => {
@@ -748,49 +937,44 @@ export function UserDetails() {
                   <User className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" /> Your
                   Age & Gender
                 </h2>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <Input
-                      type="number"
-                      label="Age"
-                      name="age"
-                      value={formData.age}
-                      onChange={handleChange}
-                      icon={Calendar}
-                      min="1"
-                      max="120"
-                      required
-                      className="bg-white/60"
+                <div className="relative flex items-center min-w-0">
+                  <Input
+                    type="number"
+                    label="Age"
+                    name="age"
+                    value={formData.age}
+                    onChange={handleChange}
+                    icon={Calendar}
+                    min="1"
+                    max="120"
+                    required
+                    className="pr-14 sm:pr-16 md:pr-20 min-w-0 bg-white/60"
+                  />
+                  <div className="absolute inset-y-0 right-4 top-4 flex items-center pointer-events-auto">
+                    <VoiceButton
+                      onResult={handleVoiceInput("age")}
+                      size="sm"
+                      className="!w-9 sm:!w-10"
+                      type="button"
+                      tabIndex={-1}
                     />
                   </div>
-                  <VoiceButton
-                    listening={listening && activeVoiceField === "age"}
-                    onClick={() => toggleVoiceInput("age")}
-                    fieldName="age"
-                  />
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleChange}
-                      className="w-full p-4 border border-gray-200 rounded-xl transition-all duration-300 shadow-sm bg-white/60"
-                      required
-                    >
-                      <option value="">Select Gender</option>
-                      {genderOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <VoiceButton
-                    listening={listening && activeVoiceField === "gender"}
-                    onClick={() => toggleVoiceInput("gender")}
-                    fieldName="gender"
-                  />
+                <div>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="w-full p-4 border border-gray-200 rounded-xl transition-all duration-300 shadow-sm bg-white/60"
+                    required
+                  >
+                    <option value="">Select Gender</option>
+                    {genderOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex justify-end gap-2 mt-4 sm:mt-6">
                   <Button
@@ -811,24 +995,26 @@ export function UserDetails() {
                   <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
                   Your Address
                 </h2>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <Input
-                      type="text"
-                      label="Address"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      icon={MapPin}
-                      required
-                      className="bg-white/60"
+                <div className="relative flex items-center min-w-0">
+                  <Input
+                    type="text"
+                    label="Address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    icon={MapPin}
+                    required
+                    className="pr-14 sm:pr-16 md:pr-20 min-w-0 bg-white/60"
+                  />
+                  <div className="absolute inset-y-0 right-4 top-4 flex items-center pointer-events-auto">
+                    <VoiceButton
+                      onResult={handleVoiceInput("address")}
+                      size="sm"
+                      className="!w-9 sm:!w-10"
+                      type="button"
+                      tabIndex={-1}
                     />
                   </div>
-                  <VoiceButton
-                    listening={listening && activeVoiceField === "address"}
-                    onClick={() => toggleVoiceInput("address")}
-                    fieldName="address"
-                  />
                 </div>
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
                   <Button
@@ -856,58 +1042,57 @@ export function UserDetails() {
                   <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
                   Emergency Contact
                 </h2>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <Input
-                      type="text"
-                      label={`Contact Name (${subStep + 1})`}
-                      value={formData.emergencyContacts[subStep].name}
-                      onChange={(e) =>
-                        handleEmergencyContactChange(
-                          subStep,
-                          "name",
-                          e.target.value
-                        )
-                      }
-                      icon={User}
-                      required
-                      className="bg-white/60 pr-12"
+                <div className="relative flex items-center min-w-0">
+                  <Input
+                    type="text"
+                    label={`Contact Name (${subStep + 1})`}
+                    value={formData.emergencyContacts[subStep].name}
+                    onChange={(e) =>
+                      handleEmergencyContactChange(
+                        subStep,
+                        "name",
+                        e.target.value
+                      )
+                    }
+                    icon={User}
+                    required
+                    className="pr-14 sm:pr-16 md:pr-20 min-w-0 bg-white/60"
+                  />
+                  <div className="absolute inset-y-0 right-4 top-4 flex items-center pointer-events-auto">
+                    <VoiceButton
+                      onResult={handleVoiceInput("emergencyContactName")}
+                      size="sm"
+                      className="!w-9 sm:!w-10"
+                      type="button"
+                      tabIndex={-1}
                     />
                   </div>
-                  <VoiceButton
-                    listening={
-                      listening && activeVoiceField === `contactName_${subStep}`
-                    }
-                    onClick={() => toggleVoiceInput(`contactName_${subStep}`)}
-                    fieldName={`contact ${subStep + 1} name`}
-                  />
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <Input
-                      type="tel"
-                      label={`Contact Number (${subStep + 1})`}
-                      value={formData.emergencyContacts[subStep].number}
-                      onChange={(e) =>
-                        handleEmergencyContactChange(
-                          subStep,
-                          "number",
-                          e.target.value
-                        )
-                      }
-                      icon={Phone}
-                      required
-                      className="bg-white/60 pr-12"
+                <div className="relative flex items-center min-w-0">
+                  <Input
+                    type="tel"
+                    label={`Contact Number (${subStep + 1})`}
+                    value={formData.emergencyContacts[subStep].number}
+                    onChange={(e) =>
+                      handleEmergencyContactChange(
+                        subStep,
+                        "number",
+                        e.target.value
+                      )
+                    }
+                    icon={Phone}
+                    required
+                    className="pr-14 sm:pr-16 md:pr-20 min-w-0 bg-white/60"
+                  />
+                  <div className="absolute inset-y-0 right-4 top-4 flex items-center pointer-events-auto">
+                    <VoiceButton
+                      onResult={handleVoiceInput("emergencyContactNumber")}
+                      size="sm"
+                      className="!w-9 sm:!w-10"
+                      type="button"
+                      tabIndex={-1}
                     />
                   </div>
-                  <VoiceButton
-                    listening={
-                      listening &&
-                      activeVoiceField === `contactNumber_${subStep}`
-                    }
-                    onClick={() => toggleVoiceInput(`contactNumber_${subStep}`)}
-                    fieldName={`contact ${subStep + 1} number`}
-                  />
                 </div>
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
                   <Button
@@ -935,84 +1120,66 @@ export function UserDetails() {
                   <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
                   Health & Status
                 </h2>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <select
-                      value={formData.healthCondition.selected}
-                      onChange={handleHealthConditionChange}
-                      className="w-full p-4 border border-gray-200 rounded-xl transition-all duration-300 shadow-sm bg-white/60"
-                      required
-                    >
-                      <option value="">Select Your Health Condition</option>
-                      {healthConditionOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <VoiceButton
-                    listening={
-                      listening && activeVoiceField === "healthCondition"
-                    }
-                    onClick={() => toggleVoiceInput("healthCondition")}
-                    fieldName="health condition"
-                  />
+                <div>
+                  <select
+                    value={formData.healthCondition.selected}
+                    onChange={handleHealthConditionChange}
+                    className="w-full p-4 border border-gray-200 rounded-xl transition-all duration-300 shadow-sm bg-white/60"
+                    required
+                  >
+                    <option value="">Select Your Health Condition</option>
+                    {healthConditionOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
                 {formData.healthCondition.selected === "Other" && (
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        label="Specify Condition"
-                        value={formData.healthCondition.custom}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            healthCondition: {
-                              ...prev.healthCondition,
-                              custom: e.target.value,
-                            },
-                          }))
-                        }
-                        required
-                        className="bg-white/60"
+                  <div className="relative flex items-center min-w-0">
+                    <Input
+                      type="text"
+                      label="Specify Condition"
+                      value={formData.healthCondition.custom}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          healthCondition: {
+                            ...prev.healthCondition,
+                            custom: e.target.value,
+                          },
+                        }))
+                      }
+                      required
+                      className="pr-14 sm:pr-16 md:pr-20 min-w-0 bg-white/60"
+                    />
+                    <div className="absolute inset-y-0 right-4 top-4 flex items-center pointer-events-auto">
+                      <VoiceButton
+                        onResult={handleVoiceInput("healthConditionCustom")}
+                        size="sm"
+                        className="!w-9 sm:!w-10"
+                        type="button"
+                        tabIndex={-1}
                       />
                     </div>
-                    <VoiceButton
-                      listening={
-                        listening && activeVoiceField === "specifyCondition"
-                      }
-                      onClick={() => toggleVoiceInput("specifyCondition")}
-                      fieldName="specify condition"
-                    />
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <select
-                      name="currentMedicalStatus"
-                      value={formData.currentMedicalStatus}
-                      onChange={handleChange}
-                      className="w-full p-4 border border-gray-200 rounded-xl transition-all duration-300 shadow-sm bg-white/60"
-                      required
-                    >
-                      <option value="">Select Status</option>
-                      {medicalStatusOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <VoiceButton
-                    listening={
-                      listening && activeVoiceField === "currentMedicalStatus"
-                    }
-                    onClick={() => toggleVoiceInput("currentMedicalStatus")}
-                    fieldName="medical status"
-                  />
+                <div>
+                  <select
+                    name="currentMedicalStatus"
+                    value={formData.currentMedicalStatus}
+                    onChange={handleChange}
+                    className="w-full p-4 border border-gray-200 rounded-xl transition-all duration-300 shadow-sm bg-white/60"
+                    required
+                  >
+                    <option value="">Select Status</option>
+                    {medicalStatusOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
                   <Button
@@ -1041,48 +1208,20 @@ export function UserDetails() {
                   <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
                   Medical Report (Optional)
                 </h2>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-white/60 hover:border-blue-400 transition-colors duration-300">
-                  <input
-                    type="file"
-                    id="medicalReport"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => handleFileUpload("medicalReport", e.target.files[0])}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="medicalReport"
-                    className="cursor-pointer flex flex-col items-center gap-3"
-                  >
-                    <Upload className="w-12 h-12 text-blue-500" />
-                    <div>
-                      <p className="text-lg font-semibold text-gray-700 mb-1">
-                        Upload Medical Report
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        PDF, JPEG, PNG files (Max 10MB) - Auto-compressed if needed
-                      </p>
-                    </div>
-                    {formData.medicalReport && formData.medicalReport.data && (
-                      <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                        <p className="text-green-700 font-medium">
-                          ✓ {formData.medicalReport.name}
-                        </p>
-                        <p className="text-green-600 text-sm">
-                          Size: {(formData.medicalReport.compressedSize / 1024 / 1024).toFixed(2)} MB
-                          {formData.medicalReport.compressed ? (
-                            <span className="ml-2 text-green-700 font-medium">
-                              (Auto-compressed {formData.medicalReport.compressionRatio}% - Saved {((formData.medicalReport.originalSize - formData.medicalReport.compressedSize) / 1024 / 1024).toFixed(2)} MB)
-                            </span>
-                          ) : (
-                            <span className="ml-2 text-blue-700 font-medium">
-                              (Uploaded without compression)
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    )}
-                  </label>
-                </div>
+                
+                <FileUploadCard
+                  field="medicalReport"
+                  title="Upload Medical Report"
+                  description="PDF, JPEG, PNG files (Max 10MB) - Auto-compressed if needed"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  icon={Upload}
+                  formData={formData}
+                  uploadState={uploadStates.medicalReport}
+                  onFileSelect={handleFileUpload}
+                  onCancel={cancelUpload}
+                  onRemove={removeFile}
+                />
+                
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
                   <Button
                     type="button"
@@ -1109,60 +1248,20 @@ export function UserDetails() {
                   <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />{" "}
                   Profile Picture (Optional)
                 </h2>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-white/60 hover:border-blue-400 transition-colors duration-300">
-                  <input
-                    type="file"
-                    id="profilePicture"
-                    accept=".jpg,.jpeg,.png"
-                    onChange={(e) => handleFileUpload("profilePicture", e.target.files[0])}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="profilePicture"
-                    className="cursor-pointer flex flex-col items-center gap-3"
-                  >
-                    {formData.profilePicture && formData.profilePicture.data ? (
-                      <div className="flex flex-col items-center gap-3">
-                        <img
-                          src={formData.profilePicture.data}
-                          alt="Profile Preview"
-                          className="w-24 h-24 rounded-full object-cover border-4 border-blue-200"
-                        />
-                        <div className="text-center">
-                          <p className="text-lg font-semibold text-gray-700 mb-1">
-                            Change Profile Picture
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            JPEG, PNG files (Max 5MB)
-                          </p>
-                          {formData.profilePicture.compressed ? (
-                            <p className="text-green-600 text-xs mt-1">
-                              Auto-compressed {formData.profilePicture.compressionRatio}% 
-                              (Size: {(formData.profilePicture.compressedSize / 1024).toFixed(0)}KB)
-                            </p>
-                          ) : (
-                            <p className="text-blue-600 text-xs mt-1">
-                              Uploaded without compression 
-                              (Size: {(formData.profilePicture.compressedSize / 1024).toFixed(0)}KB)
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <Camera className="w-12 h-12 text-blue-500" />
-                        <div>
-                          <p className="text-lg font-semibold text-gray-700 mb-1">
-                            Upload Profile Picture
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            JPEG, PNG files (Max 5MB) - Auto-compressed if needed
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </label>
-                </div>
+                
+                <FileUploadCard
+                  field="profilePicture"
+                  title="Upload Profile Picture"
+                  description="JPEG, PNG files (Max 5MB) - Auto-compressed if needed"
+                  accept=".jpg,.jpeg,.png"
+                  icon={Camera}
+                  formData={formData}
+                  uploadState={uploadStates.profilePicture}
+                  onFileSelect={handleFileUpload}
+                  onCancel={cancelUpload}
+                  onRemove={removeFile}
+                />
+                
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
                   <Button
                     type="button"
@@ -1173,8 +1272,8 @@ export function UserDetails() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isLoading}
-                    className="bg-green-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto"
+                    disabled={isLoading || uploadStates.medicalReport.isUploading || uploadStates.profilePicture.isUploading}
+                    className="bg-green-600 text-white px-6 py-2 rounded-xl shadow w-1/2 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? "Saving your information..." : "Complete Setup"}
                   </Button>

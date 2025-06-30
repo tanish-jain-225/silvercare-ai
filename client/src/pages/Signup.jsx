@@ -72,6 +72,12 @@ export function Signup() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
+
   React.useEffect(() => {
     speak("Welcome! Let's create your SilverCare AI account.");
   }, [speak]);
@@ -128,6 +134,7 @@ export function Signup() {
         >
           <form
             onSubmit={handleSubmit}
+            onKeyDown={handleKeyDown}
             className="space-y-5 sm:space-y-6 md:space-y-8"
             autoComplete="off"
           >

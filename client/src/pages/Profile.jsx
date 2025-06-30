@@ -160,36 +160,36 @@ export function Profile() {
         {/* Medical Report */}
         {user?.medicalReport && (
           <Card className="w-full max-w-2xl mb-8 animate-fade-in-up bg-white dark:bg-dark-50/95 border border-slate-200 dark:border-dark-600/30 backdrop-blur-md shadow-xl rounded-2xl transition-shadow hover:shadow-2xl">
-            <div className="flex items-center mb-5">
-              <div className="p-2 rounded-full bg-slate-100 dark:bg-primary-100/20 mr-4">
+            <div className="flex items-center mb-4 sm:mb-5">
+              <div className="p-2 rounded-full bg-slate-100 dark:bg-primary-100/20 mr-3 sm:mr-4">
                 <FileText
                   className="text-slate-600 dark:text-primary-100"
-                  size={28}
+                  size={24}
                   aria-hidden="true"
                 />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 dark:text-primary-100 tracking-tight">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-primary-100 tracking-tight">
                 Medical Report
               </h3>
             </div>
-            <div className="bg-slate-50 dark:bg-primary-100/10 rounded-lg px-4 py-3 border border-slate-200 dark:border-primary-100/10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <FileText className="text-blue-600 dark:text-blue-400" size={20} />
-                  <div>
-                    <p className="font-medium text-slate-800 dark:text-primary-100">
+            <div className="bg-slate-50 dark:bg-primary-100/10 rounded-lg p-3 sm:px-4 sm:py-3 border border-slate-200 dark:border-primary-100/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                  <FileText className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5 sm:mt-0" size={18} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-slate-800 dark:text-primary-100 text-sm sm:text-base truncate">
                       {user.medicalReport.name || 'Medical Report'}
                     </p>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      <span className="text-xs text-slate-500 dark:text-primary-100/60 bg-slate-100 dark:bg-primary-100/10 px-2 py-1 rounded">
+                    <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-1">
+                      <span className="text-xs text-slate-500 dark:text-primary-100/60 bg-slate-100 dark:bg-primary-100/10 px-2 py-1 rounded whitespace-nowrap">
                         {((user.medicalReport.compressedSize || user.medicalReport.originalSize || 0) / 1024).toFixed(0)}KB
                       </span>
                       {user.medicalReport.compressed ? (
-                        <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                        <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded whitespace-nowrap">
                           Compressed ({user.medicalReport.compressionRatio}% saved)
                         </span>
                       ) : (
-                        <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
+                        <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded whitespace-nowrap">
                           Original Quality
                         </span>
                       )}
@@ -208,10 +208,10 @@ export function Profile() {
                       document.body.removeChild(link);
                     }
                   }}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-xs sm:text-sm font-medium flex-shrink-0 w-full sm:w-auto"
                 >
-                  <Download size={16} />
-                  View/Download
+                  <Download size={14} className="sm:w-4 sm:h-4" />
+                  <span className="sm:inline">View/Download</span>
                 </button>
               </div>
             </div>

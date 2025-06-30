@@ -129,6 +129,12 @@ export function Login() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
+
   React.useEffect(() => {
     speak("Welcome to SilverCare AI. Please enter your login details.");
   }, [speak]);
@@ -185,6 +191,7 @@ export function Login() {
         >
           <form
             onSubmit={handleSubmit}
+            onKeyDown={handleKeyDown}
             className="space-y-5 sm:space-y-6 md:space-y-8"
             autoComplete="off"
           >
@@ -254,13 +261,15 @@ export function Login() {
               {isLoading ? "Signing in..." : "Login"}
             </Button>
 
-            {/* Divider */}
-            <div className="relative my-6">
+            {/* Divider with improved design */}
+            <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-600"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white/20 text-gray-600 font-medium">Or continue with</span>
+              <div className="relative flex justify-center">
+                <span className="px-4 py-2 bg-white  text-gray-600  font-medium text-sm sm:text-base rounded-full shadow-md border border-gray-200  backdrop-blur-sm">
+                  Or continue with
+                </span>
               </div>
             </div>
 
