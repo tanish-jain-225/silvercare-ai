@@ -128,11 +128,7 @@ export function AskQueries() {
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
           className="flex flex-col w-full max-w-4xl bg-white/95 dark:bg-dark-200/90 rounded-2xl shadow-lg border border-primary-100/30 dark:border-primary-200/40 overflow-hidden h-[80vh] mx-auto"
         >
-          <div className="flex items-center justify-between gap-2 p-2">
-            <button className="bg-primary-200 p-2 text-white rounded-md" onClick={()=> handleChatHistory()}>
-              {/* Panel Icon - From React Icons */}
-              <LucidePanelLeftOpen />
-            </button>
+          <div className="flex items-center justify-center gap-2 p-2">
             <motion.div
               layout
               transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
@@ -171,11 +167,6 @@ export function AskQueries() {
                 />
               </motion.div>
             </motion.div>
-            <button className="bg-primary-200 p-2 text-white rounded-md" onClick={() => {window.location.reload()}}>
-              {/* Refresh By History Icon - From React Icons */}
-              
-              <History />
-            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 custom-scrollbar">
