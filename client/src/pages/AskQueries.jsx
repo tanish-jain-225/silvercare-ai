@@ -8,12 +8,14 @@ import { route_endpoint } from "../utils/helper.js";
 import TrueFocus from "../components/ask-queries/TrueFocus";
 import { motion } from "framer-motion";
 import { useVoice } from "../hooks/useVoice";
+import { useLocation } from "../hooks/useLocation";
 import { BottomNavigation } from "../components/layout/BottomNavigation";
 import { LucidePanelLeftOpen, History } from "lucide-react";
 
 export function AskQueries() {
   const { user } = useApp();
   const endOfMessagesRef = useRef(null);
+  const { location } = useLocation();
 
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -45,13 +47,152 @@ export function AskQueries() {
   const handleChatHistory = () => {
     console.log("Chat history functionality not implemented yet.");
     // This function can be used to handle chat history logic
-  }
+  };
+
+  // Handle emergency response based on server analysis
+  const handleEmergencyResponse = async (isEmergency, emergencyData, originalMessage) => {
+    if (isEmergency && user?.emergencyContacts?.length > 0) {
+      try {
+        // Create emergency message with location
+        const locationText =
+          location?.lat && location?.lng
+            ? `https://www.google.com/maps?q=${location.lat},${location.lng}`
+            : "Location not available";
+
+        const analysis = emergencyData.emergency_analysis;
+        const sentimentLevel = analysis?.sentiment_polarity < -0.4 
+          ? 'Severely Distressed' 
+          : analysis?.sentiment_polarity < -0.2 
+          ? 'Highly Distressed' 
+          : 'Distressed';
+
+        const emergencyMessage = `EMERGENCY ALERT from ${
+          user.fullName || user.email
+        }
+
+Message: "${originalMessage}"
+
+Location: ${locationText}
+
+Emergency Analysis:
+- Confidence: ${Math.round(emergencyData.confidence * 100)}%
+- Sentiment: ${sentimentLevel}
+- Emergency Score: ${analysis?.emergency_score || 'N/A'}
+- Immediate Danger Detected: ${analysis?.has_immediate_danger ? 'YES' : 'NO'}
+- Medical Emergency: ${analysis?.has_medical_distress ? 'YES' : 'NO'}
+
+Please contact them immediately or call emergency services.
+
+Sent from SilverCare AI Emergency Detection System`;
+
+        // Open WhatsApp Web for each emergency contact
+        user.emergencyContacts.forEach((contact) => {
+          const cleanNumber = contact.number.replace(/[^0-9]/g, "");
+          const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(
+            emergencyMessage
+          )}`;
+          window.open(whatsappUrl, "_blank");
+        });
+
+        // Create detailed emergency notification
+        const analysisDetails = analysis?.pattern_matches;
+        const detectionReasons = [];
+        
+        if (analysisDetails?.immediate_danger > 0) detectionReasons.push('immediate danger');
+        if (analysisDetails?.medical_emergency > 0) detectionReasons.push('medical emergency');
+        if (analysisDetails?.safety_threats > 0) detectionReasons.push('safety threat');
+        if (analysis?.sentiment_polarity < -0.3) detectionReasons.push('severe emotional distress');
+
+        const emergencyNotification = {
+          id: `emergency-${Date.now()}`,
+          message: `Emergency situation detected with ${Math.round(emergencyData.confidence * 100)}% confidence based on: ${detectionReasons.join(', ')}. I've opened WhatsApp for your emergency contacts: ${user.emergencyContacts
+            .map((c) => c.name)
+            .join(
+              ", "
+            )}. Please send the pre-filled emergency message to notify them immediately.`,
+          isUser: false,
+          timestamp: new Date(),
+          isEmergency: true,
+        };
+
+        setMessages((prev) => [...prev, emergencyNotification]);
+        
+        // Disable inputs while speaking but keep pause button available
+        setInputDisabled(true);
+        speak(
+          `Emergency situation detected with ${Math.round(emergencyData.confidence * 100)} percent confidence. I've opened WhatsApp for your emergency contacts with a detailed emergency message.`,
+          {
+            onended: () => {
+              setInputDisabled(false); // Re-enable inputs after speech ends
+            },
+          }
+        );
+
+        return true;
+      } catch (error) {
+        console.error("Failed to handle emergency:", error);
+        const errorNotification = {
+          id: `emergency-error-${Date.now()}`,
+          message:
+            "Emergency situation detected but failed to open WhatsApp contacts. Please manually call your emergency contacts or emergency services immediately.",
+          isUser: false,
+          timestamp: new Date(),
+          isError: true,
+        };
+        setMessages((prev) => [...prev, errorNotification]);
+        
+        // Provide voice feedback for emergency error with input control
+        setInputDisabled(true);
+        speak(
+          "Emergency detected but failed to open WhatsApp contacts. Please manually call your emergency contacts or emergency services immediately.",
+          {
+            onended: () => {
+              setInputDisabled(false); // Re-enable inputs after speech ends
+            },
+          }
+        );
+        
+        return false;
+      }
+    } else if (
+      isEmergency &&
+      (!user?.emergencyContacts || user.emergencyContacts.length === 0)
+    ) {
+      // Emergency detected but no contacts configured
+      const analysis = emergencyData.emergency_analysis;
+      const noContactsNotification = {
+        id: `emergency-no-contacts-${Date.now()}`,
+        message:
+          `Emergency situation detected with ${Math.round(emergencyData.confidence * 100)}% confidence (Emergency Score: ${analysis?.emergency_score || 'N/A'}). However, you don't have any emergency contacts configured. Please go to your Profile settings to add emergency contacts, or call emergency services directly at 911.`,
+        isUser: false,
+        timestamp: new Date(),
+        isEmergency: true,
+      };
+
+      setMessages((prev) => [...prev, noContactsNotification]);
+      
+      // Disable inputs while speaking but keep pause button available
+      setInputDisabled(true);
+      speak(
+        "Emergency situation detected with high confidence, but you don't have emergency contacts configured. Please call 911 or emergency services directly.",
+        {
+          onended: () => {
+            setInputDisabled(false); // Re-enable inputs after speech ends
+          },
+        }
+      );
+      return true;
+    }
+
+    return false;
+  };
 
   // Send a message
   const handleSendMessage = async (message) => {
     const messageToSend = message || inputMessage;
     if (!messageToSend.trim() || !user?.id) return;
     setError(null);
+
     const userMessage = {
       id: Date.now().toString(),
       message: messageToSend,
@@ -61,6 +202,7 @@ export function AskQueries() {
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
     setIsLoading(true);
+
     try {
       let response, data;
       response = await fetch(`${route_endpoint}/chat/message`, {
@@ -72,9 +214,60 @@ export function AskQueries() {
         }),
       });
       data = await response.json();
+
+      // Check for emergency detection from server
+      const emergencyHandled = data.emergency_detected 
+        ? await handleEmergencyResponse(
+            data.emergency_detected, 
+            { 
+              confidence: data.emergency_confidence,
+              emergency_analysis: data.emergency_analysis 
+            }, 
+            messageToSend
+          )
+        : false;
+
+      // Check for reminder detection and handle it
+      const reminderHandled = data.reminder_detected && data.reminder_result?.success;
+      
+      if (reminderHandled) {
+        // Add a visual indicator for successful reminder creation
+        const reminderData = data.reminder_result.reminder || data.reminder_result.reminders?.[0];
+        console.log("Reminder created successfully:", reminderData);
+        
+        const reminderNotification = {
+          id: `reminder-success-${Date.now()}`,
+          message: `✅ Reminder Created Successfully!\n\nTitle: ${reminderData?.title || 'New Reminder'}\nDate: ${reminderData?.date || 'Not specified'}\nTime: ${reminderData?.time || 'Not specified'}`,
+          isUser: false,
+          timestamp: new Date(),
+          isReminder: true,
+        };
+        setMessages((prev) => [...prev, reminderNotification]);
+      } else if (data.reminder_detected && !data.reminder_result?.success) {
+        // Reminder was detected but failed to process
+        console.log("Reminder detection failed:", data.reminder_result);
+        
+        const reminderFailNotification = {
+          id: `reminder-fail-${Date.now()}`,
+          message: `❌ Reminder Processing Failed\n\nI detected you wanted to set a reminder, but couldn't process it automatically. Please try the Reminders section or be more specific with your request.`,
+          isUser: false,
+          timestamp: new Date(),
+          isError: true,
+        };
+        setMessages((prev) => [...prev, reminderFailNotification]);
+      }
+
+      let aiResponseMessage =
+        data.message || "Sorry, I could not understand that.";
+
+      // If emergency was detected, modify AI response to acknowledge it
+      if (emergencyHandled) {
+        aiResponseMessage = `I understand this may be an emergency situation based on advanced sentiment analysis. I've already notified your emergency contacts. ${aiResponseMessage} Is there anything else I can help you with right now?`;
+      }
+
       const aiMessage = {
         id: (Date.now() + 1).toString(),
-        message: data.message || "Sorry, I could not understand that.",
+        message: aiResponseMessage,
         isUser: false,
         timestamp: new Date(),
       };
@@ -83,12 +276,24 @@ export function AskQueries() {
         return updated;
       });
 
-      setInputDisabled(true); // Disable input while speaking
-      speak(aiMessage.message, {
-        onended: () => {
-          setInputDisabled(false); // Enable input after speaking ends
-        },
-      });
+      // Only speak the AI response if no emergency was handled (emergency has its own speech)
+      if (!emergencyHandled) {
+        // Disable inputs while speaking but keep pause button available
+        setInputDisabled(true);
+        speak(aiMessage.message, {
+          onended: () => {
+            setInputDisabled(false); // Re-enable inputs after speech ends
+          },
+        });
+      } else {
+        // If emergency was handled, inputs are already managed by emergency handler
+        // Just ensure they're re-enabled after any ongoing speech
+        setTimeout(() => {
+          if (!isSpeaking) {
+            setInputDisabled(false);
+          }
+        }, 100);
+      }
     } catch (error) {
       setError("Unable to connect to the server. Please try again.");
       const errorMessage = {
@@ -179,7 +384,11 @@ export function AskQueries() {
                 timestamp={msg.timestamp}
                 index={index}
                 className={
-                  msg.isUser
+                  msg.isEmergency
+                    ? "bg-red-100 text-red-800 border-2 border-red-300 dark:bg-red-900/40 dark:text-red-200 dark:border-red-600/60 shadow-lg"
+                    : msg.isReminder
+                    ? "bg-green-100 text-green-800 border-2 border-green-300 dark:bg-green-900/40 dark:text-green-200 dark:border-green-600/60 shadow-lg"
+                    : msg.isUser
                     ? "bg-accent-yellow/20 text-primary-300 border border-primary-100/30 dark:bg-primary-900/40 dark:text-white dark:border-primary-800/40"
                     : "bg-primary-100/80 text-primary-200 border border-primary-100/30 dark:bg-primary-900/40 dark:text-primary-100 dark:border-primary-700/40"
                 }
@@ -223,10 +432,10 @@ export function AskQueries() {
                 <button
                   onClick={() => {
                     stop();
-                    setInputDisabled(false); // Enable input when pause is clicked
+                    setInputDisabled(false); // Re-enable inputs when user stops speech
                   }}
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary-200 hover:bg-blue-700 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-105"
-                  aria-label="Pause/Stop Speaking"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-red-500 hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600 text-white dark:text-white border border-red-400 dark:border-red-400 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-105"
+                  aria-label="Stop AI Voice"
                   type="button"
                 >
                   <Pause size={20} />

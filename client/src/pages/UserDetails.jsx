@@ -29,7 +29,10 @@ export function UserDetails() {
   const [step, setStep] = useState(1); // Step state
   const [subStep, setSubStep] = useState(0); // For emergency contacts
   const [isPreFilled, setIsPreFilled] = useState(false); // Track if form is pre-filled with existing data
-  const [submissionAttempts, setSubmissionAttempts] = useState(0); // Track submission attempts
+  const [fileInputKeys, setFileInputKeys] = useState({
+    medicalReport: Date.now(),
+    profilePicture: Date.now(),
+  }); // Force file input re-render on errors
 
   // Bulletproof upload state management with atomic operations
   const [uploadStates, setUploadStates] = useState({
@@ -39,7 +42,6 @@ export function UserDetails() {
       controller: null,
       stage: "idle", // idle, validating, processing, uploading, complete, error, cancelled
       error: null,
-      retryCount: 0,
       operationId: null,
     },
     profilePicture: {
@@ -48,7 +50,6 @@ export function UserDetails() {
       controller: null,
       stage: "idle",
       error: null,
-      retryCount: 0,
       operationId: null,
     },
   });
@@ -269,7 +270,7 @@ export function UserDetails() {
       console.log(`Aborted controller for ${field}`);
     }
 
-    // Remove from active operations
+    // Remove from active operations immediately
     activeUploadOperations.current.delete(field);
 
     // Reset upload state atomically
@@ -281,7 +282,6 @@ export function UserDetails() {
         controller: null,
         stage: "idle",
         error: null,
-        retryCount: prev[field].retryCount,
         operationId: null,
       },
     }));
@@ -292,14 +292,18 @@ export function UserDetails() {
     // Clear any existing errors
     setError("");
 
-    // Reset file input
-    setTimeout(() => {
-      const fileInput = document.getElementById(field);
-      if (fileInput) {
-        fileInput.value = "";
-        console.log(`Reset file input for ${field} after cancellation`);
-      }
-    }, 100);
+    // Force file input re-render and reset
+    setFileInputKeys(prev => ({
+      ...prev,
+      [field]: Date.now()
+    }));
+
+    // Reset file input immediately (not delayed)
+    const fileInput = document.getElementById(field);
+    if (fileInput) {
+      fileInput.value = "";
+      console.log(`Reset file input for ${field} after cancellation`);
+    }
 
     const fieldName =
       field === "medicalReport" ? "Medical report" : "Profile picture";
@@ -475,13 +479,20 @@ export function UserDetails() {
       .toString(36)
       .substr(2, 9)}`;
 
-    // Prevent duplicate uploads for the same field
-    if (
-      uploadStates[field].isUploading ||
-      activeUploadOperations.current.has(field)
-    ) {
+    // Prevent duplicate uploads for the same field with better race condition handling
+    if (uploadStates[field].isUploading) {
       console.log(
         `Upload already in progress for ${field}, ignoring duplicate request`
+      );
+      return;
+    }
+
+    // Double-check with a small delay to handle rapid clicks
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    if (uploadStates[field].isUploading || activeUploadOperations.current.has(field)) {
+      console.log(
+        `Upload still in progress for ${field} after delay check, ignoring duplicate request`
       );
       return;
     }
@@ -509,6 +520,31 @@ export function UserDetails() {
           ...updates,
         },
       }));
+    };
+
+    // Cleanup function to ensure proper state reset
+    const cleanupUpload = (success = false) => {
+      console.log(`Cleaning up upload for ${field}, success: ${success}`);
+      
+      // Remove from active operations
+      activeUploadOperations.current.delete(field);
+      
+      // Reset file input if upload failed
+      if (!success) {
+        // Force file input re-render by updating key
+        setFileInputKeys(prev => ({
+          ...prev,
+          [field]: Date.now()
+        }));
+        
+        setTimeout(() => {
+          const fileInput = document.getElementById(field);
+          if (fileInput) {
+            fileInput.value = "";
+            console.log(`Reset file input for ${field} after failed upload`);
+          }
+        }, 100);
+      }
     };
 
     // Initialize upload state atomically
@@ -786,16 +822,13 @@ export function UserDetails() {
           controller: null,
           stage: "complete",
         });
-        activeUploadOperations.current.delete(field);
+        cleanupUpload(true); // Success cleanup
       }, 300);
     } catch (error) {
       console.error(
         `Upload failed for ${field} (${operationId}):`,
         error.message
       );
-
-      // Clean up operation tracking
-      activeUploadOperations.current.delete(field);
 
       // Handle cancellation gracefully
       if (error.message.includes("cancelled")) {
@@ -806,6 +839,7 @@ export function UserDetails() {
           stage: "cancelled",
           error: null,
         });
+        cleanupUpload(false);
         console.log(`Upload cancelled for ${field} (${operationId})`);
         return;
       }
@@ -835,14 +869,8 @@ export function UserDetails() {
         }. ${errorMessage}`
       );
 
-      // Reset file input
-      setTimeout(() => {
-        const fileInput = document.getElementById(field);
-        if (fileInput) {
-          fileInput.value = "";
-          console.log(`Reset file input for ${field}`);
-        }
-      }, 100);
+      // Cleanup with failure handling
+      cleanupUpload(false);
     }
   };
 
@@ -1003,6 +1031,7 @@ export function UserDetails() {
     onFileSelect,
     onCancel,
     onRemove,
+    fileInputKey,
   }) => {
     const hasFile = formData[field] && formData[field].data;
     const { isUploading } = uploadState;
@@ -1014,6 +1043,7 @@ export function UserDetails() {
             <input
               type="file"
               id={field}
+              key={fileInputKey} // Force re-render on error
               accept={accept}
               onChange={(e) => onFileSelect(field, e.target.files[0])}
               className="hidden"
@@ -1110,7 +1140,7 @@ export function UserDetails() {
     }
   };
 
-  // Enhanced form submission with timeout handling and retry logic
+  // Enhanced form submission with timeout handling
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -1122,8 +1152,6 @@ export function UserDetails() {
       return;
     }
 
-    // Track submission attempts
-    setSubmissionAttempts((prev) => prev + 1);
     setIsLoading(true);
     setError(""); // Clear any existing errors when submitting
 
@@ -1367,7 +1395,7 @@ export function UserDetails() {
             }}
             className="space-y-8 sm:space-y-10 text-gray-900"
           >
-            {/* Enhanced Error Message with Retry Option */}
+            {/* Error Message */}
             {error && (
               <div className="bg-red-50 border-l-4 border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
                 <div className="flex items-start">
@@ -1379,37 +1407,6 @@ export function UserDetails() {
                         : "Upload Error"}
                     </p>
                     <p className="text-red-700 mt-1">{error}</p>
-                    {(error.includes("timeout") ||
-                      error.includes("Network") ||
-                      error.includes("Failed to save")) &&
-                      submissionAttempts > 0 && (
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={() => {
-                              setError("");
-                              setSubmissionAttempts((prev) => prev + 1);
-                              // Retry form submission
-                              setTimeout(() => {
-                                const form = document.querySelector("form");
-                                if (form) {
-                                  const submitEvent = new Event("submit", {
-                                    bubbles: true,
-                                    cancelable: true,
-                                  });
-                                  form.dispatchEvent(submitEvent);
-                                }
-                              }, 100);
-                            }}
-                            className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm font-medium hover:bg-red-200 transition-colors"
-                            disabled={isLoading}
-                          >
-                            {isLoading ? "Retrying..." : "Retry Submission"}
-                          </button>
-                          <span className="text-xs text-red-600 self-center">
-                            Attempt {submissionAttempts + 1}
-                          </span>
-                        </div>
-                      )}
                   </div>
                   <button
                     onClick={() => setError("")}
@@ -1711,6 +1708,7 @@ export function UserDetails() {
                   onFileSelect={handleFileUpload}
                   onCancel={cancelUpload}
                   onRemove={removeFile}
+                  fileInputKey={fileInputKeys.medicalReport}
                 />
 
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">
@@ -1751,6 +1749,7 @@ export function UserDetails() {
                   onFileSelect={handleFileUpload}
                   onCancel={cancelUpload}
                   onRemove={removeFile}
+                  fileInputKey={fileInputKeys.profilePicture}
                 />
 
                 <div className="flex justify-between gap-2 mt-4 sm:mt-6">

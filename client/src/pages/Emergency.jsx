@@ -33,7 +33,6 @@ export default function Emergency() {
     loading: locationLoading,
     error: locationError,
   } = useLocation();
-  const [isEmergencyActive, setIsEmergencyActive] = useState(false);
 
   // State for emergency chat
   const [messages, setMessages] = useState({});
@@ -73,6 +72,36 @@ export default function Emergency() {
   const [showAddContactForm, setShowAddContactForm] = useState(false);
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
+
+  const emergencyHelp = async () => {
+    // confirm the action
+    const helpConfirm = confirm(
+      "Are you sure you want to activate emergency SOS? This will notify your emergency contacts for help and share your location."
+    );
+
+    if (!helpConfirm) {
+      speak("SOS Message cancelled.");
+      return;
+    } else {
+      speak("SOS Message Sent. Please wait for help.");
+
+      // Get default emergency contacts and send message
+      const emergencyMessage = `EMERGENCY SOS ALERT\n\nI need immediate help!\n\nMy current location:\nhttps://www.google.com/maps?q=${location?.lat},${location?.lng}\n\nPlease contact me or emergency services immediately.\n\nSent from SilverCare AI Emergency System\nThis is an automated emergency message.`;
+
+      // Send emergency message to all default contacts
+      const defaultContacts = emergencyContacts.filter((c) => c.isDefault);
+      for (const contact of defaultContacts) {
+        const whatsappUrl = `https://wa.me/${contact.phone.replace(
+          /[^0-9]/g,
+          ""
+        )}?text=${encodeURIComponent(emergencyMessage)}`;
+        window.open(whatsappUrl, "_blank");
+      }
+      speak(
+        "Emergency SOS message sent to your default contacts via WhatsApp."
+      );
+    }
+  };
 
   const handleAddContact = async () => {
     if (!newContactName.trim() || !newContactPhone.trim()) {
@@ -222,6 +251,50 @@ export default function Emergency() {
     <div className="min-h-screen mb-20 w-full overflow-x-hidden bg-gradient-to-br from-primary-50 to-primary-100/30 dark:from-dark-100 dark:to-dark-200 flex flex-col px-2">
       {/* Content */}
       <div className="container mx-auto w-full max-w-4xl px-2 sm:px-4 py-6 sm:py-8 flex-1 flex flex-col gap-8">
+        {/* Emergency SOS Help Button Section */}
+        <section className="w-full">
+          <Card className="p-4 bg-white/90 dark:bg-dark-100/90 backdrop-blur-sm border border-primary-100/20 dark:border-primary-100/10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="flex items-start">
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-12 h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-full">
+                      <AlertTriangle
+                        className="text-primary-300 dark:text-primary-100"
+                        size={24}
+                      />
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-semibold text-primary-300 dark:text-primary-100">
+                      Emergency SOS Button
+                    </h2>
+                  </div>
+                  <button
+                    className="text-md font-bold text-white  transition-colors duration-200 bg-red-600 hover:bg-red-700 py-2 px-4 rounded-lg"
+                    onClick={() => {
+                      emergencyHelp();
+                    }}
+                  >
+                    Get Help
+                  </button>
+                </div>
+                <p className="text-primary-200 dark:text-primary-100/90">
+                  Instantly send emergency SOS alerts to your default contacts
+                  via WhatsApp with your exact location for immediate
+                  assistance.
+                </p>
+                <div className="mt-2 space-y-1">
+                  <span className="text-sm text-yellow-600 block"> 
+                    Numbers must be valid WhatsApp numbers
+                  </span>
+                  <span className="text-sm text-green-600 block">
+                    Uses multiple delivery methods for reliability
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </section>
+
         {/* Location Section */}
         <section className="w-full">
           <Card className="p-4 sm:p-6 bg-white/90 dark:bg-dark-100/90 backdrop-blur-sm border border-primary-100/20 dark:border-primary-100/10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
@@ -239,7 +312,14 @@ export default function Emergency() {
                       Your Current Location
                     </h3>
                   </div>
-                  <button className="text-md font-bold hover:text-yellow-400" onClick={()=>{window.location.reload()}}>Refresh</button>
+                  <button
+                    className="text-md font-bold text-white  transition-colors duration-200 bg-blue-600 hover:bg-blue-700 py-2 px-4 rounded-lg"
+                    onClick={() => {
+                      window.location.reload();
+                    }}
+                  >
+                    Refresh
+                  </button>
                 </div>
                 {locationLoading ? (
                   <p className="text-primary-200 dark:text-primary-100/90">
@@ -288,7 +368,10 @@ export default function Emergency() {
         <section className="w-full">
           <div className="flex items-center mb-4 sm:mb-6">
             <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-primary-100/50 dark:bg-primary-100/10 rounded-lg mr-3 sm:mr-4">
-              <Send className="text-primary-300 dark:text-primary-100" size={24} />
+              <Users
+                className="text-primary-300 dark:text-primary-100"
+                size={24}
+              />
             </div>
             <h3 className="text-xl sm:text-2xl font-semibold text-primary-300 dark:text-primary-100">
               Emergency Chat
@@ -377,13 +460,17 @@ export default function Emergency() {
                     message.trim()
                   )}`;
                   window.open(whatsappUrl, "_blank");
-                  speak(`Emergency message sent to ${phoneNumber} via WhatsApp`);
+                  speak(
+                    `Emergency message sent to ${phoneNumber} via WhatsApp`
+                  );
                   setMessages((prev) => ({
                     ...prev,
                     "any-number": "",
                   }));
                 }}
-                disabled={!newContactPhone.trim() || !messages["any-number"]?.trim()}
+                disabled={
+                  !newContactPhone.trim() || !messages["any-number"]?.trim()
+                }
                 className="w-full bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 disabled:bg-primary-100/30 dark:disabled:bg-primary-100/10 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
               >
                 <Send size={20} />
