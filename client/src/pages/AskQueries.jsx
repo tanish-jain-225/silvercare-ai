@@ -382,9 +382,7 @@ export function AskQueries() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className={`absolute inset-0 z-30 bg-black/60 backdrop-blur-sm flex items-center justify-center overflow-y-auto p-4 ${
-                  isInitialWelcomePlaying ? 'pointer-events-none' : ''
-                }`}
+                className="absolute inset-0 z-30 bg-black/30 backdrop-blur-sm flex items-center justify-center overflow-y-auto p-4"
               >
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
@@ -395,12 +393,7 @@ export function AskQueries() {
                   
                   <button
                     onClick={handleStartChat}
-                    disabled={isInitialWelcomePlaying}
-                    className={`bg-gradient-to-r from-primary-200 to-primary-300 hover:from-primary-300 hover:to-primary-200 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-sm sm:text-base md:text-lg shadow-lg transition-all duration-300 hover:shadow-xl dark:from-primary-200 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-primary-200 flex-shrink-0 w-full break-words ${
-                      isInitialWelcomePlaying 
-                        ? 'opacity-50 cursor-not-allowed' 
-                        : 'hover:cursor-pointer'
-                    }`}
+                    className={`bg-gradient-to-r from-primary-200 to-primary-300 hover:from-primary-300 hover:to-primary-200 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-sm sm:text-base md:text-lg shadow-lg transition-all duration-300 hover:shadow-xl dark:from-primary-200 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-primary-200 flex-shrink-0 w-full break-words z-40`}
                   >
                     Start Conversation
                   </button>

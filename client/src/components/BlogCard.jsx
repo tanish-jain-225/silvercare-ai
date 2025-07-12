@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { Volume2 } from "lucide-react";
 
 export function BlogCard({ article }) {
   const { title, description, url, urlToImage, publishedAt } = article;
@@ -13,6 +14,22 @@ export function BlogCard({ article }) {
     });
   };
 
+  const handleSpeakTitle = () => {
+    if ('speechSynthesis' in window) {
+      // Stop any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      // Create new speech utterance
+      const utterance = new SpeechSynthesisUtterance(title);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      
+      // Speak the title
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   return (
     <motion.div
       className="group bg-white dark:bg-gray-900 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden h-full flex flex-col border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
@@ -21,6 +38,16 @@ export function BlogCard({ article }) {
     >
       {/* Image Container */}
       <div className="relative overflow-hidden h-40 sm:h-48 lg:h-52">
+        {/* Speak Button - positioned at top right corner */}
+        <button
+          onClick={handleSpeakTitle}
+          className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg hover:shadow-xl backdrop-blur-sm border border-gray-200 dark:border-gray-600 hover:bg-white dark:hover:bg-gray-700 transition-all duration-200 flex items-center justify-center group/speak"
+          aria-label={`Read aloud: ${title}`}
+          title="Click to hear article title"
+        >
+          <Volume2 className="w-4 h-4 text-gray-700 dark:text-gray-300 group-hover/speak:text-blue-600 dark:group-hover/speak:text-blue-400 transition-colors duration-200" />
+        </button>
+        
         {urlToImage ? (
           <img
             src={urlToImage}
