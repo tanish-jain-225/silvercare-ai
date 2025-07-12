@@ -32,7 +32,47 @@ export default function Emergency() {
     location,
     loading: locationLoading,
     error: locationError,
+    accuracy,
+    locationDetails,
   } = useLocation();
+
+  // Helper function to format accuracy information
+  const getAccuracyStatus = (accuracyMeters) => {
+    if (!accuracyMeters) return { status: "Unknown", color: "gray", description: "Accuracy information unavailable" };
+    
+    if (accuracyMeters <= 10) {
+      return { 
+        status: "Excellent", 
+        color: "green", 
+        description: `Very precise location (±${accuracyMeters.toFixed(1)}m)` 
+      };
+    } else if (accuracyMeters <= 50) {
+      return { 
+        status: "Good", 
+        color: "blue", 
+        description: `Good accuracy (±${accuracyMeters.toFixed(1)}m)` 
+      };
+    } else if (accuracyMeters <= 100) {
+      return { 
+        status: "Fair", 
+        color: "yellow", 
+        description: `Moderate accuracy (±${accuracyMeters.toFixed(1)}m)` 
+      };
+    } else {
+      return { 
+        status: "Poor", 
+        color: "red", 
+        description: `Low accuracy (±${accuracyMeters.toFixed(1)}m)` 
+      };
+    }
+  };
+
+  // Format timestamp
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "Unknown";
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString();
+  };
 
   // State for emergency chat
   const [messages, setMessages] = useState({});
@@ -86,7 +126,7 @@ export default function Emergency() {
       speak("SOS Message Sent. Please wait for help.");
 
       // Get default emergency contacts and send message
-      const emergencyMessage = `EMERGENCY SOS ALERT\n\nI need immediate help!\n\nMy current location:\nhttps://www.google.com/maps?q=${location?.lat},${location?.lng}\n\nPlease contact me or emergency services immediately.\n\nSent from SilverCare AI Emergency System\nThis is an automated emergency message.`;
+      const emergencyMessage = `EMERGENCY SOS ALERT \n\n- I need immediate help! \n- My current location: ${location?.lat.toFixed(6)}, ${location?.lng.toFixed(6)} \n- View on Google Maps: https://www.google.com/maps?q=${location?.lat},${location?.lng} \n- Please contact me or emergency services immediately. \n\nSent from SilverCare AI Emergency System.`;
 
       // Send emergency message to all default contacts
       const defaultContacts = emergencyContacts.filter((c) => c.isDefault);
@@ -322,32 +362,211 @@ export default function Emergency() {
                   </button>
                 </div>
                 {locationLoading ? (
-                  <p className="text-primary-200 dark:text-primary-100/90">
-                    <span className="font-medium text-accent-yellow dark:text-accent-yellow/90">
-                      Loading location...
-                    </span>{" "}
-                    Please allow location access for emergency services.
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-primary-200 dark:text-primary-100/90">
+                      <span className="font-medium text-accent-yellow dark:text-accent-yellow/90">
+                        Loading location...
+                      </span>{" "}
+                      Please allow location access for emergency services.
+                    </p>
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent-yellow"></div>
+                      <span className="text-sm text-primary-200/80 dark:text-primary-100/70">
+                        Acquiring GPS signal and calculating accuracy...
+                      </span>
+                    </div>
+                  </div>
                 ) : locationError ? (
-                  <p className="text-primary-200 dark:text-primary-100/90">
-                    <span className="font-medium text-primary-400 dark:text-primary-200">
-                      Location unavailable
-                    </span>{" "}
-                    Please enable location permissions for emergency services.
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-primary-200 dark:text-primary-100/90">
+                      <span className="font-medium text-primary-400 dark:text-primary-200">
+                        Location unavailable
+                      </span>{" "}
+                      Please enable location permissions for emergency services.
+                    </p>
+                    <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                      Error: {locationError.message}
+                    </div>
+                  </div>
                 ) : location ? (
-                  <p className="text-primary-200 dark:text-primary-100/90">
-                    Location sharing is{" "}
-                    <span className="font-medium text-green-500 dark:text-green-500">
-                      active
-                    </span>{" "}
-                    for emergency services.
-                    <br />
-                    <span className="text-sm text-primary-200/80 dark:text-primary-100/70">
-                      Coordinates: {location.lat.toFixed(6)},{" "}
-                      {location.lng.toFixed(6)}
-                    </span>
-                  </p>
+                  <div className="space-y-3">
+                    <p className="text-primary-200 dark:text-primary-100/90">
+                      Location sharing is{" "}
+                      <span className="font-medium text-green-500 dark:text-green-500">
+                        active
+                      </span>{" "}
+                      for emergency services.
+                    </p>
+
+                    {/* Accuracy Information */}
+                    {accuracy && (() => {
+                      const accuracyInfo = getAccuracyStatus(accuracy);
+                      return (
+                        <div className={`p-3 rounded-lg border ${
+                          accuracyInfo.color === 'green' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
+                          accuracyInfo.color === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' :
+                          accuracyInfo.color === 'yellow' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
+                          'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="font-medium text-primary-300 dark:text-primary-100">GPS Accuracy:</span>
+                              <span className={`ml-2 font-semibold ${
+                                accuracyInfo.color === 'green' ? 'text-green-600 dark:text-green-400' :
+                                accuracyInfo.color === 'blue' ? 'text-blue-600 dark:text-blue-400' :
+                                accuracyInfo.color === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                                'text-red-600 dark:text-red-400'
+                              }`}>
+                                {accuracyInfo.status}
+                              </span>
+                            </div>
+                            <div className={`px-2 py-1 rounded text-xs font-medium ${
+                              accuracyInfo.color === 'green' ? 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200' :
+                              accuracyInfo.color === 'blue' ? 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200' :
+                              accuracyInfo.color === 'yellow' ? 'bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200' :
+                              'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200'
+                            }`}>
+                              ±{accuracy.toFixed(1)}m
+                            </div>
+                          </div>
+                          <div className="text-xs text-primary-200/80 dark:text-primary-100/70 mt-1">
+                            {accuracyInfo.description}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Additional Location Details */}
+                    {locationDetails && (
+                      <div className="bg-white/50 dark:bg-dark-100/50 p-3 rounded-lg border border-primary-100/20 dark:border-primary-100/10">
+                        <div className="text-sm font-medium text-primary-300 dark:text-primary-100 mb-2">
+                          Additional GPS Information:
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          {locationDetails.altitude !== null && (
+                            <div>
+                              <span className="text-primary-200 dark:text-primary-100/80">Altitude:</span>
+                              <span className="ml-2 text-primary-300 dark:text-primary-100 font-mono">
+                                {locationDetails.altitude.toFixed(1)}m
+                                {locationDetails.altitudeAccuracy && 
+                                  ` (±${locationDetails.altitudeAccuracy.toFixed(1)}m)`
+                                }
+                              </span>
+                            </div>
+                          )}
+                          {locationDetails.speed !== null && locationDetails.speed > 0 && (
+                            <div>
+                              <span className="text-primary-200 dark:text-primary-100/80">Speed:</span>
+                              <span className="ml-2 text-primary-300 dark:text-primary-100 font-mono">
+                                {(locationDetails.speed * 3.6).toFixed(1)} km/h
+                              </span>
+                            </div>
+                          )}
+                          {locationDetails.heading !== null && (
+                            <div>
+                              <span className="text-primary-200 dark:text-primary-100/80">Direction:</span>
+                              <span className="ml-2 text-primary-300 dark:text-primary-100 font-mono">
+                                {locationDetails.heading.toFixed(0)}°
+                              </span>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-primary-200 dark:text-primary-100/80">Last Update:</span>
+                            <span className="ml-2 text-primary-300 dark:text-primary-100 font-mono">
+                              {formatTimestamp(locationDetails.timestamp)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Google Maps Link */}
+                    <div className="bg-white/50 dark:bg-dark-100/50 p-3 rounded-lg border border-primary-100/20 dark:border-primary-100/10">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <span className="text-sm font-medium text-primary-300 dark:text-primary-100">
+                            Emergency Location Link:
+                          </span>
+                          <div className="text-xs text-primary-200/80 dark:text-primary-100/70 mt-1">
+                            Share this link with emergency services
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const mapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+                            navigator.clipboard.writeText(mapsUrl);
+                            speak("Location link copied to clipboard");
+                          }}
+                          className="text-xs bg-primary-300 hover:bg-primary-400 dark:bg-primary-100 dark:hover:bg-primary-200 text-white px-3 py-1 rounded transition-colors duration-200"
+                        >
+                          Copy Link
+                        </button>
+                      </div>
+                      
+                      {/* Open in Google Maps Button */}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <button
+                          onClick={() => {
+                            const mapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+                            window.open(mapsUrl, "_blank");
+                            speak("Opening location in Google Maps");
+                          }}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                        >
+                          <MapPin size={16} />
+                          Open in Google Maps
+                        </button>
+                      </div>
+                      
+                      {/* Coordinate Display with Click to Copy */}
+                      <div className="mt-3 pt-3 border-t border-primary-100/20 dark:border-primary-100/10">
+                        <div className="text-xs text-primary-200/80 dark:text-primary-100/70 mb-2">
+                          Click coordinates to copy:
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${location.lat.toFixed(6)}`);
+                              speak("Latitude copied");
+                            }}
+                            className="text-left p-2 bg-white/70 dark:bg-dark-100/70 rounded border hover:bg-white dark:hover:bg-dark-100 transition-colors"
+                          >
+                            <div className="text-xs text-primary-200 dark:text-primary-100/80">Latitude:</div>
+                            <div className="font-mono text-sm text-primary-300 dark:text-primary-100">
+                              {location.lat.toFixed(6)}°
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${location.lng.toFixed(6)}`);
+                              speak("Longitude copied");
+                            }}
+                            className="text-left p-2 bg-white/70 dark:bg-dark-100/70 rounded border hover:bg-white dark:hover:bg-dark-100 transition-colors"
+                          >
+                            <div className="text-xs text-primary-200 dark:text-primary-100/80">Longitude:</div>
+                            <div className="font-mono text-sm text-primary-300 dark:text-primary-100">
+                              {location.lng.toFixed(6)}°
+                            </div>
+                          </button>
+                        </div>
+                        
+                        {/* Full Coordinates Copy */}
+                        <button
+                          onClick={() => {
+                            const coordsText = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
+                            navigator.clipboard.writeText(coordsText);
+                            speak("Full coordinates copied");
+                          }}
+                          className="w-full mt-2 p-2 bg-white/70 dark:bg-dark-100/70 rounded border hover:bg-white dark:hover:bg-dark-100 transition-colors text-center"
+                        >
+                          <div className="text-xs text-primary-200 dark:text-primary-100/80">Full Coordinates:</div>
+                          <div className="font-mono text-sm text-primary-300 dark:text-primary-100">
+                            {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <p className="text-primary-200 dark:text-primary-100/90">
                     <span className="font-medium text-primary-300 dark:text-primary-100">

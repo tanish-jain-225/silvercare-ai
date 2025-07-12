@@ -4,15 +4,27 @@ export const useLocation = () => {
     const [location, setLocation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [accuracy, setAccuracy] = useState(null);
+    const [locationDetails, setLocationDetails] = useState(null);
 
     useEffect(() => {
         let watchId = null;
         if ('geolocation' in navigator) {
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
+                    const coords = position.coords;
                     setLocation({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
+                        lat: coords.latitude,
+                        lng: coords.longitude,
+                    });
+                    setAccuracy(coords.accuracy);
+                    setLocationDetails({
+                        accuracy: coords.accuracy,
+                        altitude: coords.altitude,
+                        altitudeAccuracy: coords.altitudeAccuracy,
+                        heading: coords.heading,
+                        speed: coords.speed,
+                        timestamp: position.timestamp
                     });
                     setLoading(false);
                     setError(null); // Clear any previous error
@@ -48,5 +60,5 @@ export const useLocation = () => {
         };
     }, []);
 
-    return { location, loading, error };
+    return { location, loading, error, accuracy, locationDetails };
 };

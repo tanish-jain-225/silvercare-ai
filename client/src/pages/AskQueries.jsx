@@ -66,24 +66,7 @@ export function AskQueries() {
           ? 'Highly Distressed' 
           : 'Distressed';
 
-        const emergencyMessage = `EMERGENCY ALERT from ${
-          user.fullName || user.email
-        }
-
-Message: "${originalMessage}"
-
-Location: ${locationText}
-
-Emergency Analysis:
-- Confidence: ${Math.round(emergencyData.confidence * 100)}%
-- Sentiment: ${sentimentLevel}
-- Emergency Score: ${analysis?.emergency_score || 'N/A'}
-- Immediate Danger Detected: ${analysis?.has_immediate_danger ? 'YES' : 'NO'}
-- Medical Emergency: ${analysis?.has_medical_distress ? 'YES' : 'NO'}
-
-Please contact them immediately or call emergency services.
-
-Sent from SilverCare AI Emergency Detection System`;
+        const emergencyMessage = `EMERGENCY ALERT from ${user.fullName || user.email} \n\n- Message: "${originalMessage}" \n- Location: ${locationText} \n- Confidence: ${Math.round(emergencyData.confidence * 100)}% \n- Sentiment: ${sentimentLevel} \n- Emergency Score: ${analysis?.emergency_score || 'N/A'} \n- Immediate Danger: ${analysis?.has_immediate_danger ? 'YES' : 'NO'} \n- Medical Emergency: ${analysis?.has_medical_distress ? 'YES' : 'NO'} \n- Please contact them immediately or call emergency services \n\nSent from SilverCare AI Emergency Detection System`;
 
         // Open WhatsApp Web for each emergency contact
         user.emergencyContacts.forEach((contact) => {
