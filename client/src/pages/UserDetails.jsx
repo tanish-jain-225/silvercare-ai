@@ -120,7 +120,6 @@ export function UserDetails() {
 
   useEffect(() => {
     if (user) {
-      console.log("Initializing form with user data:", user);
 
       // Check if user has existing profile data
       const hasExistingData =
@@ -162,12 +161,10 @@ export function UserDetails() {
   // Enhanced cleanup effect to handle unmounting and cancel uploads
   useEffect(() => {
     return () => {
-      console.log("Component unmounting - cleaning up uploads...");
 
       // Cancel any ongoing uploads
       Object.entries(uploadStates).forEach(([field, state]) => {
         if (state.controller && state.isUploading) {
-          console.log(`Aborting upload for ${field} on unmount`);
           state.controller.abort();
         }
       });
@@ -175,7 +172,6 @@ export function UserDetails() {
       // Clear active operations
       activeUploadOperations.current.clear();
 
-      console.log("Upload cleanup completed");
     };
   }, []); // Empty dependency array ensures this only runs on unmount
 
@@ -260,14 +256,12 @@ export function UserDetails() {
 
   // Enhanced cancel upload function with operation tracking
   const cancelUpload = (field) => {
-    console.log(`Cancelling upload for ${field}...`);
 
     const uploadState = uploadStates[field];
 
     // Abort the upload operation if controller exists
     if (uploadState.controller && !uploadState.controller.signal.aborted) {
       uploadState.controller.abort();
-      console.log(`Aborted controller for ${field}`);
     }
 
     // Remove from active operations immediately
@@ -302,29 +296,24 @@ export function UserDetails() {
     const fileInput = document.getElementById(field);
     if (fileInput) {
       fileInput.value = "";
-      console.log(`Reset file input for ${field} after cancellation`);
     }
 
     const fieldName =
       field === "medicalReport" ? "Medical report" : "Profile picture";
     speak(`${fieldName} upload cancelled.`);
-    console.log(`Upload cancellation completed for ${field}`);
   };
 
   // Enhanced remove uploaded file function
   const removeFile = (field) => {
-    console.log(`Removing file for ${field}...`);
 
     // Ensure no upload is in progress before removing
     if (uploadStates[field].isUploading) {
-      console.log(`Cannot remove file - upload in progress for ${field}`);
       return;
     }
 
     // Clear file data from form atomically
     setFormData((prev) => {
       const newData = { ...prev, [field]: null };
-      console.log(`File data cleared for ${field}`);
       return newData;
     });
 
@@ -348,14 +337,12 @@ export function UserDetails() {
       const fileInput = document.getElementById(field);
       if (fileInput) {
         fileInput.value = "";
-        console.log(`Reset file input for ${field} after removal`);
       }
     }, 100);
 
     const fieldName =
       field === "medicalReport" ? "Medical report" : "Profile picture";
     speak(`${fieldName} removed.`);
-    console.log(`File removal completed for ${field}`);
   };
 
   // Enhanced smart compression function with error handling and quality optimization
@@ -426,11 +413,6 @@ export function UserDetails() {
 
                   if (sizeKB <= maxSizeKB) {
                     // Target size achieved
-                    console.log(
-                      `Compression successful: ${sizeKB.toFixed(
-                        0
-                      )}KB (quality: ${Math.round(currentQuality * 100)}%)`
-                    );
                     resolve(blob);
                   } else {
                     // Continue compressing with lower quality
@@ -470,7 +452,6 @@ export function UserDetails() {
   // Bulletproof file upload handler with atomic state management
   const handleFileUpload = async (field, file) => {
     if (!file) {
-      console.log(`No file provided for ${field}`);
       return;
     }
 
@@ -481,9 +462,6 @@ export function UserDetails() {
 
     // Prevent duplicate uploads for the same field with better race condition handling
     if (uploadStates[field].isUploading) {
-      console.log(
-        `Upload already in progress for ${field}, ignoring duplicate request`
-      );
       return;
     }
 
@@ -491,21 +469,12 @@ export function UserDetails() {
     await new Promise(resolve => setTimeout(resolve, 50));
     
     if (uploadStates[field].isUploading || activeUploadOperations.current.has(field)) {
-      console.log(
-        `Upload still in progress for ${field} after delay check, ignoring duplicate request`
-      );
       return;
     }
 
     // Track this operation
     activeUploadOperations.current.add(field);
     uploadAttempts.current[field]++;
-
-    console.log(`Starting upload ${operationId} for ${field}:`, {
-      fileName: file.name,
-      fileSize: `${(file.size / 1024).toFixed(0)}KB`,
-      attempt: uploadAttempts.current[field],
-    });
 
     // Create AbortController for this specific upload
     const controller = new AbortController();
@@ -524,7 +493,6 @@ export function UserDetails() {
 
     // Cleanup function to ensure proper state reset
     const cleanupUpload = (success = false) => {
-      console.log(`Cleaning up upload for ${field}, success: ${success}`);
       
       // Remove from active operations
       activeUploadOperations.current.delete(field);
@@ -541,7 +509,6 @@ export function UserDetails() {
           const fileInput = document.getElementById(field);
           if (fileInput) {
             fileInput.value = "";
-            console.log(`Reset file input for ${field} after failed upload`);
           }
         }, 100);
       }
@@ -561,7 +528,6 @@ export function UserDetails() {
 
     try {
       // Stage 1: File Validation (5-15%)
-      console.log(`Validating file for ${field}...`);
 
       if (field === "medicalReport") {
         const allowedTypes = [
@@ -598,7 +564,6 @@ export function UserDetails() {
       }
 
       updateUploadState({ progress: 15, stage: "validated" });
-      console.log(`File validation passed for ${field}`);
 
       // Stage 2: Size Check and Processing (15-70%)
       const checkFileSize = (fileToCheck) => {
@@ -647,10 +612,6 @@ export function UserDetails() {
 
       // Check original file size
       const originalFileCheck = await checkFileSize(file);
-      console.log(`Original file analysis for ${field}:`, {
-        size: `${originalFileCheck.sizeInKB}KB`,
-        acceptable: originalFileCheck.isAcceptableSize,
-      });
 
       // Check for cancellation after analysis
       if (controller.signal.aborted) {
@@ -665,9 +626,6 @@ export function UserDetails() {
       // Only compress if file exceeds safe size limits
       if (!originalFileCheck.isAcceptableSize) {
         updateUploadState({ progress: 40, stage: "compressing" });
-        console.log(
-          `File too large (${originalFileCheck.sizeInKB}KB), applying smart compression for ${field}...`
-        );
 
         if (file.type.startsWith("image/")) {
           try {
@@ -695,13 +653,6 @@ export function UserDetails() {
               ).toFixed(1),
             };
 
-            console.log(`Compression successful for ${field}:`, {
-              original: `${Math.round(file.size / 1024)}KB`,
-              compressed: `${Math.round(processedFile.size / 1024)}KB`,
-              savings: `${Math.round(compressionStats.savings / 1024)}KB`,
-              ratio: `${compressionStats.ratio}%`,
-            });
-
             // Check for cancellation after compression
             if (controller.signal.aborted) {
               throw new Error("Upload cancelled by user");
@@ -712,11 +663,6 @@ export function UserDetails() {
             // Verify compressed file meets requirements
             const compressedCheck = await checkFileSize(processedFile);
             finalBase64Data = compressedCheck.base64Data;
-
-            console.log(`Compressed file validation for ${field}:`, {
-              size: `${compressedCheck.sizeInKB}KB`,
-              acceptable: compressedCheck.isAcceptableSize,
-            });
 
             if (!compressedCheck.isAcceptableSize) {
               throw new Error(
@@ -747,9 +693,6 @@ export function UserDetails() {
         }
       } else {
         updateUploadState({ progress: 50, stage: "preparing" });
-        console.log(
-          `File size acceptable (${originalFileCheck.sizeInKB}KB), uploading directly for ${field}`
-        );
       }
 
       // Check for cancellation before finalizing
@@ -774,24 +717,9 @@ export function UserDetails() {
         operationId: operationId,
       };
 
-      console.log(`Final file package prepared for ${field}:`, {
-        name: fileData.name,
-        originalSize: `${Math.round(fileData.originalSize / 1024)}KB`,
-        finalSize: `${Math.round(fileData.compressedSize / 1024)}KB`,
-        compressed: fileData.compressed,
-        compressionRatio: `${fileData.compressionRatio}%`,
-        base64Length: `${Math.round(fileData.data.length / 1024)}KB`,
-        operationId: fileData.operationId,
-      });
-
       // Atomic form data update
       setFormData((prevData) => {
         const newData = { ...prevData, [field]: fileData };
-        console.log(`Form data atomically updated for ${field}:`, {
-          fileName: newData[field].name,
-          hasData: !!newData[field].data,
-          operationId: newData[field].operationId,
-        });
         return newData;
       });
 
@@ -809,10 +737,6 @@ export function UserDetails() {
             field === "medicalReport" ? "Medical report" : "Profile picture"
           } uploaded successfully.`;
 
-      console.log(
-        `Upload completed successfully for ${field}:`,
-        successMessage
-      );
       speak(successMessage);
 
       // Clean up upload state after brief delay
@@ -840,7 +764,6 @@ export function UserDetails() {
           error: null,
         });
         cleanupUpload(false);
-        console.log(`Upload cancelled for ${field} (${operationId})`);
         return;
       }
 
@@ -855,7 +778,6 @@ export function UserDetails() {
 
       // Clear form data on error
       setFormData((prevData) => {
-        console.log(`Clearing form data for ${field} due to error`);
         return { ...prevData, [field]: null };
       });
 
@@ -1146,9 +1068,6 @@ export function UserDetails() {
 
     // Prevent multiple submissions
     if (isLoading) {
-      console.log(
-        "Submission already in progress, ignoring duplicate request"
-      );
       return;
     }
 
@@ -1169,11 +1088,6 @@ export function UserDetails() {
       if (!user || !user.id) {
         throw new Error("User not authenticated");
       }
-
-      console.log("Starting form submission...", {
-        userId: user.id,
-        timestamp: new Date().toISOString(),
-      });
 
       // Prepare cleaned data - all files stored directly in Firestore
       const cleanedFormData = {
@@ -1208,11 +1122,6 @@ export function UserDetails() {
 
       // Calculate total document size to ensure it's under Firestore limits
       const estimatedSize = JSON.stringify(cleanedFormData).length;
-      console.log("Document size validation:", {
-        size: `${(estimatedSize / 1024).toFixed(0)}KB`,
-        limit: "800KB",
-        withinLimit: estimatedSize <= 800000,
-      });
 
       if (estimatedSize > 800000) {
         // 800KB safety limit (Firestore max is 1MB)
@@ -1220,28 +1129,6 @@ export function UserDetails() {
           "Profile data is too large even after compression. Please use smaller files or remove some data."
         );
       }
-
-      console.log("Submitting user data to Firestore...", {
-        hasData: true,
-        medicalReport: cleanedFormData.medicalReport
-          ? {
-              name: cleanedFormData.medicalReport.name,
-              size: `${Math.round(
-                cleanedFormData.medicalReport.compressedSize / 1024
-              )}KB`,
-              compressed: cleanedFormData.medicalReport.compressed,
-            }
-          : null,
-        profilePicture: cleanedFormData.profilePicture
-          ? {
-              name: cleanedFormData.profilePicture.name,
-              size: `${Math.round(
-                cleanedFormData.profilePicture.compressedSize / 1024
-              )}KB`,
-              compressed: cleanedFormData.profilePicture.compressed,
-            }
-          : null,
-      });
 
       // Create a promise race with timeout for the updateUser call
       const updatePromise = updateUser(cleanedFormData);
@@ -1256,8 +1143,6 @@ export function UserDetails() {
 
       // Clear the submission timeout since we completed successfully
       clearTimeout(submissionTimeout);
-
-      console.log("Form submission completed successfully");
 
       // Success message with smart compression info
       let successMessage =
@@ -1339,7 +1224,6 @@ export function UserDetails() {
       // Always clear loading state and timeout
       clearTimeout(submissionTimeout);
       setIsLoading(false);
-      console.log("Form submission process completed (success or error)");
     }
   };
 

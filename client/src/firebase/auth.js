@@ -21,18 +21,14 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 
 export const signUpWithEmailPassword = async (email, password, name) => {
   try {
-    console.log("Attempting to create user with email:", email);
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
       password,
     );
-    console.log("User created successfully:", userCredential.user.uid);
     
     if (name) {
-      console.log("Updating user profile with name:", name);
       await updateProfile(userCredential.user, { displayName: name });
-      console.log("User profile updated successfully");
     }
     return userCredential.user;
   } catch (error) {
@@ -67,13 +63,11 @@ export const signUpWithEmailPassword = async (email, password, name) => {
 
 export const loginWithEmailPassword = async (email, password) => {
   try {
-    console.log("Attempting to login with email:", email);
     const userCredential = await signInWithEmailAndPassword(
       auth,
       email,
       password,
     );
-    console.log("Login successful:", userCredential.user.uid);
     return userCredential.user;
   } catch (error) {
     console.error("Login error:", error);

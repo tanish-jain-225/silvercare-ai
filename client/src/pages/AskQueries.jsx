@@ -43,12 +43,6 @@ export function AskQueries() {
     }
   }, [user]);
 
-  // Handle chat history
-  const handleChatHistory = () => {
-    console.log("Chat history functionality not implemented yet.");
-    // This function can be used to handle chat history logic
-  };
-
   // Handle emergency response based on server analysis
   const handleEmergencyResponse = async (isEmergency, emergencyData, originalMessage) => {
     if (isEmergency && user?.emergencyContacts?.length > 0) {
@@ -216,7 +210,6 @@ export function AskQueries() {
       if (reminderHandled) {
         // Add a visual indicator for successful reminder creation
         const reminderData = data.reminder_result.reminder || data.reminder_result.reminders?.[0];
-        console.log("Reminder created successfully:", reminderData);
         
         const reminderNotification = {
           id: `reminder-success-${Date.now()}`,
@@ -228,7 +221,6 @@ export function AskQueries() {
         setMessages((prev) => [...prev, reminderNotification]);
       } else if (data.reminder_detected && !data.reminder_result?.success) {
         // Reminder was detected but failed to process
-        console.log("Reminder detection failed:", data.reminder_result);
         
         const reminderFailNotification = {
           id: `reminder-fail-${Date.now()}`,

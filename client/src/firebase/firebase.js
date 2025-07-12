@@ -22,7 +22,6 @@ export const db = getFirestore(app);
 try {
   // These settings help with connectivity issues
   // Note: These are automatically enabled in modern Firebase versions
-  console.log("Firebase initialized successfully");
 } catch (error) {
   console.error("Error configuring Firebase:", error);
 }

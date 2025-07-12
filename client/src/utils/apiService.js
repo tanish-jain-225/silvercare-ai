@@ -46,7 +46,6 @@ export async function fetchNewsByText(text) {
       category: article.category,
     }));
   } catch (error) {
-    console.error("Error fetching news articles by text:", error);
     throw error;
   }
 }

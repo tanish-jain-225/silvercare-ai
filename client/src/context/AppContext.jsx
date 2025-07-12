@@ -170,12 +170,10 @@ export function AppProvider({ children }) {
         
         if (!userDoc.exists()) {
           // Create new user document in Firestore for first-time Google users
-          console.log("Creating new user document for Google user:", user.uid);
           await setDoc(userDocRef, userData, { merge: true });
-          console.log("User document created successfully");
+          
         } else {
           // Update last login time for existing users
-          console.log("Updating existing user login time:", user.uid);
           await setDoc(userDocRef, { 
             lastLoginAt: new Date().toISOString(),
             name: user.displayName || user.email.split("@")[0], // Update name in case it changed
@@ -226,9 +224,6 @@ export function AppProvider({ children }) {
         throw new Error("User not authenticated");
       }
 
-      console.log('Current user from context:', user);
-      console.log('Data to update:', updatedUserData);
-
       // Merge with existing user data, preserving id and email
       const completeUserData = {
         ...user,
@@ -238,14 +233,11 @@ export function AppProvider({ children }) {
         updatedAt: new Date().toISOString(),
       };
 
-      console.log('Updating Firebase with data:', completeUserData);
-
       // Perform Firebase update without timeout - let it take as long as needed
       // This removes the artificial 10-second timeout to allow slow networks more time
       try {
         const docRef = doc(db, "users", user.id);
         await setDoc(docRef, completeUserData, { merge: true });
-        console.log('Firebase setDoc completed successfully');
       } catch (firebaseError) {
         console.error("Firebase update error:", firebaseError);
         
@@ -261,14 +253,11 @@ export function AppProvider({ children }) {
           throw new Error(`Firebase error: ${firebaseError.message}`);
         }
       }
-
-      console.log('Firebase operation completed successfully');
       
       // Update context state and localStorage after successful Firebase update
       setUser(completeUserData);
       storage.set("SilverCare_user", completeUserData);
 
-      console.log('User data updated successfully in all locations');
       return true;
     } catch (error) {
       console.error("Error updating user data:", error);
