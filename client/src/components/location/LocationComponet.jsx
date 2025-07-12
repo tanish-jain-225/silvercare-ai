@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLocation } from "../../hooks/useLocation";
+import { formatTimestamp } from "../../utils/helper";
 
 // Fix leaflet's missing default icon issue in React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -95,7 +96,7 @@ const CurrentLocationMap = () => {
                 {locationDetails?.timestamp && (
                   <>
                     <br />
-                    Updated: {new Date(locationDetails.timestamp).toLocaleTimeString()}
+                    Updated: {formatTimestamp(locationDetails.timestamp)}
                   </>
                 )}
               </small>

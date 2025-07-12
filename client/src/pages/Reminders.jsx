@@ -13,7 +13,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { useVoice } from "../hooks/useVoice";
-import { route_endpoint } from "../utils/helper";
+import { route_endpoint, convertTo24Hour, formatTimeForDisplay, formatTimeForSpeech, formatDate } from "../utils/helper";
 import { useApp } from "../context/AppContext";
 
 export function Reminders() {
@@ -72,9 +72,15 @@ export function Reminders() {
 
       if (data.success && Array.isArray(data.reminders)) {
         // Sort reminders by created_at in descending order (newest first)
-        const sortedReminders = data.reminders.sort((a, b) => {
-          return new Date(b.created_at) - new Date(a.created_at);
-        });
+        // and normalize time format to 12-hour display format
+        const sortedReminders = data.reminders
+          .map(reminder => ({
+            ...reminder,
+            time: formatTimeForDisplay(reminder.time) // Ensure 12-hour format
+          }))
+          .sort((a, b) => {
+            return new Date(b.created_at) - new Date(a.created_at);
+          });
         setReminders(sortedReminders);
         setSyncStatus("success");
       } else {
@@ -191,19 +197,13 @@ export function Reminders() {
   };
 
   const handleReadReminder = (reminder) => {
+    const timeForSpeech = formatTimeForSpeech(reminder.time);
     speak(
-      `Reminder: ${reminder.title} at ${reminder.time} on ${reminder.date}`
+      `Reminder: ${reminder.title} at ${timeForSpeech} on ${reminder.date}`
     );
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  // Use formatDate from helper.js for consistency - no local function needed
 
   // Local notification scheduling
   React.useEffect(() => {
@@ -221,11 +221,13 @@ export function Reminders() {
     const now = new Date();
     const futureReminders = uniqueReminders.filter((reminder) => {
       if (!reminder.date || !reminder.time) return false;
-      const reminderTime = new Date(`${reminder.date}T${reminder.time}`);
+      const time24h = convertTo24Hour(reminder.time);
+      const reminderTime = new Date(`${reminder.date}T${time24h}`);
       return reminderTime > now;
     });
     futureReminders.forEach((reminder) => {
-      const reminderTime = new Date(`${reminder.date}T${reminder.time}`);
+      const time24h = convertTo24Hour(reminder.time);
+      const reminderTime = new Date(`${reminder.date}T${time24h}`);
       const delay = reminderTime - now;
       if (delay > 0) {
         const timer = setTimeout(() => {
@@ -236,11 +238,11 @@ export function Reminders() {
           const audio = new Audio("/alarm.mp3");
           setAlarmAudio(audio);
           setIsAlarmPlaying(true);
-          audio.play().catch(() => { });
+          audio.play().catch(() => {});
           // Show notification if allowed
           if (window.Notification && Notification.permission === "granted") {
             new Notification("Alarm", {
-              body: `${reminder.title} at ${reminder.time} on ${reminder.date}`,
+              body: `${reminder.title} at ${formatTimeForDisplay(reminder.time)} on ${reminder.date}`,
               icon: "/voice-search.png",
             });
           }
@@ -288,7 +290,6 @@ export function Reminders() {
     setSyncStatus("syncing");
 
     try {
-
       const response = await fetch(`${route_endpoint}/format-reminder`, {
         method: "POST",
         headers: {
@@ -315,7 +316,6 @@ export function Reminders() {
         // Sync with backend to get the latest reminders including the new one
         await fetchReminders(false); // Don't show loading state
         setSyncStatus("success");
-
       } else {
         throw new Error(data.error || "Failed to create voice reminder");
       }
@@ -378,13 +378,15 @@ export function Reminders() {
               <Button
                 onClick={() => {
                   stop(); // Stop any ongoing speech
-                  fetchReminders(true)
+                  fetchReminders(true);
                 }}
                 variant="outline"
                 size="lg"
                 disabled={isLoading || syncStatus === "syncing"}
                 ariaLabel="Refresh reminders"
-                className={`${syncStatus === "syncing" ? "animate-pulse" : ""} 
+                className={`${
+                  syncStatus === "syncing" ? "animate-pulse" : ""
+                } 
                   px-6 py-3 
                   dark:hover:text-white
                   hover:bg-primary-50 dark:hover:bg-dark-200 
@@ -395,14 +397,12 @@ export function Reminders() {
                   hover:shadow-lg
                   disabled:opacity-50 disabled:cursor-not-allowed
                   text-base font-medium
-                  flex items-center justify-center gap-2
-                  `}
+                  flex items-center justify-center gap-2`}
               >
                 <div className="flex items-center gap-1 align-middle">
                   <RefreshCw className="w-5 h-5" />
                   <span>Refresh</span>
                 </div>
-
               </Button>
               <Button
                 onClick={() => setShowAddForm(true)}
@@ -473,12 +473,12 @@ export function Reminders() {
                     </h3>
                     <p className="text-sm text-primary-200 dark:text-primary-100/80 mt-1">
                       <span className="inline-block">
-                        {formatDate(reminder.date)}
+                        {formatDate(reminder.date, { weekday: "short", month: "short", day: "numeric" })}
                       </span>
                       <span className="mx-2 text-primary-100 dark:text-primary-100/40">
                         •
                       </span>
-                      <span className="inline-block">{reminder.time}</span>
+                      <span className="inline-block">{formatTimeForDisplay(reminder.time)}</span>
                     </p>
                   </div>
                 </div>
@@ -540,10 +540,12 @@ export function Reminders() {
                   <Input
                     label="Time"
                     type="time"
-                    value={newReminder.time}
-                    onChange={(e) =>
-                      setNewReminder({ ...newReminder, time: e.target.value })
-                    }
+                    value={convertTo24Hour(newReminder.time)}
+                    onChange={(e) => {
+                      const time24h = e.target.value;
+                      const time12h = formatTimeForDisplay(time24h);
+                      setNewReminder({ ...newReminder, time: time12h });
+                    }}
                     required
                     className="w-full dark:bg-dark-200"
                   />

@@ -17,7 +17,7 @@ import { useVoice } from "../hooks/useVoice";
 import { useApp } from "../context/AppContext";
 import { useLocation } from "../hooks/useLocation";
 import LocationComponent from "../components/location/LocationComponet";
-import { route_endpoint } from "../utils/helper";
+import { route_endpoint, formatTimestamp } from "../utils/helper";
 import {
   getSavedContacts,
   addSavedContact,
@@ -68,10 +68,8 @@ export default function Emergency() {
   };
 
   // Format timestamp
-  const formatTimestamp = (timestamp) => {
-    if (!timestamp) return "Unknown";
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString();
+  const formatTime = (timestamp) => {
+    return formatTimestamp(timestamp);
   };
 
   // State for emergency chat
@@ -473,7 +471,7 @@ export default function Emergency() {
                           <div>
                             <span className="text-primary-200 dark:text-primary-100/80">Last Update:</span>
                             <span className="ml-2 text-primary-300 dark:text-primary-100 font-mono">
-                              {formatTimestamp(locationDetails.timestamp)}
+                              {formatTime(locationDetails.timestamp)}
                             </span>
                           </div>
                         </div>

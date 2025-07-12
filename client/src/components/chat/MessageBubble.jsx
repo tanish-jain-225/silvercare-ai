@@ -2,13 +2,11 @@ import React from "react";
 import { User, Bot } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useApp } from "../../context/AppContext";
+import { formatTimestamp } from "../../utils/helper";
 
 export function MessageBubble({ message, isUser, isError, timestamp, index }) {
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatTimestamp(timestamp);
   };
 
   const { user, logout } = useApp();

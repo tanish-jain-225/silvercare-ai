@@ -23,13 +23,39 @@ export function AskQueries() {
   const [error, setError] = useState(null);
   const { speak, listen, stop, isSpeaking } = useVoice();
   const [inputDisabled, setInputDisabled] = useState(true); // Start disabled on initial load
+  const [showStartOverlay, setShowStartOverlay] = useState(true); // Show start overlay initially
+  const [isInitialWelcomePlaying, setIsInitialWelcomePlaying] = useState(false); // Track initial welcome
 
-  // Initialize messages with a welcome message
+  // This useEffect was removed to prevent duplicate welcome messages
+  // Welcome message is now handled only in handleStartChat function
+
+  // Speak page welcome message when component loads
   useEffect(() => {
+    if (user?.id && showStartOverlay && !isInitialWelcomePlaying) {
+      setIsInitialWelcomePlaying(true);
+      // Speak welcome message when page loads
+      speak("Welcome to AI Assistance section. Click start conversation to begin.", {
+        onended: () => {
+          setIsInitialWelcomePlaying(false);
+          // Keep inputs disabled until user starts conversation
+        },
+      });
+    }
+  }, [user, showStartOverlay]);
+
+  // Handle start button click
+  const handleStartChat = () => {
+    if (isInitialWelcomePlaying) {
+      stop(); // Stop the initial welcome message if still playing
+      setIsInitialWelcomePlaying(false);
+    }
+    setShowStartOverlay(false);
     if (user?.id) {
+      // Get user's name from signin info (fullName, firstName, or email)
+      const userName = user?.name || user.firstName || user.displayName || user.email?.split('@')[0] || 'there';
       const welcomeMessage = {
         id: "welcome",
-        message: "Welcome, How can I assist you today?",
+        message: `Welcome ${userName}, How can I assist you today?`,
         isUser: false,
         timestamp: new Date(),
       };
@@ -41,7 +67,7 @@ export function AskQueries() {
         },
       });
     }
-  }, [user]);
+  };
 
   // Handle emergency response based on server analysis
   const handleEmergencyResponse = async (isEmergency, emergencyData, originalMessage) => {
@@ -60,7 +86,7 @@ export function AskQueries() {
           ? 'Highly Distressed' 
           : 'Distressed';
 
-        const emergencyMessage = `EMERGENCY ALERT from ${user.fullName || user.email} \n\n- Message: "${originalMessage}" \n- Location: ${locationText} \n- Confidence: ${Math.round(emergencyData.confidence * 100)}% \n- Sentiment: ${sentimentLevel} \n- Emergency Score: ${analysis?.emergency_score || 'N/A'} \n- Immediate Danger: ${analysis?.has_immediate_danger ? 'YES' : 'NO'} \n- Medical Emergency: ${analysis?.has_medical_distress ? 'YES' : 'NO'} \n- Please contact them immediately or call emergency services \n\nSent from SilverCare AI Emergency Detection System`;
+        const emergencyMessage = `EMERGENCY SOS ALERT \n\n- Message: "${originalMessage}" \n- Location: ${locationText} \n- Confidence: ${Math.round(emergencyData.confidence * 100)}% \n- Sentiment: ${sentimentLevel} \n- Immediate Danger: ${analysis?.has_immediate_danger ? 'YES' : 'NO'} \n- Medical Emergency: ${analysis?.has_medical_distress ? 'YES' : 'NO'} \n- Please contact them immediately or call emergency services \n\nSent from SilverCare AI Emergency Detection System`;
 
         // Open WhatsApp Web for each emergency contact
         user.emergencyContacts.forEach((contact) => {
@@ -306,7 +332,7 @@ export function AskQueries() {
         <motion.div
           layout
           transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
-          className="flex flex-col w-full max-w-4xl bg-white/95 dark:bg-dark-200/90 rounded-2xl shadow-lg border border-primary-100/30 dark:border-primary-200/40 overflow-hidden h-[80vh] mx-auto"
+          className="relative flex flex-col w-full max-w-4xl bg-white/95 dark:bg-dark-200/90 rounded-2xl shadow-lg border border-primary-100/30 dark:border-primary-200/40 overflow-hidden h-[80vh] mx-auto"
         >
           <div className="flex items-center justify-center gap-2 p-2">
             <motion.div
@@ -349,7 +375,38 @@ export function AskQueries() {
             </motion.div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 custom-scrollbar">
+          <div className="relative flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 custom-scrollbar">
+            {/* Start Overlay - positioned only over the messages area */}
+            {showStartOverlay && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={`absolute inset-0 z-30 bg-black/60 backdrop-blur-sm flex items-center justify-center overflow-y-auto p-4 ${
+                  isInitialWelcomePlaying ? 'pointer-events-none' : ''
+                }`}
+              >
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2, type: "spring", damping: 25, stiffness: 200 }}
+                  className="bg-white/95 dark:bg-dark-200/95 rounded-3xl shadow-2xl border border-primary-100/30 dark:border-primary-200/40 w-full flex m-2 p-2 justify-center items-center"
+                >
+                  
+                  <button
+                    onClick={handleStartChat}
+                    disabled={isInitialWelcomePlaying}
+                    className={`bg-gradient-to-r from-primary-200 to-primary-300 hover:from-primary-300 hover:to-primary-200 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-sm sm:text-base md:text-lg shadow-lg transition-all duration-300 hover:shadow-xl dark:from-primary-200 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-primary-200 flex-shrink-0 w-full break-words ${
+                      isInitialWelcomePlaying 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:cursor-pointer'
+                    }`}
+                  >
+                    Start Conversation
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
             {messages.map((msg, index) => (
               <MessageBubble
                 key={msg.id}
@@ -387,7 +444,7 @@ export function AskQueries() {
                 onResult={handleVoiceInput}
                 size="lg"
                 className="!w-10 !h-10 sm:!w-12 sm:!h-12 rounded-full bg-primary-200 dark:bg-primary-200/80 shadow-md flex items-center justify-center dark:hover:bg-blue-700 [&>svg]:scale-75 sm:[&>svg]:scale-100"
-                disabled={isLoading || inputDisabled}
+                disabled={isLoading || inputDisabled || showStartOverlay}
               />
               <input
                 type="text"
@@ -401,9 +458,9 @@ export function AskQueries() {
                     handleSendMessage();
                   }
                 }}
-                disabled={isLoading || inputDisabled}
+                disabled={isLoading || inputDisabled || showStartOverlay}
               />
-              {isSpeaking ? (
+              {isSpeaking && !showStartOverlay ? (
                 <button
                   onClick={() => {
                     stop();
@@ -418,7 +475,7 @@ export function AskQueries() {
               ) : (
                 <button
                   onClick={() => handleSendMessage()}
-                  disabled={isLoading || inputDisabled}
+                  disabled={isLoading || inputDisabled || showStartOverlay}
                   className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary-200 hover:bg-primary-300 dark:bg-primary-200 dark:hover:bg-blue-700 text-white dark:text-white border border-primary-100/30 dark:border-blue-700/40 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
                   aria-label="Send Message"
                   type="button"

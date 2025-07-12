@@ -104,16 +104,16 @@ def get_dynamic_date_context_for_reminder():
     # Determine time of day
     if 5 <= current_hour < 12:
         time_of_day = "morning"
-        suggested_time = "09:00"
+        suggested_time = "9:00 AM"
     elif 12 <= current_hour < 17:
         time_of_day = "afternoon"
-        suggested_time = "15:00"
+        suggested_time = "3:00 PM"
     elif 17 <= current_hour < 21:
         time_of_day = "evening"
-        suggested_time = "19:00"
+        suggested_time = "7:00 PM"
     else:
         time_of_day = "night"
-        suggested_time = "20:00"
+        suggested_time = "8:00 PM"
     
     context = f"""
 CURRENT DATE & TIME CONTEXT (Use this for intelligent date/time inference):
@@ -130,7 +130,7 @@ Day Name Mappings:
 
 Smart Defaults:
 - If no date specified: use tomorrow for medicine/health, today for general tasks
-- If no time specified: use {suggested_time} (current {time_of_day}) or 09:00 for medicine
+- If no time specified: use {suggested_time} (current {time_of_day}) or 9:00 AM for medicine
 - Convert relative dates (today/tomorrow/Monday/etc.) to exact dates using the mapping above
 """
     
@@ -169,35 +169,35 @@ def get_smart_default_time_for_reminder(title):
     # Medicine times
     if any(word in title_lower for word in ['medicine', 'medication', 'pill', 'vitamin']):
         if 'evening' in title_lower or 'night' in title_lower:
-            return "20:00"
-        return "09:00"
+            return "8:00 PM"
+        return "9:00 AM"
     
     # Meal times
     if 'breakfast' in title_lower:
-        return "08:00"
+        return "8:00 AM"
     elif 'lunch' in title_lower:
-        return "12:00"
+        return "12:00 PM"
     elif 'dinner' in title_lower:
-        return "19:00"
+        return "7:00 PM"
     
     # Appointment times
     if any(word in title_lower for word in ['appointment', 'meeting', 'doctor', 'dentist']):
-        return "10:00"
+        return "10:00 AM"
     
     # Exercise/workout
     if any(word in title_lower for word in ['workout', 'exercise', 'gym', 'walk', 'run']):
-        return "07:00"
+        return "7:00 AM"
     
     # Based on current time of day
     current_hour = now.hour
     if 5 <= current_hour < 12:
-        return "09:00"
+        return "9:00 AM"
     elif 12 <= current_hour < 17:
-        return "15:00"
+        return "3:00 PM"
     elif 17 <= current_hour < 21:
-        return "19:00"
+        return "7:00 PM"
     else:
-        return "20:00"
+        return "8:00 PM"
 
 def process_reminders(reminders_list, user_id):
     """Process multiple reminders and save them to MongoDB with intelligent defaults"""
@@ -268,13 +268,13 @@ INSTRUCTIONS:
 2. Use the current date/time context above to convert relative dates accurately
 3. If date is missing, apply intelligent defaults based on reminder type
 4. If time is missing, suggest appropriate default times based on context
-5. Always return a valid JSON array with proper date formats (YYYY-MM-DD) and time formats (HH:MM)
+5. Always return a valid JSON array with proper date formats (YYYY-MM-DD) and time formats in 12-hour format (H:MM AM/PM)
 
-Return format: [{{"title": "task description", "date": "YYYY-MM-DD", "time": "HH:MM"}}]
+Return format: [{{"title": "task description", "date": "YYYY-MM-DD", "time": "H:MM AM/PM"}}]
 
 Examples using context:
-- "remind me medicine" → [{{"title": "take medicine", "date": "{(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')}", "time": "09:00"}}]
-- "appointment tomorrow" → [{{"title": "appointment", "date": "{(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')}", "time": "10:00"}}]
+- "remind me medicine" → [{{"title": "take medicine", "date": "{(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')}", "time": "9:00 AM"}}]
+- "appointment tomorrow" → [{{"title": "appointment", "date": "{(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')}", "time": "10:00 AM"}}]
 """
     
     response = client.chat.completions.create(

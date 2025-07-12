@@ -130,25 +130,25 @@ def get_dynamic_date_context():
     # Determine time of day with more granular slots
     if 5 <= current_hour < 9:
         time_of_day = "early morning"
-        suggested_time = "09:00"
+        suggested_time = "9:00 AM"
     elif 9 <= current_hour < 12:
         time_of_day = "morning"
-        suggested_time = "10:00"
+        suggested_time = "10:00 AM"
     elif 12 <= current_hour < 14:
         time_of_day = "midday"
-        suggested_time = "15:00"
+        suggested_time = "3:00 PM"
     elif 14 <= current_hour < 17:
         time_of_day = "afternoon"
-        suggested_time = "16:00"
+        suggested_time = "4:00 PM"
     elif 17 <= current_hour < 20:
         time_of_day = "evening"
-        suggested_time = "19:00"
+        suggested_time = "7:00 PM"
     elif 20 <= current_hour < 23:
         time_of_day = "night"
-        suggested_time = "09:00"  # Suggest morning for next day
+        suggested_time = "9:00 AM"  # Suggest morning for next day
     else:
         time_of_day = "late night"
-        suggested_time = "09:00"  # Suggest morning for next day
+        suggested_time = "9:00 AM"  # Suggest morning for next day
     
     # Generate extended month context
     current_month = now.strftime("%B").lower()
@@ -165,7 +165,7 @@ def get_dynamic_date_context():
     context = f"""
 CURRENT DATE & TIME CONTEXT (Use this for intelligent date/time inference):
 
-🗓️ Current Information:
+Current Information:
 - Today is: {today} ({now.strftime("%A, %B %d, %Y")})
 - Tomorrow is: {tomorrow} ({(now + timedelta(days=1)).strftime("%A, %B %d")})
 - Day after tomorrow: {day_after_tomorrow} ({(now + timedelta(days=2)).strftime("%A, %B %d")})
@@ -173,28 +173,28 @@ CURRENT DATE & TIME CONTEXT (Use this for intelligent date/time inference):
 - Current time: {current_time}
 - Time of day: {time_of_day}
 
-📅 Day Name Mappings (next 7 days):
+Day Name Mappings (next 7 days):
 - Today ({now.strftime("%A").lower()}): {today}
 - Tomorrow ({(now + timedelta(days=1)).strftime("%A").lower()}): {tomorrow}
 """ + "\n".join([f"- {day} ({(now + timedelta(days=i)).strftime('%B %d')}): {date}" 
                 for i, (day, date) in enumerate(days_ahead.items()) 
                 if day != now.strftime("%A").lower() and i < 7]) + f"""
 
-🏢 Weekday Mappings (for appointments/business):
+Weekday Mappings (for appointments/business):
 """ + "\n".join([f"- {day}: {date}" for day, date in weekdays_ahead.items()]) + f"""
 
-🕐 Smart Time Defaults (use when time not specified):
-- Early morning: 07:00 (workout, early tasks)
-- Morning: 09:00 (medicine, appointments, general tasks)
-- Late morning: 11:00 (meetings, calls)
-- Midday/Lunch: 12:00 (lunch reminders)
-- Afternoon: 15:00 (appointments, errands)
-- Late afternoon: 16:00 (pickup, visits)
-- Evening: 19:00 (dinner, evening medicine)
-- Night: 20:00 (evening activities, bedtime prep)
+Smart Time Defaults (use when time not specified):
+- Early morning: 7:00 AM (workout, early tasks)
+- Morning: 9:00 AM (medicine, appointments, general tasks)
+- Late morning: 11:00 AM (meetings, calls)
+- Midday/Lunch: 12:00 PM (lunch reminders)
+- Afternoon: 3:00 PM (appointments, errands)
+- Late afternoon: 4:00 PM (pickup, visits)
+- Evening: 7:00 PM (dinner, evening medicine)
+- Night: 8:00 PM (evening activities, bedtime prep)
 - Current suggestion: {suggested_time} (since it's {time_of_day} now)
 
-📋 Smart Date Defaults (use when date not specified):
+Smart Date Defaults (use when date not specified):
 - Medicine/Health: Tomorrow morning (for daily medicine) or today (for immediate needs)
 - Appointments/Meetings: Next suitable weekday (Mon-Fri)
 - Personal tasks: Today if before 6 PM, tomorrow if after 6 PM
@@ -202,20 +202,20 @@ CURRENT DATE & TIME CONTEXT (Use this for intelligent date/time inference):
 - Exercise/Workout: Tomorrow morning or today if early in the day
 - Errands/Shopping: Today if afternoon, tomorrow if evening/night
 
-📆 Extended Time References:
+Extended Time References:
 - This week: {this_week}
 - Next week: {next_week}
 - This month: {current_month} {now.year}
 - Next month: {next_month_name} {next_month.year}
 
-⚡ INFERENCE RULES:
-1. "medicine" without time → 09:00 (morning) or 20:00 (if "evening" mentioned)
+INFERENCE RULES:
+1. "medicine" without time → 9:00 AM (morning) or 8:00 PM (if "evening" mentioned)
 2. "appointment" without date → next weekday (Monday-Friday)
 3. "tomorrow" → {tomorrow}
 4. "today" → {today}
 5. Weekday names → map to next occurrence of that day
-6. Meal names → breakfast: 08:00, lunch: 12:00, dinner: 19:00
-7. Time of day words → morning: 09:00, afternoon: 15:00, evening: 19:00, night: 20:00
+6. Meal names → breakfast: 8:00 AM, lunch: 12:00 PM, dinner: 7:00 PM
+7. Time of day words → morning: 9:00 AM, afternoon: 3:00 PM, evening: 7:00 PM, night: 8:00 PM
 8. No date/time specified → use smart defaults based on task type and current time
 """
     
@@ -239,7 +239,10 @@ def analyze_emergency_sentiment(text):
         r'\b(trapped|fire|smoke|gas leak|broke in|attacking me)\b',
         r'\b(dying|passed out|allergic reaction|poisoned|chest pain)\b',
         r'\b(urgent|immediate help|need help now|critical condition|life-threatening)\b',
-        r'\b(emergency situation|emergency assistance|call 911|call for help)\b'
+        r'\b(emergency situation|emergency assistance|call 911|call for help)\b', 
+        r'\b(need ambulance|need police|need fire department|need rescue)\b',
+        r'\b(urgent medical attention|critical injury|severe trauma|life-threatening condition)\b', 
+        r'\b(urgent care|critical condition|life-threatening injury|severe illness)\b'
     ]
     
     # Medical emergency patterns
@@ -270,7 +273,8 @@ def analyze_emergency_sentiment(text):
         r'\b(very worried|extremely anxious|panicking|terrified)\b',
         r'\b(scared|afraid|nervous|stressed|upset)\b',
         r'\b(feeling hopeless|feeling helpless|feeling lost|feeling trapped)\b',
-        r'\b(feeling overwhelmed|feeling desperate|feeling confused|feeling alone)\b'
+        r'\b(feeling overwhelmed|feeling desperate|feeling confused|feeling alone)\b', 
+        r'\b(feeling suicidal|having suicidal thoughts|thinking about self-harm|feeling like giving up)\b'
     ]
     
     # Non-emergency help patterns (to reduce false positives)
@@ -281,7 +285,10 @@ def analyze_emergency_sentiment(text):
         r'\b(homework help|project help|assignment help)\b',
         r'\b(help finding|help choosing|help deciding)\b',
         r'\b(technical help|computer help|software help)\b', 
-        r'\b(need advice|need guidance|need support)\b'
+        r'\b(need advice|need guidance|need support)\b', 
+        r'\b(need assistance|need help with something|need help understanding)\b', 
+        r'\b(need to talk|need to vent|need to share|need to express)\b', 
+        r'\b(need to discuss|need to explain|need to clarify|need to ask)\b'
     ]
     
     # Context that indicates questions or learning
@@ -289,7 +296,8 @@ def analyze_emergency_sentiment(text):
         r'\b(what is|how do|why does|when should|where can|which)\b',
         r'\b(explain|tell me about|information about|learn about)\b',
         r'\b(curious|wondering|interested|would like to know)\b', 
-        r'\b(need clarification|need more information|need details)\b'
+        r'\b(need clarification|need more information|need details)\b', 
+        r'\b(what time|when should|how often)\b'
     ]
     
     # Future or hypothetical context (not immediate)
@@ -443,7 +451,11 @@ def analyze_reminder_intent(text):
         r'\b(set.{0,10}reminder|set.{0,10}alarm)\b',
         # Add more voice-friendly patterns
         r'\b(remind me about|remind me of|remind me when)\b',
-        r'\b(I need to remember|make sure I)\b'
+        r'\b(I need to remember|make sure I)\b', 
+        r'\b(please remind|can you remind|could you remind)\b',
+        r'\b(need to remember|want to remember|have to remember)\b',
+        r'\b(need to set a reminder|want to set a reminder|have to set a reminder)\b',
+        r'\b(need to set an alarm|want to set an alarm|have to set an alarm)\b'
     ]
     
     # Time indicators
@@ -451,7 +463,8 @@ def analyze_reminder_intent(text):
         r'\b\d{1,2}:\d{2}\b',  # 12:30, 9:45
         r'\b\d{1,2}\s*(am|pm|a\.m\.|p\.m\.)\b',  # 9 am, 3 PM
         r'\b\d{1,2}\s*o\'?clock\b',  # 5 o'clock
-        r'\b(morning|afternoon|evening|night|noon|midnight)\b'
+        r'\b(morning|afternoon|evening|night|noon|midnight)\b', 
+        r'\b(in the morning|in the afternoon|in the evening|at night)\b'
     ]
     
     # Date indicators  
@@ -469,20 +482,27 @@ def analyze_reminder_intent(text):
         r'\b(take|call|meet|visit|buy|eat|drink)\b',
         r'\b(medication|medicine|pills|appointment|meeting|workout|exercise)\b',
         # Add more medical/health terms common in voice input
-        r'\b(doctor|hospital|pharmacy|prescription|vitamin)\b'
+        r'\b(doctor|hospital|pharmacy|prescription|vitamin)\b', 
+        r'\b(urgent|important|critical|high priority)\b'
     ]
     
     # Question patterns (to reduce false positives)
     question_patterns = [
         r'\b(what|when|where|how|why|should I|can I|do I)\b',
         r'\?',  # Question mark
-        r'\b(what time|when should|how often)\b'
+        r'\b(what time|when should|how often)\b', 
+        r'\b(should I set|can I set|do I need to set)\b',
+        r'\b(what date|when is|how to set|where to set)\b',
+        r'\b(should I remind|can you remind|do I need to remind)\b',
     ]
     
     # Past tense patterns (to reduce false positives)
     past_patterns = [
         r'\b(took|called|met|visited|ate|drank|had)\b',
-        r'\b(yesterday|last|already|just)\b'
+        r'\b(yesterday|last|already|just)\b', 
+        r'\b(was|were|did|has|have)\b',
+        r'\b(remembered|forgot|set|scheduled)\b',
+        r'\b(needed|wanted|had to)\b',
     ]
     
     # Count matches
@@ -683,14 +703,14 @@ def process_reminder_directly(user_input, user_id):
 
 {date_context}
 
-🎯 CORE INSTRUCTIONS:
+CORE INSTRUCTIONS:
 1. Extract title, date, and time from user input with intelligent inference
 2. ALWAYS fill in missing date/time using the context above and smart defaults
 3. Convert relative dates and times accurately using current context
 4. Handle natural language patterns like "tomorrow morning", "Monday afternoon", "next week"
 5. Return valid JSON with proper date formats (YYYY-MM-DD) and time formats (HH:MM)
 
-🧠 INTELLIGENT INFERENCE RULES:
+INTELLIGENT INFERENCE RULES:
 - "remind me medicine" → tomorrow 09:00 (medicine default)
 - "appointment Monday" → next Monday 10:00 (appointment default) 
 - "call doctor" → next weekday 10:00 (business hours)
@@ -700,7 +720,7 @@ def process_reminder_directly(user_input, user_id):
 - "breakfast reminder" → tomorrow 08:00 if after 10AM, today 08:00 if before
 - "meeting this week" → next weekday 10:00
 
-📋 TASK-SPECIFIC DEFAULTS:
+TASK-SPECIFIC DEFAULTS:
 - Medicine/Pills: 09:00 (morning) or 20:00 (evening), tomorrow preferred
 - Appointments: 10:00, next business day (Mon-Fri)  
 - Meals: breakfast 08:00, lunch 12:30, dinner 19:00
@@ -710,7 +730,7 @@ def process_reminder_directly(user_input, user_id):
 - Sleep/bedtime: 22:00
 - Wake up/alarm: 07:00
 
-🕐 TIME INFERENCE:
+TIME INFERENCE:
 - "morning" → 09:00
 - "afternoon" → 15:00  
 - "evening" → 19:00
@@ -719,18 +739,18 @@ def process_reminder_directly(user_input, user_id):
 - "dinner time" → 19:00
 - "bedtime" → 22:00
 
-📅 DATE INFERENCE:
+DATE INFERENCE:
 - "today" → {datetime.now().strftime("%Y-%m-%d")}
 - "tomorrow" → {(datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")}
 - "monday", "tuesday" etc. → map to next occurrence
 - "next week" → start of next week
 - "this weekend" → next Saturday
 
-⚡ RETURN FORMAT:
+RETURN FORMAT:
 Single reminder: {{"title": "task description", "date": "YYYY-MM-DD", "time": "HH:MM"}}
 Multiple reminders: [{{"title": "task1", "date": "YYYY-MM-DD", "time": "HH:MM"}}, {{"title": "task2", "date": "YYYY-MM-DD", "time": "HH:MM"}}]
 
-💡 EXAMPLES:
+EXAMPLES:
 Input: "remind me medicine"
 Output: {{"title": "take medicine", "date": "{(datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")}", "time": "09:00"}}
 
@@ -897,83 +917,83 @@ def get_smart_default_time(title):
     # Medicine times - more specific
     if any(word in title_lower for word in ['medicine', 'medication', 'pill', 'vitamin']):
         if 'morning' in title_lower or 'am' in title_lower:
-            return "08:00"
+            return "8:00 AM"
         elif 'evening' in title_lower or 'night' in title_lower or 'pm' in title_lower:
-            return "20:00"
+            return "8:00 PM"
         elif 'afternoon' in title_lower:
-            return "15:00"
+            return "3:00 PM"
         elif 'bedtime' in title_lower:
-            return "22:00"
+            return "10:00 PM"
         else:
-            return "09:00"  # Default morning medicine
+            return "9:00 AM"  # Default morning medicine
     
     # Specific meal times
     if 'breakfast' in title_lower:
-        return "08:00"
+        return "8:00 AM"
     elif 'lunch' in title_lower:
-        return "12:30"
+        return "12:30 PM"
     elif 'dinner' in title_lower:
-        return "19:00"
+        return "7:00 PM"
     elif 'snack' in title_lower:
         if current_hour < 12:
-            return "10:30"  # Morning snack
+            return "10:30 AM"  # Morning snack
         else:
-            return "15:30"  # Afternoon snack
+            return "3:30 PM"  # Afternoon snack
     
     # Appointment times - business hours
     if any(word in title_lower for word in ['appointment', 'meeting', 'doctor', 'dentist', 'consultation']):
         if 'morning' in title_lower:
-            return "10:00"
+            return "10:00 AM"
         elif 'afternoon' in title_lower:
-            return "14:00"
+            return "2:00 PM"
         else:
-            return "10:00"  # Default to morning
+            return "10:00 AM"  # Default to morning
     
     # Work-related times
     if any(word in title_lower for word in ['work', 'office', 'call', 'email', 'meeting']):
-        return "10:00"  # Standard business time
+        return "10:00 AM"  # Standard business time
     
     # Exercise/workout times
     if any(word in title_lower for word in ['workout', 'exercise', 'gym', 'walk', 'run', 'jog']):
         if 'morning' in title_lower:
-            return "07:00"
+            return "7:00 AM"
         elif 'evening' in title_lower:
-            return "18:00"
+            return "6:00 PM"
         else:
-            return "07:00"  # Default to early morning
+            return "7:00 AM"  # Default to early morning
     
     # Shopping/errands
     if any(word in title_lower for word in ['shop', 'buy', 'store', 'grocery', 'errand', 'pickup']):
-        return "14:00"  # Afternoon shopping
+        return "2:00 PM"  # Afternoon shopping
     
     # Study/learning
     if any(word in title_lower for word in ['study', 'homework', 'read', 'learn', 'practice']):
         if current_hour < 12:
-            return "10:00"  # Morning study
+            return "10:00 AM"  # Morning study
         else:
-            return "16:00"  # Afternoon study
+            return "4:00 PM"  # Afternoon study
     
     # Sleep-related
     if any(word in title_lower for word in ['sleep', 'bed', 'bedtime', 'rest']):
-        return "22:00"
+        return "10:00 PM"
     
     # Wake up
     if any(word in title_lower for word in ['wake', 'alarm', 'get up']):
-        return "07:00"
+        return "7:00 AM"
     
     # Based on current time of day with more granular defaults
     if 5 <= current_hour < 9:
-        return "09:00"  # Early morning
+        return "9:00 AM"  # Early morning
     elif 9 <= current_hour < 12:
-        return "10:00"  # Morning
+        return "10:00 AM"  # Morning
     elif 12 <= current_hour < 14:
-        return "15:00"  # Midday
+        return "3:00 PM"  # Midday
     elif 14 <= current_hour < 17:
-        return "16:00"  # Afternoon
+        return "4:00 PM"  # Afternoon
     elif 17 <= current_hour < 20:
-        return "19:00"  # Evening
+        return "7:00 PM"  # Evening
     else:
-        return "09:00"  # Night - suggest next morning
+        return "9:00 AM"  # Night - suggest next morning
 
 def validate_and_format_date(date_str):
     """Validate and format date string to YYYY-MM-DD with enhanced parsing"""
@@ -1075,32 +1095,47 @@ def validate_and_format_date(date_str):
     return datetime.now().strftime("%Y-%m-%d")
 
 def validate_and_format_time(time_str):
-    """Validate and format time string to HH:MM with enhanced parsing"""
+    """Validate and format time string to 12-hour format (e.g., 9:00 AM) with enhanced parsing"""
     if not time_str or str(time_str).lower() in ['null', 'none', '', 'undefined']:
-        return "09:00"  # Default morning time
+        return "9:00 AM"  # Default morning time
+    
+    def format_to_12hour(hour, minute):
+        """Convert 24-hour format to 12-hour format"""
+        if hour == 0:
+            return f"12:{minute:02d} AM"
+        elif hour < 12:
+            return f"{hour}:{minute:02d} AM"
+        elif hour == 12:
+            return f"12:{minute:02d} PM"
+        else:
+            return f"{hour-12}:{minute:02d} PM"
     
     try:
         time_str = str(time_str).strip().lower()
         
-        # Already in correct format
+        # Already in 12-hour format
+        if re.match(r'\d{1,2}:\d{2}\s*(am|pm|a\.?m\.?|p\.?m\.?)', time_str):
+            return time_str.upper().replace('.', '')
+        
+        # Already in 24-hour format
         if re.match(r'\d{1,2}:\d{2}$', time_str):
             parts = time_str.split(':')
             hour, minute = int(parts[0]), int(parts[1])
             if 0 <= hour <= 23 and 0 <= minute <= 59:
-                return f"{hour:02d}:{minute:02d}"
+                return format_to_12hour(hour, minute)
         
         # Handle time words - order matters for partial matches
         time_mappings = {
-            'midnight': '00:00',  # Check specific times first
-            'noon': '12:00',
-            'breakfast': '08:00',
-            'lunch': '12:30',
-            'dinner': '19:00',
-            'bedtime': '22:00',
-            'morning': '09:00',
-            'afternoon': '15:00', 
-            'evening': '19:00',
-            'night': '20:00'
+            'midnight': '12:00 AM',
+            'noon': '12:00 PM',
+            'breakfast': '8:00 AM',
+            'lunch': '12:30 PM',
+            'dinner': '7:00 PM',
+            'bedtime': '10:00 PM',
+            'morning': '9:00 AM',
+            'afternoon': '3:00 PM', 
+            'evening': '7:00 PM',
+            'night': '8:00 PM'
         }
         
         for word, time_val in time_mappings.items():
@@ -1115,39 +1150,36 @@ def validate_and_format_time(time_str):
             minute = int(match.group(2)) if match.group(2) else 0
             period = match.group(3).lower().replace('.', '')
             
-            if 'p' in period and hour != 12:  # PM
-                hour += 12
-            elif 'a' in period and hour == 12:  # 12 AM = 00:00
-                hour = 0
-            
-            if 0 <= hour <= 23 and 0 <= minute <= 59:
-                return f"{hour:02d}:{minute:02d}"
+            if 1 <= hour <= 12 and 0 <= minute <= 59:
+                period_str = "AM" if 'a' in period else "PM"
+                return f"{hour}:{minute:02d} {period_str}"
         
-        # Handle time with colon but no AM/PM - improved
+        # Handle time with colon but no AM/PM - convert to 12-hour
         colon_match = re.search(r'(\d{1,2}):(\d{2})', time_str)
         if colon_match:
             hour = int(colon_match.group(1))
             minute = int(colon_match.group(2))
             if 0 <= hour <= 23 and 0 <= minute <= 59:
-                return f"{hour:02d}:{minute:02d}"
+                return format_to_12hour(hour, minute)
         
         # Handle hour only (e.g., "9", "15") - improved
         hour_only_match = re.search(r'\b(\d{1,2})\b', time_str)
         if hour_only_match:
             hour = int(hour_only_match.group(1))
             if 0 <= hour <= 23:
-                return f"{hour:02d}:00"
+                return format_to_12hour(hour, 0)
             elif 1 <= hour <= 12:  # Assume reasonable times
-                # If it's a small number, could be AM or PM
+                # If it's a small number, decide AM/PM based on context
                 if hour < 8:  # Likely PM for times like 3, 5, 7
-                    hour += 12
-                return f"{hour:02d}:00"
+                    return f"{hour}:00 PM"
+                else:
+                    return f"{hour}:00 AM"
         
     except Exception as e:
         print(f"Time parsing error for '{time_str}': {e}")
     
     # Fallback to default time
-    return "09:00"
+    return "9:00 AM"
 
 @chat_bp.route('/chat/message', methods=['POST'])
 def send_message():

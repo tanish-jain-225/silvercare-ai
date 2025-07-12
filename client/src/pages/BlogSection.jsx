@@ -1,8 +1,8 @@
-// 0428d00fd6aa41ca9f25b366f402881b
 import React, { useState, useEffect } from "react";
 import { BlogCard } from "../components/BlogCard";
 import { fetchNewsByText } from "../utils/apiService";
 import { motion } from "framer-motion";
+import { useVoice } from "../hooks/useVoice";
 
 export function BlogSection() {
   const [articles, setArticles] = useState([]);
@@ -13,6 +13,9 @@ export function BlogSection() {
   const [currentFeaturedIndex, setCurrentFeaturedIndex] = useState(0);
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [welcomeShown, setWelcomeShown] = useState(false);
+  
+  const { speak } = useVoice();
 
   const fallbackArticles = [
     {
@@ -63,7 +66,14 @@ export function BlogSection() {
 
   useEffect(() => {
     fetchArticles(""); // Initial load with latest news
-  }, []);
+    
+    // Show welcome message when component loads
+    if (!welcomeShown) {
+      setWelcomeShown(true);
+      const welcomeMessage = "Welcome to the Blog Section! Here you can find the latest health and wellness news articles.";
+      speak(welcomeMessage);
+    }
+  }, [welcomeShown, speak]);
 
   // Manual carousel controls only - no auto-rotation
   
